@@ -180,75 +180,40 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .navdim{color:var(--ink-faint);font-size:13.5px}
 
 /* ── 탐색 화면 ─────────────────────────── */
-.browse h1{font-size:19px;font-weight:700;margin:26px 0 14px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(246px,1fr));gap:20px}
-.card{background:transparent;border:0;padding:0;text-align:left;color:inherit;display:block}
-.thumb{
-  position:relative;aspect-ratio:16/9;border-radius:9px;overflow:hidden;
-  background:var(--thumb);
+/* 채팅 사용자 카드 — 플랫폼의 프로필 팝오버와 같은 역할. */
+.ucard{
+  position:fixed;z-index:40;width:218px;
+  background:var(--panel);border:1px solid var(--line-2);border-radius:10px;
+  box-shadow:0 10px 28px rgba(0,0,0,.18);padding:11px 12px;
+  font-size:12.5px;line-height:1.5;
 }
-.card:hover .thumb{outline:2px solid var(--accent)}
-/* 카드 호버 시 뜨는 시청자 구성 패널.
-   호버는 비용이 0이라 '정보를 찾아본 행동'으로 해석하지 않습니다(Kang et al. 2009는
-   희소 자원 지불이 전제). 노출 사실과 머문 시간만 기록합니다. */
-.card-info{
-  position:absolute;left:8px;right:8px;bottom:8px;z-index:3;
-  background:var(--overlay);color:#fff;border-radius:7px;padding:9px 11px;
-  font-size:12px;line-height:1.55;opacity:0;transform:translateY(4px);
-  transition:opacity .13s ease,transform .13s ease;pointer-events:none;
+.uc-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.uc-ic{
+  width:26px;height:26px;border-radius:50%;flex:none;
+  display:grid;place-items:center;font-size:10px;font-weight:800;
+  background:var(--ic-bg);color:var(--ic-ink);
 }
-.card:hover .card-info,.card:focus-within .card-info{opacity:1;transform:none}
-.card:hover .stat-bar,.card:focus-within .stat-bar{opacity:0;transition:opacity .13s ease}
-.card-info .hd{font-weight:700;font-size:12.5px;margin-bottom:3px}
-.card-info .rowline{display:flex;justify-content:space-between;gap:10px}
-.card-info .rowline .v{font-weight:700;font-variant-numeric:tabular-nums}
-.card-info .rowline.ai .v,.card-info .rowline.ai .k{color:#5fe3bd}
-.badge-live{
-  position:absolute;left:8px;top:8px;background:var(--live);color:#fff;
-  font-size:11px;font-weight:700;padding:2px 6px;border-radius:3px;
+.uc-ic.ai{background:var(--ai-tint);color:var(--ai);border:1px solid var(--ai-border)}
+.uc-nm{font-weight:700;font-size:13px;word-break:break-all}
+.uc-rows{display:flex;flex-direction:column;gap:4px}
+.uc-row{display:flex;justify-content:space-between;gap:10px}
+.uc-row .k{color:var(--ink-faint)}
+.uc-row .v{font-weight:600;font-variant-numeric:tabular-nums}
+.uc-row .v.ai{color:var(--ai)}
+.msg .nm,.msg .ic{cursor:pointer}
+/* 플랫폼 공지 줄. 현재는 쓰지 않습니다 — 실제 플랫폼은 투표 예고를 채팅에 쓰지 않습니다.
+   실제 클립을 넣은 뒤 "채팅이 제한되었습니다" 같은 모드 변경 줄이 필요하면 이 스타일을 씁니다. */
+.msg.sys{
+  background:var(--accent-tint);border-left:3px solid var(--accent);
+  border-radius:0 6px 6px 0;padding:7px 10px;margin:3px 0;
+  font-size:13px;color:var(--ink-dim);font-weight:600;line-height:1.5;
 }
-.badge-cnt{display:none}   /* .stat-bar로 대체 */
-.badge-ai{display:none}   /* .stat-bar로 대체 */
-/* 썸네일 하단 수치 띠 — 시청자 수와 AI 비율을 카드에서 가장 큰 글자로 둡니다.
-   어두운 스크림 위에 올라가므로 색은 테마와 무관하게 고정합니다. */
-.stat-bar{
-  position:absolute;left:0;right:0;bottom:0;
-  display:flex;align-items:flex-end;gap:13px;
-  padding:26px 11px 9px;
-  background:linear-gradient(to top,
-    rgba(0,0,0,.88) 0%, rgba(0,0,0,.62) 46%, rgba(0,0,0,0) 100%);
-  pointer-events:none;
-}
-.stat-bar .unit{display:flex;flex-direction:column;gap:2px;line-height:1}
-.stat-bar .lbl{
-  font-size:10.5px;font-weight:600;letter-spacing:.04em;color:rgba(255,255,255,.76);
-}
-.stat-bar .num{
-  font-size:22px;font-weight:800;color:#fff;
-  font-variant-numeric:tabular-nums;letter-spacing:-.01em;
-}
-.stat-bar .num small{font-size:12px;font-weight:600;margin-left:1px;opacity:.82}
-.stat-bar .unit.ai .num{color:#5fe3bd}
-.stat-bar .unit.ai .lbl{color:#5fe3bd;opacity:.88}
-.stat-bar .sep{width:1px;align-self:stretch;margin:4px 0 2px;background:rgba(255,255,255,.26)}
-/* 정체성·수치 강조 — 썸네일 수치 띠와 메타 줄 두 곳에 둡니다.
-   상단 색 띠는 비율이 중간값일 때 "AI 시청자"로 단정해 보여 제거했습니다. */
-.meta .ident{
-  font-size:13.5px;font-weight:700;margin-top:7px;
-}
-.meta .ident.ai{color:var(--ai)}
-.meta .ident.human{color:var(--ink-dim)}
-.meta{padding:10px 2px 0}
-.meta .t{font-size:14.5px;font-weight:500;line-height:1.35}
-.meta .s{font-size:13px;color:var(--ink-dim);margin-top:3px}
-.meta .g{font-size:12.5px;color:var(--ink-faint);margin-top:6px}
-.card.target .meta .t{color:var(--ink);font-weight:700}
-.card.filler{opacity:.72;pointer-events:none}
-
+.msg.sys .nm,.msg.sys .ic{cursor:default}
 /* ── 시청 화면 ─────────────────────────── */
 .watch{display:none;grid-template-columns:minmax(0,1fr) 336px;gap:18px;margin-top:22px}
 .watch.on{display:grid}
 .stage{min-width:0}
+.playwrap{position:relative}
 .player{
   position:relative;aspect-ratio:16/9;border-radius:10px;overflow:hidden;
   background:linear-gradient(170deg,var(--video-1),var(--video-2) 68%);
@@ -326,6 +291,16 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .intro-row .v{font-weight:700;font-variant-numeric:tabular-nums}
 .intro-row .v.ai{color:var(--ai)}
 .intro-note{margin:16px 0 0;font-size:13px;color:var(--ink-faint);line-height:1.7}
+.intro-id{display:flex;flex-direction:column;gap:7px;margin:20px 0 4px}
+.intro-id label{font-size:14px;font-weight:600}
+.intro-id input{
+  font:inherit;font-size:15px;padding:11px 13px;border-radius:8px;
+  border:1px solid var(--line-2);background:var(--bg);color:var(--ink);
+}
+.intro-id input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+.intro-id input.bad{border-color:var(--live)}
+.id-note{font-size:12.5px;color:var(--ink-faint)}
+.id-note.bad{color:var(--live);font-weight:600}
 .intro-go{
   margin-top:22px;background:var(--accent);border:0;border-radius:8px;
   color:var(--on-accent);font-weight:700;padding:12px 26px;font-size:14.5px;
@@ -333,11 +308,47 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 
 /* ── 반응 버튼 ─────────────────────────── */
 .reacts{display:inline-flex;gap:6px}
+/* 방송 종료 화면 */
+.player.off .scene,.player.off .ph-tag,.player.off .live,.player.off .clock{opacity:0}
+.player.off{background:#0b0d11}
+.endcard{
+  position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:10px;padding:18px;
+  background:rgba(8,10,14,.92);color:#eef1f6;text-align:center;
+}
+.ec-hd{margin:0;font-size:15px;font-weight:700}
+.ec-sub{
+  background:var(--accent);color:var(--on-accent);border:0;border-radius:8px;
+  padding:9px 22px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;
+}
+.ec-sub[aria-pressed="true"]{background:rgba(255,255,255,.14);color:#cfd5df}
+.ec-lb{margin:6px 0 0;font-size:12px;color:rgba(255,255,255,.6)}
+.ec-grid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.ec-item{
+  width:140px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+  border-radius:8px;padding:0 0 8px;overflow:hidden;cursor:pointer;
+  color:#eef1f6;font-family:inherit;text-align:left;
+}
+.ec-item:hover{background:rgba(255,255,255,.13)}
+.ec-thumb{display:block;height:62px;background:linear-gradient(140deg,#2a3140,#1a1f29)}
+.ec-t{display:block;font-size:12px;font-weight:600;line-height:1.35;padding:7px 8px 0}
+.ec-v{display:block;font-size:11px;color:rgba(255,255,255,.55);padding:3px 8px 0}
+@media (max-width:860px){
+  .endcard{gap:7px;padding:12px}
+  .ec-item{width:118px}
+  .ec-thumb{height:52px}
+}
+
 .react{
   background:var(--panel-2);border:1px solid var(--line);color:var(--ink-dim);
   border-radius:7px;padding:6px 11px;font-size:13px;line-height:1;
   font-variant-numeric:tabular-nums;
+  display:inline-flex;align-items:center;gap:5px;cursor:pointer;
 }
+/* 엄지 아이콘은 SVG로 둡니다. 이모지(👍)는 기기마다 글꼴이 달라
+   참가자가 보는 자극물이 윈도우·맥·안드로이드에서 제각각이 됩니다. */
+.react .th{width:16px;height:16px;fill:currentColor;display:block}
+.react.down .th{transform:rotate(180deg)}
 .react:hover{color:var(--ink)}
 .react[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:700}
 .react .rc{margin-left:3px}
@@ -362,15 +373,14 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .poll-opts{display:flex;gap:9px;margin-top:12px;flex-wrap:wrap}
 .poll-opts button{
   flex:1 1 180px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);
-  color:#eef1f6;border-radius:8px;padding:11px 13px;font-size:13.5px;
-  text-align:left;line-height:1.35;
+  color:#eef1f6;border-radius:8px;padding:13px;font-size:14px;font-weight:600;
+  text-align:center;line-height:1.35;cursor:pointer;font-family:inherit;
 }
 .poll-opts button:hover:not(:disabled){border-color:#8fa8ef;background:rgba(255,255,255,.12)}
 .poll-opts button:disabled{opacity:.45;cursor:default}
 .poll-opts button[aria-pressed="true"]{
-  border-color:#8fa8ef;background:rgba(143,168,239,.22);opacity:1;font-weight:500;
+  border-color:#8fa8ef;background:rgba(143,168,239,.22);opacity:1;font-weight:700;
 }
-.poll-opts button b{display:block;font-size:12px;color:#9aa4b5;font-weight:400;margin-top:3px}
 .poll-done{margin:11px 0 0;font-size:12.5px;color:#6fd6b8}
 
 /* 이유 작성 — 잠긴 채팅창 안 */
@@ -385,6 +395,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
   color:var(--on-accent);font-weight:700;padding:9px 18px;font-size:13.5px;
 }
 .why-note{font-size:12px;color:var(--note);line-height:1.5}
+.why-note.bad{color:var(--live);font-weight:600}
 
 /* 채팅 */
 .locked{
@@ -455,7 +466,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 @media (max-width:860px){
   .watch.on{grid-template-columns:minmax(0,1fr)}
   .chat{height:min(60vh,460px)}
-  .poll{left:8px;right:8px;bottom:8px;padding:11px 12px}
+  /* 좁은 화면에서는 영상 위에 겹치지 않습니다. 딜레마 본문이 3줄이라
+     16:9 영역 안에 들어가지 않고, 겹치면 질문 첫 줄부터 잘립니다. */
+  .poll{
+    position:static;margin-top:10px;max-width:none;padding:12px 13px;
+    left:auto;right:auto;bottom:auto;backdrop-filter:none;
+  }
   .poll-body{font-size:12.5px}
   .poll-opts{gap:7px}
   .poll-opts button{flex:1 1 100%}
@@ -468,136 +484,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 <body>
 
 <!-- ══ 실험자 패널 (참가자에게는 접힌 상태로 제공) ══ -->
-<div id="lab">
-  <div class="bar">
-    <span class="labtag">실험자</span>
-    <span id="condLine" style="font-size:13px;color:var(--ink-dim)"></span>
-    <span class="spacer"></span>
-    <button class="ghost" id="toggleLab" aria-expanded="false">조건 설정</button>
-    <button class="ghost" id="restart">처음부터</button>
-  </div>
-  <div id="labBody">
-    <div class="inner">
-      <div class="fld">
-        <span>댓글 방식</span>
-        <div class="seg" id="segSrc">
-          <button data-v="script" aria-pressed="true">고정 스크립트</button>
-          <button data-v="live" aria-pressed="false">실시간 생성</button>
-        </div>
-      </div>
-      <div class="fld">
-        <span>정체성 표시 방식</span>
-        <div class="seg" id="segLabel">
-          <button data-v="human" aria-pressed="true">전원 사람</button>
-          <button data-v="mixed" aria-pressed="false">사람+AI</button>
-        </div>
-      </div>
-      <label class="fld">
-        <span>AI 채팅 비율 <b class="val" id="ratioVal">0%</b></span>
-        <input type="range" id="ratio" min="0" max="100" step="10" value="0">
-      </label>
-      <label class="fld">
-        <span>시청자 수</span>
-        <input type="number" id="viewers" min="1" max="99999" value="243">
-        <span class="note" id="densityNote"></span>
-      </label>
-      <div class="fld">
-        <span>참가자 채팅 입력</span>
-        <div class="seg" id="segInput">
-          <button data-v="on" aria-pressed="true">허용</button>
-          <button data-v="off" aria-pressed="false">차단</button>
-        </div>
-      </div>
-      <label class="fld">
-        <span>seed (AI 배정 seed) <b class="val" id="seedVal">7</b></span>
-        <input type="range" id="seed" min="1" max="40" step="1" value="7">
-        <span class="note">동일 seed에서 동일한 AI 배정과 닉네임.</span>
-      </label>
-      <div class="fld">
-        <span>안내 페이지</span>
-        <div class="seg" id="segIntro">
-          <button data-v="on" aria-pressed="true">표시</button>
-          <button data-v="off" aria-pressed="false">건너뜀</button>
-        </div>
-      </div>
-      <div class="fld">
-        <span>테마</span>
-        <div class="seg" id="segTheme">
-          <button data-v="light" aria-pressed="true">화이트</button>
-          <button data-v="dark" aria-pressed="false">다크</button>
-        </div>
-      </div>
-      <div class="fld">
-        <span>Study</span>
-        <div class="seg" id="segStudy">
-          <button data-v="1" aria-pressed="true">1 · 진입/시청</button>
-          <button data-v="2" aria-pressed="false">2 · 투표/일치도</button>
-        </div>
-      </div>
-      <div class="fld s2only">
-        <span>의견 일치도 (study 2)</span>
-        <div class="seg" id="segCong">
-          <button data-v="all" aria-pressed="true">전부 일치</button>
-          <button data-v="half" aria-pressed="false">절반</button>
-          <button data-v="none" aria-pressed="false">전부 불일치</button>
-        </div>
-        <span class="note">참가자 투표 기준. 절반은 탐색적 조건 — null 위험 있음.</span>
-      </div>
-      <div class="fld s2only">
-        <span>투표 시나리오 (study 2)</span>
-        <div class="seg" id="segScen">
-          <button data-v="A" aria-pressed="true">A · 트롤리</button>
-          <button data-v="B" aria-pressed="false">B · 고릴라</button>
-        </div>
-        <span class="note">A는 도덕 판단, B는 사실 추정. 쟁점의 도덕성이 일치도 효과를 바꾸는지 비교용.</span>
-      </div>
-      <div class="fld s2only">
-        <span>투표 제한 시간 (study 2)</span>
-        <div class="seg" id="segPollwin">
-          <button data-v="30" aria-pressed="false">30초</button>
-          <button data-v="40" aria-pressed="true">40초</button>
-          <button data-v="0" aria-pressed="false">제한 없음</button>
-        </div>
-        <span class="note">제한 없음은 투표 시점에 채팅이 열려 참가자별 노출 시작점이 달라집니다.</span>
-      </div>
-      <div class="fld s2only">
-        <span>선택 이유 노출 (study 2)</span>
-        <div class="seg" id="segWhy">
-          <button data-v="on" aria-pressed="true">이유 보임</button>
-          <button data-v="off" aria-pressed="false">입장만</button>
-        </div>
-        <span class="note">이유가 보일 때만 참가자도 이유를 적습니다.</span>
-      </div>
-      <div class="fld" style="grid-column:1/-1">
-        <span>조건 프리셋</span>
-        <div class="presets">
-          <button data-p="A">① 사람만 (통제)</button>
-          <button data-p="B">② AI 30%, 내용 동일</button>
-          <button data-p="C">③ AI 60%, 내용 동일</button>
-          <button data-p="D">④ AI 30%, 실시간 생성</button>
-        </div>
-      </div>
-      <div class="fld" style="grid-column:1/-1">
-        <span>시청자 수 후보 — 채팅 밀도가 함께 따라옵니다</span>
-        <div class="presets">
-          <button data-v="27">27명</button>
-          <button data-v="243">243명</button>
-          <button data-v="1243">1,243명</button>
-          <button data-v="3180">3,180명</button>
-        </div>
-        <span class="note">파일럿에서 소/대 지각을 확인해 둘을 고릅니다. 1,879명이
-          Flores-Saviaga 군집 경계이므로 3,180은 그 위, 1,243은 아래입니다.</span>
-      </div>
-      <p class="hint">
-        ①과 ②③은 <b>댓글 텍스트가 완전히 동일</b>하고 아이콘·닉네임 표시만 달라집니다 — 같은 seed·시청자 수에서 순서도 같습니다.
-        채팅 속도와 실제 채팅 참여 인원은 <b>시청자 수에서 자동 산출</b>되며 따로 조작하지 않습니다
-        (Flores-Saviaga et al., 2019 HT'19 규모별 실측치 보간). 생태학적 타당도를 위해 연동한 것이므로
-        시청자 수와 밀도는 하나의 조건으로 함께 움직입니다.
-        이 패널은 운영본에서 URL 파라미터로 대체되며 참가자에게는 보이지 않습니다.
-      </p>
-    </div>
-  </div>
-</div>
 
 <!-- ══ 플랫폼 헤더 ══ -->
 <div class="site" id="siteBar"><div class="inner">
@@ -615,18 +501,24 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
     <p class="intro-lead" id="introLead"></p>
     <div class="intro-card" id="introCard"></div>
     <p class="intro-note" id="introNote"></p>
+    <!-- 참가자 식별. 설문 응답과 로그를 묶는 열쇠입니다. -->
+    <div class="intro-id">
+      <label for="pidEmail">참가자 고유 코드(없을 경우 이메일주소)를 입력해주세요.</label>
+      <input id="pidEmail" type="text" autocomplete="off"
+             placeholder="예: P017 또는 example@gmail.com" spellcheck="false">
+      <span class="id-note" id="idNote">설문 응답과 연결하는 데만 씁니다.</span>
+    </div>
     <button class="intro-go" id="introGo">시작하기</button>
   </section>
 
-  <section class="browse" id="browse">
-    <h1>지금 방송 중</h1>
-    <div class="grid" id="grid"></div>
-  </section>
 
   <!-- ══ 시청 화면 ══ -->
   <section class="watch" id="watch">
     <div class="stage">
-      <div class="player">
+      <!-- 영상과 투표 카드를 한 상자에 둡니다. 투표 카드는 넓은 화면에서
+           이 상자 기준으로 영상 아래쪽에 겹치고, 좁은 화면에서는 아래로 흐릅니다. -->
+      <div class="playwrap">
+      <div class="player" id="player">
         <div class="live"><span class="dot"></span>LIVE</div>
         <span class="ph-tag">영상 자리 · 실제 클립으로 교체</span>
         <div class="live-stat" id="liveStat"></div>
@@ -644,8 +536,20 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
         </div>
         <span class="clock" id="clock">0:00</span>
 
-        <!-- ══ Study 2: 영상 위 투표 오버레이 (실제 플랫폼의 투표 카드 위치) ══ -->
-        <section class="poll" id="poll" hidden aria-live="polite">
+        <!-- 방송 종료 후 추천. 실제 플랫폼이 영상이 끝나면 띄우는 화면입니다.
+             여기서의 구독·다음 영상 클릭이 마지막 행동 지표입니다. -->
+        <div class="endcard" id="endCard" hidden>
+          <p class="ec-hd">방송이 종료되었습니다</p>
+          <button class="ec-sub" id="endSub" aria-pressed="false">구독하기</button>
+          <p class="ec-lb">하루끝 harukkeut 의 다른 영상</p>
+          <div class="ec-grid" id="ecGrid"></div>
+        </div>
+
+      </div>
+
+      <!-- 투표 카드. 넓은 화면에서는 영상 위에 겹치고(실제 플랫폼의 위치),
+           좁은 화면에서는 영상 아래로 내려옵니다 — 겹치면 질문이 잘립니다. -->
+      <section class="poll" id="poll" hidden aria-live="polite">
           <div class="poll-head">
             <span class="poll-tag">투표</span>
             <span class="poll-timer" id="pollTimer"></span>
@@ -654,8 +558,19 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
           <p class="poll-body" id="pollBody"></p>
           <div class="poll-opts" id="pollOpts"></div>
           <p class="poll-done" id="pollDone" hidden></p>
-        </section>
+          <!-- 이유 작성은 보드대로 방송 화면 쪽에 둡니다. 투표와 한 흐름으로 묶여야
+               "투표 + 그렇게 생각한 이유"가 하나의 과제로 읽힙니다. -->
+          <div class="poll-why" id="pollWhy" hidden>
+            <label for="whyText">왜 그렇게 생각했는지 한 줄로 적어주세요.</label>
+            <!-- placeholder에 예시를 두지 않습니다. 어떤 예시든 한쪽 논거가 되어
+                 참가자의 이유를 그 방향으로 끌어갑니다. -->
+            <textarea id="whyText" maxlength="120" rows="2"></textarea>
+            <button class="poll-send" id="whySend">보내기</button>
+            <span class="why-note" id="whyNote"></span>
+          </div>
+      </section>
       </div>
+
       <div class="info">
         <h2 id="streamTitle">오늘 있었던 일 좀 들어주라</h2>
         <div class="row">
@@ -665,11 +580,11 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
           <!-- 반응 버튼. 누르라고 유도하지 않고 자리만 둡니다 — 노트의
                "명시적으로 행동을 강요하지말고" 반영. -->
           <span class="reacts">
-            <button class="react" id="reactUp" aria-pressed="false" title="좋아요">
-              <span aria-hidden="true">▲</span> <span class="rc" id="rcUp"></span>
+            <button class="react" id="reactUp" aria-pressed="false" aria-label="좋아요" title="좋아요">
+              <svg class="th" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h3.5v11H3a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z"/><path d="M8.5 21V10.4l3.8-6.8a1.5 1.5 0 0 1 2.8.9L14.3 9h5.4a1.9 1.9 0 0 1 1.85 2.3l-1.6 7.5A2 2 0 0 1 18 21H8.5z"/></svg><span class="rc" id="rcUp"></span>
             </button>
-            <button class="react" id="reactDown" aria-pressed="false" title="싫어요">
-              <span aria-hidden="true">▼</span> <span class="rc" id="rcDown"></span>
+            <button class="react down" id="reactDown" aria-pressed="false" aria-label="싫어요" title="싫어요">
+              <svg class="th" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h3.5v11H3a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z"/><path d="M8.5 21V10.4l3.8-6.8a1.5 1.5 0 0 1 2.8.9L14.3 9h5.4a1.9 1.9 0 0 1 1.85 2.3l-1.6 7.5A2 2 0 0 1 18 21H8.5z"/></svg><span class="rc" id="rcDown"></span>
             </button>
           </span>
           <button class="sub" id="subBtn" aria-pressed="false">구독</button>
@@ -684,14 +599,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
       <div class="locked" id="chatLocked" hidden>
         <span class="lock-ic" aria-hidden="true">🔒</span>
         <span id="lockMsg">투표가 끝나면 채팅이 열립니다</span>
-        <!-- 투표 후 이유 작성은 잠긴 채팅창 자리에서 — 채팅에 쓰는 흐름 그대로 -->
-        <div class="poll-why" id="pollWhy" hidden>
-          <label for="whyText">왜 그렇게 선택했는지 한 줄로 적어주세요.</label>
-          <textarea id="whyText" maxlength="120" rows="3"
-            placeholder="예: 내 손으로 밀어서 죽이는 건 다른 문제라고 생각해서"></textarea>
-          <button class="poll-send" id="whySend">보내기</button>
-          <span class="why-note" id="whyNote"></span>
-        </div>
       </div>
       <footer id="inputRow">
         <input id="say" placeholder="채팅을 입력하세요" maxlength="60" autocomplete="off">
@@ -714,6 +621,14 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
   </section>
 </div>
 
+<!-- 채팅 사용자 카드. 실제 스트리밍 플랫폼처럼 프로필을 올리거나 닉네임을 누르면 뜹니다. -->
+<div class="ucard" id="ucard" hidden>
+  <div class="uc-top">
+    <span class="uc-ic" id="ucIc"></span>
+    <span class="uc-nm" id="ucNm"></span>
+  </div>
+  <div class="uc-rows" id="ucRows"></div>
+</div>
 <script>
 /* ═══════════════════════════════════════════
    모듈 구성은 스펙 문서의 구조도를 그대로 따릅니다.
@@ -724,149 +639,117 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 /* ── 1. 조건 라우터 ───────────────────────── */
 const ConditionRouter = (() => {
   const DEF = {
-    study:1,              // 1 = 진입/시청 (규모 × 정체성), 2 = 투표 → 의견 일치도
-    src:'script', label:'human', ratio:0, viewers:243, input:'on', seed:7, pid:'TEST',
+    label:'mixed', ratio:100, viewers:1243, input:'on', seed:7, pid:'TEST',
     cong:'all',           // study 2 일치도: all | half | none (참가자 투표 기준)
     why:'on',             // 참가자에게 선택 이유를 쓰게 할지
-    pollwin:40,           // 투표 제한 시간(초). 0이면 제한 없음
-    scen:'A',             // study 2 시나리오: A 트롤리(도덕) | B 고릴라(사실 추정)
+    pollwin:0,            // 투표 제한 시간(초). 0이면 제한 없음 — 파일럿 기본값.
+                          // 본실험에서는 파일럿에서 나온 분포로 값을 정해 넣습니다.
     theme:'light',        // light | dark — 전 조건 동일하게 고정해 쓸 것
     intro:'on'            // 자극물 전 안내 페이지 표시 여부
   };
+  /* 조건 코드. 주소에 cong=half처럼 그대로 쓰면 참가자가 보고 조작을 알아챕니다.
+     설문 플랫폼에서는 ?pid=P017&c=k3 형태로 넘기고, 여기서 조건으로 풉니다.
+     코드는 의미가 드러나지 않게 섞어 두었습니다. */
+  const CODES = {
+    q7: {cong:'all',  label:'mixed'},
+    m2: {cong:'half', label:'mixed'},
+    z5: {cong:'none', label:'mixed'},
+    b9: {cong:'all',  label:'human'},
+    k3: {cong:'half', label:'human'},
+    r6: {cong:'none', label:'human'}
+  };
+
   function read(){
     const q = new URLSearchParams(location.search);
     const c = {...DEF};
+    // 코드가 있으면 먼저 적용하고, 개별 파라미터로 덮어쓸 수 있게 둡니다(점검용)
+    const code = q.get('c');
+    if (code && CODES[code]) Object.assign(c, CODES[code], {code});
     for (const k of Object.keys(DEF)){
       if (!q.has(k)) continue;
       const v = q.get(k);
       c[k] = (k==='ratio'||k==='viewers'||k==='seed'||k==='study'||k==='pollwin')
         ? Number(v) : v;
     }
-    if (![1,2].includes(c.study)) c.study = DEF.study;
-    if (!['script','live'].includes(c.src)) c.src = DEF.src;
     if (!['human','mixed'].includes(c.label)) c.label = DEF.label;
     if (!['all','half','none'].includes(c.cong)) c.cong = DEF.cong;
     if (!['on','off'].includes(c.why)) c.why = DEF.why;
-    if (!['A','B'].includes(c.scen)) c.scen = DEF.scen;
     if (!Number.isFinite(c.pollwin) || c.pollwin < 0 || c.pollwin > 90) c.pollwin = DEF.pollwin;
     if (!['light','dark'].includes(c.theme)) c.theme = DEF.theme;
     if (!['on','off'].includes(c.intro)) c.intro = DEF.intro;
     if (!Number.isFinite(c.ratio) || c.ratio<0 || c.ratio>100) c.ratio = DEF.ratio;
     if (!Number.isFinite(c.viewers) || c.viewers<1) c.viewers = DEF.viewers;
     if (!Number.isFinite(c.seed) || c.seed<1) c.seed = DEF.seed;
+    // 전원 사람 조건에서는 AI 비율이 의미가 없습니다
+    if (c.label === 'human') c.ratio = 0;
     return c;
   }
-  return {read, id:c => c.study === 2
-    ? `s2-${c.scen}-${c.cong}-${c.label}-${c.ratio}-${c.seed}`
-    : `s1-${c.viewers}-${c.label}-${c.ratio}-${c.seed}`};
+  return {read, id:c => `${c.cong}-${c.label}-${c.ratio}-${c.viewers}-${c.seed}`};
 })();
 
 let cond = ConditionRouter.read();
 
 /* ── 2. 발화 풀 ───────────────────────────── */
 /* 본문 발화 — 순서 고정. 규모가 작을수록 이 비중이 높습니다. */
+/* ① 입장~예고 구간. **순서대로** 재생되므로 한 편의 대화처럼 읽히게 섞어 씁니다.
+
+   시점은 **4시간 방송의 3시간 30분쯤**입니다. 오래 있던 사람들의 채팅이라
+   인사나 "소리 괜찮나요" 같은 입장 직후 말투는 넣지 않습니다.
+   방종 각을 잡는 분위기가 깔리되 **아직 끝난다고 말한 적은 없습니다** —
+   "오늘 여기까지" 같은 확정 멘트는 ③ 마무리 구간에 둡니다.
+
+   영상이 아직 플레이스홀더라 주제에 의존하지 않는 줄만 씁니다.
+   딜레마를 암시하는 줄은 절대 넣지 않습니다 — 투표 전에 주제가 새면 사전 의견이 오염됩니다. */
 const SCRIPT = [
-  'ㅋㅋㅋㅋ','안녕하세요','오늘 목소리 좀 잠긴듯','무슨 일 있었는데',
-  'ㅇㅇ 듣고있음','헐 진짜','그래서 어떻게 됐어요','나도 저런적 있음',
-  'ㅋㅋㅋㅋㅋㅋ','상사가 너무하네','와...','그건 좀 억울하다',
-  '참으신거 대단','ㅠㅠ','다음엔 말하세요 진짜','맞아요',
-  '오늘 뭐 드셨어요','배고프다','ㅋㅋㅋ 갑자기','저녁 뭐먹지',
-  '치킨','치킨ㄱㄱ','방금 들어왔는데 무슨 얘기중','회사 썰',
-  '아 요약좀','ㅋㅋㅋㅋ','목 아프면 물 드세요','물물',
-  '조명 좀 어두운듯','저는 괜찮은데','아까 그 얘기 더 해주세요',
-  'ㅇㅈ','그 부장님 또 나왔네ㅋㅋ','시즌2 가능','우와',
-  '저도 내일 출근이라 슬픔','ㅠㅠㅠ','같이 힘내요','ㅋㅋㅋㅋㅋ',
-  '오늘 몇시까지 하세요','끝까지 있을게요','좀만 더','ㅇㅇ',
-  '아 그거 저도 봤어요','그 얘기 웃김','또 해주세요','ㅋㅋㅋ',
-  '수고하셨어요 오늘','푹 쉬세요','내일도 오나요','옵니다'
+  'ㅋㅋㅋㅋ','아까 그거 아직도 웃김','ㅇㅇ','벌써 3시간이네','시간 왜 이렇게 빨라',
+  'ㅋㅋㅋ','또 그 얘기ㅋㅋ','나왔다','ㅇㅈ','오늘 길게 하시네',
+  '목 안 아프세요','물 좀 드세요','물물','많이 하셨다','ㅎㅎ',
+  '아까 얘기 또 생각남','그거 진짜였어요?','ㅋㅋㅋㅋㅋㅋ','아 ㅋㅋ','맞아요',
+  '슬슬 마무리 분위기','아직 아니죠?','좀만 더요','ㅠㅠ','아쉽다',
+  '저 아직 있어요','ㅇㅇ 보고있음','조용히 보는중','ㅎㅎㅎ','ㅇㅋ',
+  '배고프다','야식 참는중','치킨','치킨ㄱㄱ','ㅋㅋㅋㅋ',
+  '아 나 내일 일찍 일어나야 하는데','저도요','같이 버텨요','ㅋㅋㅋㅋㅋ','ㅇㅈㅇㅈ',
+  '방금 들어왔는데 무슨 얘기중','아 요약좀','ㅋㅋㅋ 설명 불가','그냥 보세요','ㅇㅇ',
+  '아까부터 계속 웃고있음','표정 좋아지셨다','아까보다 기운 나셨네','ㅎㅎ','오',
+  '마지막으로 뭐 하나 더 해주세요','ㅇㅈ','저도 그거 궁금','ㄱㄱ','ㅋㅋㅋㅋ',
+  '목소리 많이 쉬셨네','쉬엄쉬엄 하세요','ㅇㅇ','진짜요?','우와',
+  '아 그거 아까 나왔는데','ㅋㅋ 또 나옴','ㅇㅋㅇㅋ','ㅎㅎ','ㅋㅋㅋ'
 ];
 
 /* 짧은 반응 — 규모가 커질수록 채팅의 대부분을 차지합니다. */
 const REACTIONS = ['ㅋㅋㅋ','ㅇㅇ','ㅠㅠ','ㅋㅋㅋㅋㅋ','와','헐','ㅇㅈ','ㄹㅇ','ㅎㅎ','오',
-  'ㅋㅋ','굿','ㄱㄱ','ㅇㅋ','실화냐','ㅁㅊ','오오','ㄷㄷ','ㅋㅋㅋㅋㅋㅋㅋ','ㅊㅋ'];
+  'ㅋㅋ','굿','ㄱㄱ','ㅇㅋ','실화냐','ㅁㅊ','오오','ㄷㄷ','ㅋㅋㅋㅋㅋㅋㅋ','ㅊㅋ',
+  'ㅇㅈㅇㅈ','ㅋㅋㅋㅋ','ㄱㅇㅇ','아','음','ㅎㅇㅌ','ㅇㅇㅇ','ㅠ','ㄷㄷㄷ','ㅋ',
+  '그러게','맞말','인정','아하','헉','오키','ㅇㅋㅇㅋ','ㄱㅅ','ㅎㅎㅎ','와우'];
+
+/* 짧은 리액션은 반복돼도 자연스럽지만, 같은 게 연달아 나오면 티가 납니다.
+   직전 4개 안에 쓴 것은 다시 뽑지 않습니다. */
+const recentReacts = [];
+function pickReact(rnd){
+  let v = REACTIONS[Math.floor(rnd() * REACTIONS.length)];
+  for (let g = 0; g < 8 && recentReacts.includes(v); g++){
+    v = REACTIONS[Math.floor(rnd() * REACTIONS.length)];
+  }
+  recentReacts.push(v);
+  if (recentReacts.length > 4) recentReacts.shift();
+  return v;
+}
 
 /* ── 2-0. Study 2: 딜레마 ─────────────────────
    자리만 잡아둔 플레이스홀더입니다. 사전검사로 응답 분포 40~60%를 확인한 뒤
    교체합니다. 선정 기준과 후보 경로는 스펙 문서의 "딜레마 선정" 절 참고.    */
-const SCENARIOS = {};
-SCENARIOS.A = {
-  q: '이거 너네라면 어떻게 할래?',
-  body: '브레이크 고장난 열차가 달리는데 선로 위에 다섯 명이 있어.\n' +
-        '내가 육교 위에 있고 옆에 덩치 큰 사람이 서 있어.\n' +
-        '이 사람을 밀어서 떨어뜨리면 열차가 멈추고 다섯 명이 살아. 대신 그 사람은 죽어.',
-  A: {label: '밀지 않는다', sub: '사람을 수단으로 쓸 수는 없다'},
-  B: {label: '민다', sub: '다섯을 살리는 쪽이 낫다'},
-  // 각 입장을 지지하는 이유 발화. 참가자 투표와 일치도 조건에 따라 어느 쪽을 쓸지 결정됩니다.
-  // 운영본에서는 사전검사를 통과한 딜레마의 실제 응답 이유로 교체합니다.
-  reasonsA: [
-    '내 손으로 사람 죽이는건 다른 문제지',
-    '다섯 살린다고 한 명을 도구로 쓰는건 아님',
-    '안 밀면 적어도 내가 죽인건 아니잖아',
-    '그 사람은 아무 상관도 없는 사람인데',
-    '밀어서 진짜 멈출지 어떻게 알아',
-    '숫자로 목숨 계산하는거 자체가 좀',
-    '법으로 봐도 밀면 그냥 살인이야',
-    '나라면 손이 안 움직일듯',
-    '내가 끼어들 권한이 없다고 봄',
-    '한 번 밀기 시작하면 기준이 없어져',
-    '다섯이든 백이든 똑같다고 생각함',
-    '내가 그 자리에 서 있었으면 밀리기 싫잖아',
-    '구하는거랑 죽이는건 다른 일임',
-    '그 사람 가족은 무슨 죄야',
-    '나중에 평생 못 잊을것 같은데',
-    '다섯 명은 선로에 있었고 그 사람은 아니었어',
-    '머리로 계산한대로 사는거 무서움',
-    '생각할 시간 있으면 다른 방법 찾아야지',
-    '내가 대신 뛰어내리면 몰라도',
-    '이건 희생이 아니라 떠넘기기임',
-    '동의 없이 남 목숨을 쓰는거잖아',
-    '결과만 보면 뭐든 정당화되는데',
-    '밀어놓고 다섯 살렸다고 할 자신 없음',
-    '애초에 이런 선택을 해도 되는 사람이 있나',
-  ],
-  reasonsB: [
-    '다섯 명이랑 한 명이면 답 나온거 아닌가',
-    '가만히 있는것도 선택이야',
-    '안 밀면 다섯 명 죽는걸 보고만 있는거임',
-    '결과로 보면 미는게 맞지',
-    '숫자가 많은 쪽을 살리는게 당연하다고 봄',
-    '솔직히 머리로는 밀어야 한다고 생각함',
-    '도덕적 결벽 지키려고 다섯을 버리는건',
-    '구할 수 있는데 안 구하는것도 책임이지',
-    '감정 빼고 보면 명확한 문제임',
-    '한 명 희생으로 다섯이면 받아들여야',
-    '안 민 손은 깨끗하다는게 자기위안 아닌가',
-    '다섯 명 가족은 안 슬프냐',
-    '나중에 덜 후회하는 쪽은 미는 쪽일듯',
-    '실제로 이런 판단 하는 직업도 있잖아',
-    '손 안 대는게 착한거라는건 착각',
-    '행동 안 한것도 결과에 책임 있음',
-    '그 자리에 있던 내가 할 수 있는 최선',
-    '다섯 대 하나는 고민할 문제가 아님',
-    '내 양심보다 목숨 다섯이 무겁지',
-    '밀고 평생 괴로워하는게 맞다고 봄',
-    '아무것도 안 하는게 제일 편한 선택이잖아',
-    '피할 수 있는 죽음을 다섯이나 두는건',
-    '현실에서도 이런 결정 누군가는 해야 함',
-    '결과 아니면 뭘로 판단해',
-  ],
-  // 입장이 없는 잡담 — 일치도 조작에 들어가지 않습니다.
-  neutral: ['와 이거 진짜 어렵다', '머리로는 알겠는데 손은 안 움직일듯',
-            '이거 수업에서 본 적 있음', '답 없는 문제 아닌가', '댓글 반응 궁금하다',
-            '투표 결과 보고싶다', '나 진짜 고민된다', '둘 다 이해는 돼'],
-};
-
-/* 시나리오 B — 도덕적 부담이 없는 사실 추정형 딜레마.
-   A(트롤리)는 입장이 도덕적 자기개념과 묶여 있어 불일치 조건에서 방어 반응이 섞입니다.
-   B는 그 부담이 없어 순수한 의견 일치 효과를 봅니다. 두 시나리오를 비교하면
-   일치도 효과가 쟁점의 도덕성에 의존하는지 확인할 수 있습니다. */
-SCENARIOS.B = {
+/* 투표 딜레마. 고릴라 시나리오 하나만 씁니다.
+   사실 추정형이라 도덕적 자기개념 방어가 섞이지 않고, 찬반이 대체로 반반으로 갈립니다. */
+const DILEMMA = {
   q: '이거 너네 생각엔 누가 이김?',
-  body: '맨손인 성인 남자 100명이랑 다 자란 수컷 고릴라 1마리가 붙는다고 쳐.\n' +
-        '무기 없고 도구도 없고 맨몸으로만. 장소는 그냥 넓은 공터야.\n' +
-        '진짜로 붙으면 어느 쪽이 이길까?',
-  A: {label: '사람 100명', sub: '수가 너무 많다'},
-  B: {label: '고릴라 1마리', sub: '맨손으로는 못 이긴다'},
+  /* 본문은 조건만 설명합니다. 어느 쪽이 유리하다는 암시를 넣지 않습니다. */
+  body: '성인 남자 100명이랑 다 자란 수컷 고릴라 1마리가 붙는다고 쳐.\n' +
+        '사람 쪽은 전부 맨손이야. 무기도 도구도 없고 맨몸으로만.\n' +
+        '장소는 넓은 공터고. 진짜로 붙으면 어느 쪽이 이길까?',
+  /* 선택지에는 설명을 달지 않습니다. "수가 너무 많다" 같은 한 줄이 붙으면
+     그 자체가 한쪽 논거가 되어 투표를 유도합니다. 조건은 본문에서만 설명합니다. */
+  A: {label: '맨손 남자 100명'},
+  B: {label: '고릴라 1마리'},
   reasonsA: [
     '100명이면 그냥 물량으로 눌림',
     '고릴라도 체력 떨어지면 끝임',
@@ -924,8 +807,7 @@ SCENARIOS.B = {
             '투표 결과 보고싶다', '나 진짜 고민된다', '둘 다 말 되긴 함'],
 };
 
-/* 현재 시나리오. restart()에서 조건에 맞춰 바꿉니다. */
-let DILEMMA = SCENARIOS.A;
+const STREAM_TITLE = '같이 판단 좀 해줘라';
 
 /* ── 2-1. 밀도 모델 ──────────────────────────
    Flores-Saviaga et al. (2019) HT'19 규모별 실측치를 구간별 로그-로그 보간.
@@ -945,10 +827,14 @@ function density(v){
   return {rate, chatters, reactShare};
 }
 
+/* 입장 직전까지 보이는 대화 줄 수. 시청자가 적으면 그만큼 줄어듭니다. */
+const BACKLOG_N = 14;
+
 /* ── 2-2. 타임라인 생성 ──────────────────────
    텍스트·타이밍·화자 구조만 결정하고 정체성(사람/AI)은 붙이지 않습니다.
    따라서 label·ratio를 바꿔도 이 결과물은 한 글자도 변하지 않습니다.     */
 function buildTimeline(c, rnd, span){
+  recentReacts.length = 0;
   const d = density(c.viewers);
   // 발화량 편중 — 소수 화자가 대화를 독점 (클리크 스트림의 1인당 36메시지 특성)
   const w = [];
@@ -961,10 +847,25 @@ function buildTimeline(c, rnd, span){
   };
   const list = [];
   const counts = new Array(d.chatters).fill(0);
-  let t = 1.5, si = 0;
+  let si = 0;
+
+  /* 입장 직전까지 흘렀던 대화를 같은 타임라인의 앞부분으로 만듭니다.
+     따로 뽑으면 백로그에서 쓴 줄이 입장 직후 다시 나와 반복 구간이 생깁니다.
+     한 대본을 이어서 쓰면 백로그와 그 이후가 한 편의 대화가 됩니다. */
+  const preN = Math.max(5, Math.min(BACKLOG_N,
+    Math.round(BACKLOG_N * Math.min(1, c.viewers / 600))));
+  for (let k = 0; k < preN; k++){
+    const useReact = si >= SCRIPT.length || rnd() < d.reactShare;
+    const ci = pickChatter();
+    counts[ci]++;
+    list.push({t: 0, text: useReact ? pickReact(rnd) : SCRIPT[si++],
+               ci, body: false, pre: true});
+  }
+
+  let t = 1.5;
   while (t < span){
     const useReact = si >= SCRIPT.length || rnd() < d.reactShare;
-    const text = useReact ? REACTIONS[Math.floor(rnd() * REACTIONS.length)] : SCRIPT[si++];
+    const text = useReact ? pickReact(rnd) : SCRIPT[si++];
     const ci = pickChatter();
     counts[ci]++;
     // body = 본문 발화. study 2에서 이 자리만 입장(찬/반) 슬롯이 됩니다.
@@ -997,9 +898,11 @@ function applyStanceSlots(list, c, rnd){
     list[i].slot = congSet.has(i) ? 'cong' : 'incong';
     list[i].ri = k++;                    // 이유 풀에서 몇 번째를 쓸지 (결정적)
   }
-  // 반응 자리 일부는 딜레마용 중립 잡담으로 교체 — 전부 'ㅋㅋㅋ'면 토론장처럼 안 보임
-  list.forEach((m, i) => {
-    if (!m.body && rnd() < 0.22){
+  /* 반응 자리 일부를 딜레마용 중립 잡담으로 교체 — 전부 'ㅋㅋㅋ'면 토론장처럼 안 보입니다.
+     단 투표가 끝난 뒤의 자리에만 넣습니다. 투표 전에 "이거 맨날 싸우는 주제" 같은 줄이
+     흐르면 주제가 미리 새서 사전 의견이 오염됩니다. */
+  list.forEach((m) => {
+    if (!m.body && m.t >= POLL_AT && rnd() < 0.22){
       m.text = DILEMMA.neutral[Math.floor(rnd() * DILEMMA.neutral.length)];
     }
   });
@@ -1021,13 +924,15 @@ const SHORT_STANCE = ['이쪽', 'ㅇㅇ 이거', '나도 이거', '이게 맞음
 function ScriptSource(c, rnd, span){
   const built = buildTimeline(c, rnd, span);
   // study 2는 본문 자리에 입장 슬롯을 깔아둡니다 (텍스트는 투표 후 결정)
-  const slots = c.study === 2 ? applyStanceSlots(built.list, c, rnd) : null;
-  let i = 0;
+  const slots = applyStanceSlots(built.list, c, rnd);
+  const pre = built.list.filter(m => m.pre);
+  let i = pre.length;                    // 재생은 백로그 다음부터
   return {
     kind:'script',
     info: built.d,
     counts: built.counts,
     slots,
+    pre,
     total: built.list.length,
     next(t){
       const out = [];
@@ -1068,36 +973,116 @@ function LiveSource(c, rnd, span, ctx){
 /* 닉네임 풀. 실제 스트리밍 채팅처럼 네 갈래를 섞는다 —
    두벌식 로마자(한글 발음을 영문 자판 그대로 친 형태), 한글 단어,
    스트리머 닉 '하루끝'에서 파생된 팬닉, 영문 단어. 숫자 꼬리가 흔하다. */
+/* ── 닉네임 ─────────────────────────────────
+   실제 이용자의 닉네임을 그대로 쓰지 않습니다. 실존 계정에 하지 않은 말을
+   붙이게 되고, 온라인 핸들은 개인정보라 IRB에서 걸립니다.
+   대신 한국어 스트리밍 채팅 닉네임의 **표면 특성 분포**에 맞춰 생성합니다.
+
+   NICK_MIX의 비율이 조정 지점입니다. 치지직·SOOP 방송 몇 개를 훑어
+   유형별 비율을 세어보고 이 숫자만 바꾸면 됩니다.
+   논문에는 "실제 한국어 스트리밍 채팅의 표면 특성 분포에 맞춰 생성했으며
+   실제 이용자 핸들은 사용하지 않았다"로 적습니다.                       */
+
+/* 유형별 비율. 합이 1이 되게 둡니다. */
+const NICK_MIX = {
+  word:  0.38,   // 한글 단어·구     — 치지직·SOOP에서 가장 흔함
+  roman: 0.20,   // 영타 한글        — 자판을 영문에 둔 채 친 한글 (rlfls = 기린)
+  en:    0.18,   // 영문 단어(+숫자) — 아프리카TV 계열의 영문 아이디 흔적
+  id:    0.14,   // 아이디형         — 가입 아이디가 그대로 노출된 경우
+  fan:   0.10    // 팬닉             — 스트리머 이름 변형
+};
+
+/* 영타 한글. 자판을 영문에 둔 채 한글을 쳐서 생긴 문자열입니다. */
 const NICK_ROMAN = ['rlfls','dudtlr','qkrwo','ghkdrl','tjdals','dlwogus','whdgks','dnjstlr',
-  'chlwndms','ajswjs','vkdlxld','rladudtn','tkfkdgo','skanfu','gkwkdy','qudtls','ehdgo','wjdalsrn'];
+  'chlwndms','ajswjs','vkdlxld','rladudtn','tkfkdgo','skanfu','gkwkdy','qudtls','ehdgo',
+  'wjdalsrn','gksrmf','dkssud','rhkswpd','tprPdml','akfVks','dPdml','wkdwkd','qkqthf',
+  'ekfrhk','vlfdy','rmaxls','tnqur','dudgh','gnlrkd','wjsdml','akdkdy','chdrkd'];
+
+/* 한글 단어·구 */
 const NICK_WORD = ['초코마루','퇴근하고싶다','나른한오후','밤식빵','고양이집사','무민',
   '달리는사람','빵순이','조용한관객','라면물조절','치킨먹고싶다','새벽세시','감자칩',
-  '민트초코','겨울잠','월요병말기','덮밥충','야근각','물멍','이불밖은위험해'];
+  '민트초코','겨울잠','월요병말기','덮밥충','야근각','물멍','이불밖은위험해',
+  '커피수혈','출근싫어','집가고싶다','낮잠요정','불면증환자','떡볶이교','존버중',
+  '오늘도평화','배달음식러버','귀차니즘','침대와한몸','주말만기다려','수면부족',
+  '간식창고','눈팅러','지나가던행인','야식금지','카페인중독','퇴근후한잔','소파붙박이',
+  '아메리카노','비오는날','창가자리','늦잠','겨울이좋아','마감지옥','통장잔고0',
+  '방구석여포','라디오키고','고독한미식가','이따밥','조용히볼게요'];
+
 /* 스트리머 '하루끝'에서 딴 팬닉과 변형 */
 const NICK_FAN = ['하루시작','하루사이','하루중간','이틀끝','사흘끝','하루반','하루끝지킴이',
-  '하루끝단골','하루끝님','하루끝사랑','하루의끝','하루끝붙박이','끝의하루','하루끝1호팬'];
-const NICK_EN = ['moon','cozy','latte','pepper','navy','otter','pixel','maple','sodam','rainy'];
+  '하루끝단골','하루끝님','하루끝사랑','하루의끝','하루끝붙박이','끝의하루','하루끝1호팬',
+  '하루끝러버','하루처음','반나절끝','하루끝노예','하루끝매니저','하루끝호소인'];
+
+/* 영문 단어 */
+const NICK_EN = ['moon','cozy','latte','pepper','navy','otter','pixel','maple','sodam','rainy',
+  'onion','velvet','pudding','cloudy','bloom','sprout','amber','quiet','tofu','lemon',
+  'marble','nova','ollie','pebble','sunny','teddy','winter','yuzu','ash','berry'];
+
+/* 아이디형 — 가입 아이디가 그대로 노출된 경우 */
+const NICK_IDA = ['kim','lee','park','choi','jung','kang','yoon','han','seo','oh',
+  'min','hyun','jin','sung','woo','young','jae','soo','eun','ji'];
+const NICK_IDB = ['day','night','star','sky','one','two','zip','box','map','log',
+  'cat','dog','bear','fox','owl','bee','ice','sun','sea','air'];
+
+/* 스트리머가 "투표 올릴게, 그동안 채팅 닫을게"라고 말한 데 대한 채팅 반응.
+   플랫폼 공지는 띄우지 않습니다 — 실제 플랫폼은 투표 예고를 채팅에 쓰지 않고
+   스트리머가 말로 합니다. 그래서 이 반응들이 참가자가 받는 유일한 신호입니다.
+
+   세 갈래로 나눠 섞습니다. 전부 "ㅇㅋ"면 무슨 일인지 알 수 없고,
+   전부 설명조면 대본처럼 읽힙니다. 실제 채팅은 대부분 소음입니다.
+   입장(stance)이 없는 메타 발화라 일치도 조작과는 무관합니다. */
+const REACT_SIGNAL = ['오 투표?','채팅 닫는대?','밸런스게임 한다고?','뭐 물어보려고?'];
+const REACT_NOISE  = ['오오 재밌겠다','아 그거 요즘 이슈던데','기대된다','어떤거?','나는 모름',
+                      'ㅇㅇ','ㄱㄷ','ㅋㅋㅋ','오오','ㅇㅋㅇㅋ','ㄱㄱ','뭔데뭔데',
+                      '아 나 그거 봤어','설명 좀','ㅇㅋ 기다림','오 알 것 같기도'];
+const REACT_LOCK   = ['아직 쓸 말 남았는데','ㅈㅅ 한 마디만','아 잠깐만'];
+
+/* ③ 마무리 구간. 스트리머가 접으려 할 때의 채팅. */
+const REACT_OUTRO = ['아 벌써요','오늘도 수고하셨어요','잘 봤습니다','다음에 또 와요',
+  '아쉽다','ㅠㅠ','조심히 가세요','푹 쉬세요','내일도 오나요','오늘 재밌었어요',
+  'ㅂㅇㅂㅇ','수고요','굿밤','다음 방송 언제','또 올게요','ㅠㅠㅠ','고생하셨습니다',
+  '밸런스게임 또 해주세요','오늘 꿀잼','ㅇㅇ 잘봤어요'];
 
 function makeNick(rnd){
+  const pickOf = a => a[Math.floor(rnd() * a.length)];
+  const d = n => String(Math.floor(rnd() * n));
+  const pad = n => d(n).padStart(String(n - 1).length, '0');
+
+  /* 숫자 꼬리. 유형마다 붙는 비율이 다릅니다 —
+     영타 한글과 아이디형은 거의 붙고, 한글 단어는 덜 붙습니다. */
+  const tail = (p) => {
+    if (rnd() >= p) return '';
+    const r = rnd();
+    if (r < 0.34) return pad(100);                       // 두 자리 (07, 42)
+    if (r < 0.62){                                       // 출생연도 느낌 (97, 03)
+      const y = Math.floor(rnd() * 15);                  // 0~14 → 90~99, 00~04
+      return y < 10 ? String(90 + y) : '0' + (y - 10);
+    }
+    if (r < 0.86) return String(1000 + Math.floor(rnd() * 9000));  // 네 자리 (2447)
+    return d(10);                                        // 한 자리
+  };
+
   const r = rnd();
-  const num = (n) => String(Math.floor(rnd() * n)).padStart(2, '0');
-  if (r < 0.34){                       // rlfls2447 류
-    return NICK_ROMAN[Math.floor(rnd() * NICK_ROMAN.length)] +
-           (rnd() < 0.85 ? num(100) + num(100) : '');
+  let acc = NICK_MIX.word;
+  if (r < acc) return pickOf(NICK_WORD) + tail(0.30);
+
+  acc += NICK_MIX.roman;
+  if (r < acc) return pickOf(NICK_ROMAN) + tail(0.88);
+
+  acc += NICK_MIX.en;
+  if (r < acc){
+    const base = pickOf(NICK_EN);
+    // 영문은 가끔 언더스코어가 들어갑니다
+    return rnd() < 0.18 ? base + '_' + pickOf(NICK_EN) : base + tail(0.78);
   }
-  if (r < 0.60){                       // 한글 단어 (+가끔 숫자)
-    return NICK_WORD[Math.floor(rnd() * NICK_WORD.length)] +
-           (rnd() < 0.35 ? num(100) : '');
-  }
-  if (r < 0.82){                       // 팬닉
-    return NICK_FAN[Math.floor(rnd() * NICK_FAN.length)] +
-           (rnd() < 0.2 ? num(10) : '');
-  }
-  return NICK_EN[Math.floor(rnd() * NICK_EN.length)] + num(1000);
+
+  acc += NICK_MIX.id;
+  if (r < acc) return pickOf(NICK_IDA) + pickOf(NICK_IDB) + tail(0.72);
+
+  return pickOf(NICK_FAN) + tail(0.18);
 }
 
 /* AI 닉네임은 봇처럼 보이는 형태로 유지 */
-const NICK_AI = ['도우미', '채팅봇', 'AI', '보조에이전트', 'AI도우미', '시청봇'];
 
 function mulberry32(a){
   return function(){
@@ -1183,19 +1168,17 @@ function IdentityAssigner(c, nChatters, counts){
     }
   }
 
+  /* 닉네임은 AI든 사람이든 같은 풀에서 뽑습니다. AI임은 아이콘 라벨 하나로만 표시합니다.
+     'AI도우미_03' 같은 이름을 주면 라벨 말고 이름까지 달라져서, 정체성 조작에
+     이름의 기계스러움이 섞입니다 — 그러면 아이콘만 바꾸는 설계가 성립하지 않습니다. */
   const roster = [];
   const used = new Set();
   for (let i = 0; i < nChatters; i++){
-    if (aiSet.has(i)){
-      const base = NICK_AI[Math.floor(rnd() * NICK_AI.length)];
-      roster.push({kind:'ai', name: `${base}_${String(i + 1).padStart(2,'0')}`});
-    } else {
-      let nm = makeNick(rnd), guard = 0;
-      while (used.has(nm) && guard++ < 24) nm = makeNick(rnd);   // 같은 닉 중복 방지
-      if (used.has(nm)) nm += String(i);
-      used.add(nm);
-      roster.push({kind:'human', name: nm});
-    }
+    let nm = makeNick(rnd), guard = 0;
+    while (used.has(nm) && guard++ < 24) nm = makeNick(rnd);   // 같은 닉 중복 방지
+    if (used.has(nm)) nm += String(i);
+    used.add(nm);
+    roster.push({kind: aiSet.has(i) ? 'ai' : 'human', name: nm});
   }
   return {
     roster,
@@ -1220,10 +1203,70 @@ function IdentityAssigner(c, nChatters, counts){
 
 /* ── 5. 렌더러 ───────────────────────────── */
 const feed = document.getElementById('feed');
+/* ── 채팅 사용자 카드 ────────────────────
+   실제 플랫폼처럼 프로필을 올리거나 닉네임을 누르면 그 사용자 정보가 뜹니다.
+   조작(사람/AI)을 한 번 더 노출하는 자리이면서, 어떤 사용자를 들여다봤는지가
+   그대로 로그에 남습니다.
+   주의: 호버는 비용이 0이라 '정보를 찾아본 행동'으로 해석하지 않습니다
+   (Kang et al. 2009는 희소 자원 지불이 전제). 클릭은 비용이 있어 구분해 남깁니다. */
+const userStats = {};
+const uc = {el: null, who: null, since: 0, how: null};
+
+function userRows(name, isAI){
+  const st = userStats[name] || (userStats[name] = {msgs: 0, first_at: null, opens: 0});
+  return [
+    ['유형', isAI ? 'AI 시청자' : '실제 이용자', isAI],
+    ['이 방송 채팅', `${st.msgs}개`, false],
+    ['첫 채팅', st.first_at === null ? '-' : `${Math.round(st.first_at)}초`, false]
+  ];
+}
+
+function showUserCard(anchor, name, isAI, how){
+  const st = userStats[name] || (userStats[name] = {msgs: 0, first_at: null, opens: 0});
+  st.opens++;
+  const card = $('ucard');
+  $('ucIc').className = 'uc-ic' + (isAI ? ' ai' : '');
+  $('ucIc').textContent = isAI ? 'AI' : name.slice(0, 2).toUpperCase();
+  $('ucNm').textContent = name;
+  $('ucRows').innerHTML = userRows(name, isAI).map(([k, v, ai]) =>
+    `<div class="uc-row"><span class="k">${k}</span><span class="v${ai ? ' ai' : ''}">${v}</span></div>`
+  ).join('');
+  card.hidden = false;
+  const r = anchor.getBoundingClientRect();
+  const w = card.offsetWidth, h = card.offsetHeight;
+  card.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left - w - 10)) + 'px';
+  card.style.top  = Math.max(8, Math.min(innerHeight - h - 8, r.top - 4)) + 'px';
+  uc.who = name; uc.since = performance.now(); uc.how = how;
+  Logger.add('user_card_open', {name, is_ai: isAI, how, at_sec: +tick.toFixed(2), opens: st.opens});
+}
+
+function hideUserCard(){
+  if (!uc.who) return;
+  $('ucard').hidden = true;
+  Logger.add('user_card_close', {
+    name: uc.who, how: uc.how,
+    dur_ms: Math.round(performance.now() - uc.since), at_sec: +tick.toFixed(2)
+  });
+  uc.who = null;
+}
+
+/* 바깥을 누르면 닫습니다 — 클릭으로 연 카드는 호버와 달리 고정됩니다. */
+document.addEventListener('click', e => {
+  if (uc.who && uc.how === 'click' && !e.target.closest('.ucard') && !e.target.closest('.nm')){
+    hideUserCard();
+  }
+});
+
 const Renderer = {
   push(c){
     const el = document.createElement('div');
-    el.className = 'msg';
+    el.className = 'msg' + (c.kind === 'sys' ? ' sys' : '');
+    if (c.kind === 'sys'){
+      el.append(document.createTextNode(c.text));
+      feed.appendChild(el);
+      feed.scrollTop = feed.scrollHeight;
+      return;
+    }
     const ic = document.createElement('span');
     ic.className = 'ic ' + c.kind;
     ic.textContent = c.kind === 'ai' ? 'AI' : (c.kind === 'me' ? '나' : '');
@@ -1231,6 +1274,34 @@ const Renderer = {
     nm.className = 'nm ' + c.kind;
     nm.textContent = c.name;
     el.append(ic, nm);
+
+    if (c.kind !== 'me'){
+      const isAI = c.kind === 'ai';
+      const st = userStats[c.name] || (userStats[c.name] = {msgs: 0, first_at: null, opens: 0});
+      st.msgs++;
+      if (st.first_at === null) st.first_at = tick;
+      let hoverTimer = 0;
+      const open = (how) => showUserCard(nm, c.name, isAI, how);
+      // 프로필을 올리면 잠깐 뒤에 뜹니다 — 지나가는 커서에 반응하지 않도록
+      [ic, nm].forEach(t => {
+        t.addEventListener('mouseenter', () => {
+          if (uc.how === 'click') return;
+          hoverTimer = setTimeout(() => open('hover'), 220);
+        });
+        t.addEventListener('mouseleave', () => {
+          clearTimeout(hoverTimer);
+          if (uc.how === 'hover') hideUserCard();
+        });
+      });
+      // 닉네임을 누르면 고정됩니다
+      nm.addEventListener('click', (e) => {
+        e.stopPropagation();
+        clearTimeout(hoverTimer);
+        if (uc.who === c.name && uc.how === 'click'){ hideUserCard(); return; }
+        if (uc.who) hideUserCard();
+        open('click');
+      });
+    }
     // study 2: 입장 배지. 이유 노출을 끄면 배지만 남습니다.
     if (c.stance){
       const st = document.createElement('span');
@@ -1240,13 +1311,33 @@ const Renderer = {
     }
     el.append(document.createTextNode(c.text));
     feed.appendChild(el);
+    if (msgObserver){
+      el.__seen = {ms: 0, since: 0, wasVisible: false, stance: c.stance || null,
+                   kind: c.kind, el};
+      seen.msgs.push(el.__seen);
+      msgObserver.observe(el);
+    }
     const near = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 90;
     if (near) feed.scrollTop = feed.scrollHeight;
     /* 스크롤백을 열어둡니다 — 지나간 채팅을 거슬러 읽는 행동 자체가 측정 대상입니다.
        상한은 메모리 보호용이고, 3,180명·180초에서도 600줄을 넘지 않습니다. */
-    while (feed.children.length > 600) feed.removeChild(feed.firstChild);
+    while (feed.children.length > 600){
+      const gone = feed.firstChild;
+      if (msgObserver && gone.__seen){
+        if (gone.__seen.since){ gone.__seen.ms += performance.now() - gone.__seen.since; gone.__seen.since = 0; }
+        msgObserver.unobserve(gone);
+      }
+      feed.removeChild(gone);
+    }
   },
-  clear(){ feed.innerHTML = ''; }
+  clear(){
+    if (msgObserver) msgObserver.disconnect();
+    seen.msgs.length = 0; seen.offscreen = 0;
+    feed.innerHTML = '';
+    hideUserCard();
+    for (const k of Object.keys(userStats)) delete userStats[k];
+    initSeen();
+  }
 };
 
 /* 채팅 스크롤 추적.
@@ -1276,6 +1367,111 @@ function initChatScroll(){
       });
     }, 500);   // 연속 스크롤은 한 건으로 묶습니다
   }, {passive: true});
+}
+
+/* ── 메시지별 화면 체류 ──────────────────────
+   comment_shown은 '피드에 붙었다'는 사실일 뿐 본 것이 아닙니다.
+   스크롤이 위에 가 있으면 새 메시지는 화면 밖에 쌓이고, 밀도가 높으면
+   읽기 전에 밀려 올라가고, 탭을 가린 동안에도 계속 쌓입니다.
+
+   채팅창 안에 실제로 들어와 있던 시간만 누적합니다. 탭이 가려진 구간은 제외합니다.
+   이벤트는 늘리지 않고 내부에 모았다가 종료 요약에 한 번만 내보냅니다.
+
+   한계: 화면에 있었다 ≠ 읽었다. 시선 추적 없이는 그 이상 불가.
+         논문에는 '읽은 메시지'가 아니라 '화면 노출 시간'으로 기술. */
+const SEEN_MIN_MS = 1000;        // 이 시간 이상 떠 있어야 '봤다'로 셉니다
+const seen = {msgs: [], offscreen: 0};
+let msgObserver = null;
+
+function nowVisible(){ return document.visibilityState === 'visible'; }
+
+function initSeen(){
+  if (!('IntersectionObserver' in window)) return;   // 미지원 브라우저는 집계 생략
+  msgObserver = new IntersectionObserver((entries) => {
+    const now = performance.now();
+    for (const e of entries){
+      const rec = e.target.__seen;
+      if (!rec) continue;
+      if (e.isIntersecting){
+        if (!rec.since) rec.since = now;
+      } else if (rec.since){
+        if (nowVisible()) rec.ms += now - rec.since;
+        rec.since = 0;
+      }
+    }
+  }, {root: feed, threshold: 0.6});                  // 줄의 60% 이상 보여야 인정
+}
+
+/* 탭을 가리면 그 순간까지만 적립하고 멈춥니다. 돌아오면 다시 시작합니다. */
+function pauseSeen(stop){
+  const now = performance.now();
+  for (const r of seen.msgs){
+    if (!r.since) continue;
+    if (stop){ r.ms += now - r.since; r.since = 0; r.wasVisible = true; }
+  }
+  if (!stop){
+    for (const r of seen.msgs) if (r.wasVisible && r.el.isConnected){ r.since = now; r.wasVisible = false; }
+  }
+}
+
+/* 종료 시 집계. 입장(stance)·정체성(kind)별로 나눠 내보냅니다. */
+function seenSummary(){
+  const now = performance.now();
+  const vis = nowVisible();
+  let n = 0, cong = 0, incong = 0, msCong = 0, msIncong = 0, off = 0, msAll = 0;
+  for (const r of seen.msgs){
+    let ms = r.ms;
+    if (r.since && vis) ms += now - r.since;          // 아직 화면에 있는 것도 반영
+    msAll += ms;
+    if (ms < SEEN_MIN_MS){ if (ms === 0) off++; continue; }
+    n++;
+    if (r.stance){
+      if (r.stance === vote){ cong++; msCong += ms; } else { incong++; msIncong += ms; }
+    }
+  }
+  const tot = cong + incong;
+  /* shown_* 과 lines_* 는 세는 대상이 다릅니다.
+     shown_*  타임라인 발화만 (백로그·예고 반응·참가자 본인 글 제외)
+     lines_*  채팅창에 들어온 모든 줄
+     둘을 직접 빼지 마십시오. 비교는 입장(stance) 기준 필드로만 하십시오. */
+  return {
+    lines_total: seen.msgs.length,                     // 피드에 들어온 모든 줄
+    lines_seen: n,                                     // 그중 1초 이상 화면에 있던 줄
+    lines_offscreen: off,                              // 한 번도 화면에 안 뜬 줄
+    visible_ms_total: Math.round(msAll),
+    seen_congruent: cong,
+    seen_incongruent: incong,
+    seen_congruence_ratio: tot ? +(cong / tot * 100).toFixed(1) : null,
+    visible_ms_congruent: Math.round(msCong),
+    visible_ms_incongruent: Math.round(msIncong),
+    threshold_ms: SEEN_MIN_MS
+  };
+}
+
+/* 채팅 텍스트를 드래그해서 읽는 행동. 복사하려는 것일 수도, 한 줄을 짚어가며
+   읽는 것일 수도 있습니다. 어느 쪽인지는 해석하지 않고 사실만 남깁니다.
+   선택이 끝난 시점(mouseup/touchend)에 한 번만 기록합니다. */
+function initTextSelect(){
+  const record = () => {
+    const sel = document.getSelection();
+    if (!sel || sel.isCollapsed) return;
+    const txt = sel.toString().trim();
+    if (txt.length < 2) return;
+    const node = sel.anchorNode;
+    const el = node && (node.nodeType === 1 ? node : node.parentElement);
+    const msg = el && el.closest('.msg');
+    const inChat = Boolean(el && el.closest('.chat'));
+    Logger.add('text_select', {
+      at_sec: +tick.toFixed(2),
+      where: inChat ? 'chat' : (el && el.closest('.poll') ? 'poll' : 'other'),
+      chars: txt.length,
+      text: txt.slice(0, 120),
+      msg_name: msg ? (msg.querySelector('.nm') || {}).textContent || null : null,
+      msg_kind: msg ? (msg.querySelector('.ic') ? msg.querySelector('.ic').className.replace('ic ', '') : null) : null
+    });
+  };
+  document.addEventListener('mouseup', () => setTimeout(record, 0));
+  document.addEventListener('touchend', () => setTimeout(record, 0), {passive: true});
 }
 
 /* ── 6. 로거 ─────────────────────────────── */
@@ -1339,6 +1535,24 @@ const Sink = (function(){
       return sessionId;
     },
     id: () => sessionId,
+    /* 세션 행은 입장 전에 이미 만들어집니다. 안내 페이지에서 이메일을 받으면
+       그 행을 채워 넣습니다 — 중간에 창을 닫아도 세션 자체는 남게 하려는 구조입니다. */
+    async setPid(pid){
+      if (!on() || !sessionId) return;
+      const url = `${SUPABASE_URL}/rest/v1/sessions?id=eq.${sessionId}`;
+      try {
+        await fetch(url, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+            Prefer: 'return=minimal'
+          },
+          body: JSON.stringify({pid})
+        });
+      } catch {}
+    },
     /* 이벤트는 모아서 보냅니다. 한 건씩 보내면 300명 × 수천 건이 전부 개별 요청이 됩니다. */
     push(ev){ queue.push({session_id: sessionId, t: ev.t, type: ev.type, data: ev}); },
     async flush(final){
@@ -1386,13 +1600,19 @@ const Logger = {
 /* 5초마다, 그리고 창을 닫거나 탭을 가릴 때 전송합니다. */
 setInterval(() => Sink.flush(false), 5000);
 addEventListener('visibilitychange', () => {
+  pauseSeen(document.visibilityState !== 'visible');
   Logger.add('visibility', {state: document.visibilityState});
   if (document.visibilityState === 'hidden') Sink.flush(true);
 });
 addEventListener('pagehide', () => { Logger.add('page_hide'); Sink.flush(true); });
 
 /* ── 7. 플레이 루프 ──────────────────────── */
-const SPAN = 180;          // 영상 길이(초). 실제 클립 확정 시 교체.
+const SPAN = 240;          // 영상 길이(초). 실제 클립 확정 시 교체.
+/* 마무리 구간. 스트리머가 방송을 접으려 하는 시점과 실제로 끊기는 시점입니다.
+   끊긴 뒤 추천 화면에서 구독·다음 영상 클릭이 측정됩니다 —
+   "갈 때 붙잡는가"가 이 자극물의 마지막 행동 지표입니다. */
+const OUTRO_AT = 200;      // 스트리머가 "오늘 여기까지" 하는 시각
+const END_AT   = 230;      // 화면이 꺼지고 추천이 뜨는 시각
 const STEP = 0.25;         // 틱 간격(초). 고밀도 조건에서 초당 2회 이상 렌더되도록.
 const ctx = {lastUserMessage: null};
 let source = null, ident = null, timer = null, tick = 0, entered = false;
@@ -1400,9 +1620,7 @@ let source = null, ident = null, timer = null, tick = 0, entered = false;
 function buildSources(){
   // 타임라인 RNG는 seed와 시청자 수에만 의존 — label/ratio를 바꿔도 내용 불변
   const rnd = mulberry32(cond.seed * 7919 + cond.viewers);
-  source = cond.src === 'live'
-    ? LiveSource(cond, rnd, SPAN, ctx)
-    : ScriptSource(cond, rnd, SPAN);
+  source = ScriptSource(cond, rnd, SPAN);
   ident = IdentityAssigner(cond, source.info.chatters, source.counts);
 }
 
@@ -1418,20 +1636,40 @@ function loop(){
   document.getElementById('clock').textContent =
     Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
 
-  // study 2: 투표 → 카운트다운 → 고정 시각에 채팅 해제
-  if (cond.study === 2){
-    if (!vote && tick >= POLL_AT && $('poll').hidden) showPoll();
-    if (!$('poll').hidden && !vote) tickTimer();
-    if (!chatOpen && unlockAt !== null && tick >= unlockAt) unlockChat();
-    if (!chatOpen) return;                  // 잠긴 동안 채팅 시계를 세우지 않음
+  // 예고 → 반응 구간 → 투표 → 카운트다운 → 고정 시각에 채팅 해제
+  if (!announced && tick >= ANNOUNCE_AT) announcePoll();
+  while (reactQueue.length && reactQueue[0].t <= tick){
+    const m = reactQueue.shift();
+    Renderer.push({kind: m.kind, name: m.name, text: m.text});
+    Logger.add('comment_shown', {
+      name: m.name, kind: m.kind, text: m.text, stance: null, phase: 'pre_poll'
+    });
   }
+  if (!vote && tick >= POLL_AT && $('poll').hidden){ showPoll(); lockChat(); }
+  if (!outroed && tick >= OUTRO_AT) startOutro();
+  while (outroQueue.length && outroQueue[0].t <= tick){
+    const m = outroQueue.shift();
+    Renderer.push({kind: m.kind, name: m.name, text: m.text});
+    Logger.add('comment_shown', {
+      name: m.name, kind: m.kind, text: m.text, stance: null, phase: 'outro'
+    });
+  }
+  if (!ended && tick >= END_AT){ endStream(); return; }
+  if (!$('poll').hidden && !vote) tickTimer();
+  if (vote && !chatOpen && unlockAt !== null){   // 무제한 모드는 이유 제출 전까지 null
+    const left = Math.max(0, Math.ceil(unlockAt - tick));
+    $('lockMsg').textContent = left > 0
+      ? `채팅이 열리기까지 ${left}초` : '채팅이 열립니다';
+  }
+  if (!chatOpen && unlockAt !== null && tick >= unlockAt) unlockChat();
+  if (!chatOpen) return;                    // 잠긴 동안 채팅 시계를 세우지 않음
   // 채팅 시계는 잠금이 풀린 뒤부터 흐릅니다. 영상 시각(tick)을 그대로 쓰면
   // 잠금 구간에 쌓인 메시지가 해제 순간 한꺼번에 쏟아집니다 — 5,000명 조건이면
   // 수백 건이 동시에 터집니다.
   chatT += STEP;
 
   for (const raw of source.next(chatT)){
-    const r = cond.study === 2 && vote ? resolveStance(raw, vote) : {text: raw.text, stance: null};
+    const r = vote ? resolveStance(raw, vote) : {text: raw.text, stance: null};
     const c = ident.assign(raw);
     // 이유 노출을 끄면 입장 배지만 남고 문장은 짧은 동의 표현으로 대체됩니다
     c.text = (r.stance && cond.why === 'off') ? SHORT_STANCE[r.ri % SHORT_STANCE.length] : r.text;
@@ -1449,162 +1687,21 @@ function loop(){
 
 /* ── 8. 화면 전환 ────────────────────────── */
 const $ = id => document.getElementById(id);
-const browse = $('browse'), watch = $('watch'), done = $('done');
+const watch = $('watch'), done = $('done');
 
-/* 필러 방송. 시청자 수는 모두 딱 떨어지지 않는 수로 둡니다 — 조작된 수치로
-   읽히지 않게. 타깃 카드가 이 분포 안에서 어디쯤인지가 참조점이 되므로
-   (Ye et al. 2024) 분포 자체를 설계 변수로 보고 논문에 적습니다. */
-const FILLERS = [
-  {t:'새벽 잡담 / 아무 얘기나', s:'모래시계 moraesigye', v:3147, ai:12},
-  {t:'같이 공부해요 4시간차', s:'책상불빛 bulbit', v:812, ai:26},
-  {t:'랭크 올리는 날', s:'파란줄기 paranjulgi', v:9238, ai:8},
-  {t:'요리하면서 수다', s:'냄비받침 naembi', v:1526, ai:19},
-  {t:'노래 신청 받아요', s:'미드나잇 midnight', v:604, ai:34}
-];
+/* 숫자에 천 단위 구분 */
+const fmt = n => n.toLocaleString('ko-KR');
 
-function fmt(n){ return n.toLocaleString('ko-KR'); }
-
-/* ── 카드 호버 추적 ──────────────────────────
-   커서 체류를 그대로 "주의"로 보면 안 됩니다. Huang, White & Buscher (2012)에서
-   전체 시간의 58.8%가 커서 정지 상태였고, 그때 시선–커서 거리가 233px로 가장
-   멀었습니다(클릭 직전 77px). 그래서 **커서가 움직이는 구간만** 따로 셉니다.
-   total은 참고용, active가 분석에 쓸 값입니다.                              */
-const HOVER_IDLE_MS = 400;   // 이 시간 넘게 안 움직이면 정지로 간주
-const hoverStats = {};
-let lastMoveAt = 0;
-document.addEventListener('mousemove', () => { lastMoveAt = performance.now(); });
-
-function trackHover(el, key){
-  let enterAt = 0, activeAcc = 0, lastTick = 0, raf = 0;
-  const h = hoverStats[key] || (hoverStats[key] = {enters: 0, total_ms: 0, active_ms: 0});
-
-  const tick = () => {
-    const now = performance.now();
-    // 직전 프레임 구간에서 커서가 움직이고 있었으면 active로 적립
-    if (now - lastMoveAt < HOVER_IDLE_MS) activeAcc += now - lastTick;
-    lastTick = now;
-    raf = requestAnimationFrame(tick);
-  };
-
-  el.addEventListener('mouseenter', () => {
-    enterAt = lastTick = performance.now();
-    activeAcc = 0;
-    h.enters++;
-    raf = requestAnimationFrame(tick);
-  });
-
-  el.addEventListener('mouseleave', () => {
-    if (!enterAt) return;
-    cancelAnimationFrame(raf);
-    const dur = Math.round(performance.now() - enterAt);
-    const act = Math.round(activeAcc);
-    h.total_ms += dur;
-    h.active_ms += act;
-    enterAt = 0;
-    Logger.add('card_hover', {
-      card: key, dur_ms: dur, active_ms: act,
-      visit: h.enters, cum_total_ms: Math.round(h.total_ms), cum_active_ms: Math.round(h.active_ms)
-    });
-  });
-}
-
-function hoverSummary(){
-  const out = {};
-  for (const k of Object.keys(hoverStats)){
-    const v = hoverStats[k];
-    out[k] = {enters: v.enters, total_ms: Math.round(v.total_ms), active_ms: Math.round(v.active_ms)};
-  }
-  return out;
-}
-
-/* 정체성 표기. Study 1은 "누가 보고 있는가"가 조작이므로 시청자 기준으로,
-   Study 2는 보이는 채팅 기준으로 쓴다. */
+/* 정체성 표기. 비율을 빼고 "AI 시청자"라고만 쓰면 일부 조건에서도 전원 AI로 읽힙니다. */
 function identText(isAI, ratio){
-  if (!isAI) return cond.study === 2 ? '시청자 채팅' : '실제 시청자';
-  if (cond.study === 2) return `AI 채팅 ${ratio}%`;
-  /* 비율을 빼고 "AI 시청자"라고만 쓰면 30% 조건에서도 전원 AI로 읽힙니다. */
-  return ratio >= 100 ? 'AI 시청자 (전원)' : `AI 시청자 ${ratio}%`;
-}
-
-/* 메타 줄. 비율이 100%가 아니면 "AI 시청자 N명"이라고 쓰면 안 됩니다 —
-   N명 전원이 AI라는 뜻이 되어버립니다. */
-function metaLine(viewers, ratio, isAI){
-  if (!isAI) return `시청자 ${fmt(viewers)}명`;
-  if (ratio >= 100) return `AI 시청자 ${fmt(viewers)}명`;
-  return `시청자 ${fmt(viewers)}명 · AI ${ratio}%`;
-}
-
-/* 카드 호버 패널 — 시청자 구성을 사람/AI로 나눠 보여줍니다.
-   비율만 쓰면 "AI 30%"가 몇 명인지 감이 안 와서 인원수를 같이 둡니다. */
-function cardInfo(viewers, ratio, isAI){
-  const ai = Math.round(viewers * ratio / 100);
-  return `<span class="card-info">
-    <span class="hd">시청자 구성</span>
-    <span class="rowline"><span class="k">전체</span><span class="v">${fmt(viewers)}명</span></span>
-    ${isAI ? `<span class="rowline ai"><span class="k">AI 시청자</span>
-        <span class="v">${fmt(ai)}명 (${ratio}%)</span></span>
-      <span class="rowline"><span class="k">실제 이용자</span>
-        <span class="v">${fmt(viewers - ai)}명 (${100 - ratio}%)</span></span>`
-    : `<span class="rowline"><span class="k">실제 이용자</span>
-        <span class="v">${fmt(viewers)}명 (100%)</span></span>`}
-  </span>`;
-}
-
-/* 썸네일 하단 수치 띠. 시청자 수와 AI 비율을 큰 숫자로 띄운다. */
-function statBar(viewers, ratio, isAI){
-  return `<span class="stat-bar">
-    <span class="unit"><span class="lbl">시청자</span>
-      <span class="num">${fmt(viewers)}<small>명</small></span></span>
-    ${isAI ? `<span class="sep"></span>
-    <span class="unit ai"><span class="lbl">AI 시청자</span>
-      <span class="num">${ratio}<small>%</small></span></span>` : ''}
-  </span>`;
-}
-
-function renderBrowse(){
-  const g = $('grid'); g.innerHTML = '';
-  const isAI = cond.label === 'mixed';
-  const target = document.createElement('button');
-  target.className = 'card target';
-  target.dataset.card = 'target';
-  target.innerHTML = `
-    <div class="thumb">
-      <span class="badge-live">LIVE</span>
-      ${statBar(cond.viewers, cond.ratio, isAI)}
-      ${cardInfo(cond.viewers, cond.ratio, isAI)}
-    </div>
-    <div class="meta">
-      <div class="t">오늘 있었던 일 좀 들어주라</div>
-      <div class="s">하루끝 harukkeut</div>
-      <div class="ident ${isAI ? 'ai' : 'human'}">${metaLine(cond.viewers, cond.ratio, isAI)}</div>
-    </div>`;
-  target.addEventListener('click', enter);
-  g.appendChild(target);
-  trackHover(target, 'target');
-
-  FILLERS.forEach((f, i) => {
-    const el = document.createElement('div');
-    el.className = 'card filler';
-    el.dataset.card = 'filler' + i;
-    el.innerHTML = `
-      <div class="thumb">
-        <span class="badge-live">LIVE</span>
-        ${statBar(f.v, f.ai, isAI)}
-        ${cardInfo(f.v, f.ai, isAI)}
-      </div>
-      <div class="meta"><div class="t">${f.t}</div><div class="s">${f.s}</div>
-        <div class="ident ${isAI ? 'ai' : 'human'}">${metaLine(f.v, f.ai, isAI)}</div>
-      </div>`;
-    g.appendChild(el);
-    trackHover(el, 'filler' + i);
-  });
+  if (!isAI) return '실제 이용자';
+  return ratio >= 100 ? '모두 AI' : `AI ${ratio}% · 실제 이용자 ${100 - ratio}%`;
 }
 
 function enter(){
   if (entered) return;
   entered = true;
-  Logger.add('enter_click');
-  browse.style.display = 'none';
+  Logger.add('watch_start');
   watch.classList.add('on');
   const isAI = cond.label === 'mixed';
   $('watchCnt').textContent = `시청자 ${fmt(cond.viewers)}명`;
@@ -1629,13 +1726,130 @@ function enter(){
   });
   // 설정값(ratio)과 실제 배정 결과를 함께 남깁니다 — 조건 간 비교 시 실제값을 씁니다.
   Logger.add('ai_allocation', ident.actual);
-  if (cond.study === 2){
-    Logger.add('stance_slots', {congruence: cond.cong, ...source.slots});
-    lockChat();
-  }
+  Logger.add('stance_slots', {congruence: cond.cong, ...source.slots});
   Renderer.clear();
   tick = 0; chatT = 0;
+  /* 참가자는 방송 도중에 들어온 것으로 둡니다. 들어온 순간 채팅창에는
+     이미 지나간 대화가 쌓여 있고, 바닥으로 스크롤된 상태입니다.
+     빈 채팅창으로 시작하면 "내가 1번 시청자"처럼 읽혀 규모 조작과 어긋납니다. */
+  seedBacklog();
+  openChat();
   timer = setInterval(loop, STEP * 1000);
+}
+
+/* 투표 예고. 공지 한 줄을 띄우고, 투표가 뜰 때까지 그 신호에 반응하는 발화를 깝니다. */
+let announced = false;
+let reactQueue = [];
+function announcePoll(){
+  announced = true;
+  // 영상에서 스트리머가 말하는 시점. 채팅에는 아무것도 띄우지 않습니다.
+  Logger.add('poll_announced', {at_sec: +tick.toFixed(2)});
+
+  const span = POLL_AT - ANNOUNCE_AT;
+  // 규모가 클수록 반응도 많이 올라옵니다
+  const n = Math.max(4, Math.min(14, Math.round(source.info.rate * span * 0.8)));
+  const rnd = mulberry32(cond.seed * 31337 + cond.viewers);
+  const take = (pool, cnt) => {
+    const a = pool.slice(), out = [];
+    for (let i = 0; i < cnt && a.length; i++) out.push(a.splice(Math.floor(rnd() * a.length), 1)[0]);
+    return out;
+  };
+
+  const nSig  = n >= 8 ? 3 : 2;
+  const nLock = n >= 10 ? 2 : 1;
+  const nNoise = Math.max(1, n - nSig - nLock);
+
+  /* 신호는 앞쪽에 — 스트리머 말이 끝나자마자 나오는 게 자연스럽고,
+     참가자도 일찍 알아야 합니다. 잠김 아쉬움은 뒤쪽에 — 닫힌다는 걸
+     깨닫고 나오는 반응입니다. 소음은 전 구간에 흩뿌립니다. */
+  const at = (lo, hi) => ANNOUNCE_AT + 0.5 + (lo + rnd() * (hi - lo)) * (span - 1.2);
+  reactQueue = [
+    ...take(REACT_SIGNAL, nSig ).map(t => ({text: t, t: at(0,    0.40)})),
+    ...take(REACT_NOISE,  nNoise).map(t => ({text: t, t: at(0.05, 1)   })),
+    ...take(REACT_LOCK,   nLock).map(t => ({text: t, t: at(0.50, 1)   }))
+  ].map(m => {
+    const who = ident.roster[Math.floor(rnd() * ident.roster.length)];
+    return {...m, kind: who.kind, name: who.name};
+  }).sort((a, b) => a.t - b.t);
+}
+
+/* 종료 후 추천 영상. 클릭해도 이동하지 않고 클릭 사실만 남깁니다 —
+   자극물 밖으로 나가면 이후 행동을 못 봅니다. */
+const END_VIDEOS = [
+  {t: '새벽에 하는 고민 상담', v: '12만 회'},
+  {t: '밸런스게임 모음 2시간', v: '31만 회'},
+  {t: '구독자 사연 읽기', v: '8.7만 회'}
+];
+function renderEndCard(){
+  const g = $('ecGrid'); g.innerHTML = '';
+  END_VIDEOS.forEach((v, i) => {
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'ec-item';
+    el.innerHTML = `<span class="ec-thumb"></span>
+      <span class="ec-t">${v.t}</span><span class="ec-v">조회수 ${v.v}</span>`;
+    el.addEventListener('click', () => {
+      el.style.outline = '2px solid var(--accent)';
+      Logger.add('next_video_click', {index: i, title: v.t, at_sec: +tick.toFixed(2)});
+    });
+    g.appendChild(el);
+  });
+}
+
+/* 방송 마무리. 스트리머가 접으려 하고 채팅이 인사를 합니다. */
+let outroed = false, ended = false;
+let outroQueue = [];
+function startOutro(){
+  outroed = true;
+  Logger.add('outro_started', {at_sec: +tick.toFixed(2)});
+  const span = END_AT - OUTRO_AT;
+  const n = Math.max(5, Math.min(16, Math.round(source.info.rate * span * 0.7)));
+  const rnd = mulberry32(cond.seed * 7753 + cond.viewers);
+  const pool = REACT_OUTRO.slice();
+  outroQueue = [];
+  for (let i = 0; i < n; i++){
+    const who = ident.roster[Math.floor(rnd() * ident.roster.length)];
+    outroQueue.push({
+      t: OUTRO_AT + 0.8 + rnd() * (span - 1.5),
+      kind: who.kind, name: who.name,
+      text: pool.length ? pool.splice(Math.floor(rnd() * pool.length), 1)[0]
+                        : REACT_OUTRO[i % REACT_OUTRO.length]
+    });
+  }
+  outroQueue.sort((a, b) => a.t - b.t);
+}
+
+/* 방송 종료. 화면이 꺼지고 그 자리에 추천이 뜹니다.
+   참가자는 여기서 구독하거나 다음 영상을 누르거나, 그냥 나갈 수 있습니다. */
+function endStream(){
+  ended = true;
+  clearInterval(timer);
+  Logger.add('stream_ended', {at_sec: +tick.toFixed(2)});
+  $('player').classList.add('off');
+  renderEndCard();
+  $('poll').hidden = true;                  // 투표 카드가 종료 화면 뒤에 비쳐 보이지 않게
+  $('endCard').hidden = false;
+  $('endSub').textContent = subscribed ? '구독중' : '구독하기';
+  $('endSub').setAttribute('aria-pressed', String(subscribed));
+  /* 채팅은 그대로 둡니다 — 실제 플랫폼도 방송이 끝나면 채팅창이 남습니다.
+     입력만 막고, 지나간 대화는 계속 읽고 드래그할 수 있습니다. */
+  $('inputRow').hidden = true;
+  $('inputOff').hidden = false;
+  $('inputOff').textContent = '방송이 종료되어 채팅을 보낼 수 없습니다.';
+}
+
+/* 입장 직전까지 흘렀던 대화. 타임라인과 같은 화자·같은 정체성 배분을 쓰되
+   시각만 과거로 돌려 즉시 그려 넣습니다. 입장 전 발화이므로 입장(stance)은 없고
+   로그에도 before_join으로 따로 표시해 분석에서 제외할 수 있게 둡니다. */
+function seedBacklog(){
+  for (const raw of source.pre){
+    const c = ident.assign(raw);          // 화자 배분도 타임라인과 같은 규칙을 따릅니다
+    Renderer.push({kind: c.kind, name: c.name, text: c.text});
+    Logger.add('comment_shown', {
+      name: c.name, kind: c.kind, text: c.text, stance: null, before_join: true
+    });
+  }
+  feed.scrollTop = feed.scrollHeight;
 }
 
 /* ── 8-0. 안내 페이지 ────────────────────
@@ -1645,21 +1859,21 @@ function enter(){
 function showIntro(){
   const isAI = cond.label === 'mixed';
   $('intro').classList.add('on');
-  browse.style.display = 'none';
   watch.classList.remove('on');
   /* 안내 페이지는 플랫폼 화면이 아니라 지시문입니다. 헤더가 같이 보이면
      안내문이 사이트의 일부처럼 읽혀서 감춥니다. */
   $('siteBar').style.display = 'none';
 
-  $('introTitle').textContent = cond.study === 2
-    ? '잠시 후 방송을 보게 됩니다' : '잠시 후 방송 목록을 보게 됩니다';
-  $('introLead').textContent = cond.study === 2
-    ? '방송을 보는 중에 스트리머가 질문을 하나 던집니다. 생각하신 대로 답해주세요.'
-    : '여러 방송이 목록으로 나옵니다. 평소에 방송을 고르듯이 둘러보시면 됩니다.';
+  $('introTitle').textContent = '잠시 후 방송을 보게 됩니다';
+  $('introLead').textContent =
+    '이미 진행 중인 방송에 들어가게 됩니다. ' +
+    '보시는 중에 스트리머가 질문을 하나 던지고 투표가 열립니다. ' +
+    '생각하신 대로 고르시고, 왜 그렇게 생각했는지도 한 줄 적어주세요. ' +
+    '그 동안만 채팅이 잠깁니다. 평소에 방송 보듯이 보시면 됩니다.';
 
   $('introCard').innerHTML = `
     <div class="intro-row"><span class="k">방송</span>
-      <span class="v">${cond.study === 2 ? '같이 판단 좀 해줘라' : '오늘 있었던 일 좀 들어주라'}</span></div>
+      <span class="v">${STREAM_TITLE}</span></div>
     <div class="intro-row"><span class="k">시청자 수</span>
       <span class="v">${fmt(cond.viewers)}명</span></div>
     <div class="intro-row"><span class="k">시청자 구성</span>
@@ -1675,12 +1889,31 @@ function showIntro(){
   Logger.add('intro_shown', {viewers: cond.viewers, identity: isAI ? 'ai' : 'human'});
 }
 
+/* 고유 코드 또는 이메일 둘 다 받습니다. @가 들어 있으면 이메일로 보고 형식을 보고,
+   아니면 코드로 봅니다. 형식을 깐깐하게 잡으면 멀쩡한 값이 막힙니다. */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
 function introGo(){
+  const el = $('pidEmail');
+  const v = el.value.trim().toLowerCase();
+  const bad = v.includes('@') ? !EMAIL_RE.test(v) : v.length < 2;
+  if (bad){
+    el.classList.add('bad');
+    $('idNote').textContent = v.includes('@')
+      ? '이메일 주소를 다시 확인해주세요.' : '코드 또는 이메일 주소를 입력해주세요.';
+    $('idNote').classList.add('bad');
+    el.focus();
+    return;
+  }
+  el.classList.remove('bad');
+  $('idNote').classList.remove('bad');
+  cond.pid = v;
+  Sink.setPid(v);
+  Logger.add('participant_id', {value: v, kind: v.includes('@') ? 'email' : 'code'});
   Logger.add('intro_done', {at: +((Date.now() - Logger.t0) / 1000).toFixed(2)});
   $('intro').classList.remove('on');
   $('siteBar').style.display = '';
-  if (cond.study === 2){ enter(); }
-  else { browse.style.display = ''; renderBrowse(); }
+  enter();
 }
 
 /* ── 반응 버튼 ────────────────────────────
@@ -1697,7 +1930,10 @@ function setReact(v){
 /* 투표·채팅 해제 타이밍. 채팅 노출 시간이 참가자마다 달라지면 안 되므로
    해제는 투표 시점이 아니라 **고정 시각**에 일어납니다. 빨리 투표한 사람이
    채팅을 더 오래 보는 일이 없습니다. */
-const POLL_AT    = 20;   // 스트리머가 딜레마를 꺼내는 시각(초)
+const POLL_AT     = 30;   // 투표 카드가 뜨고 채팅이 잠기는 시각(초)
+const ANNOUNCE_AT = 22;   // 스트리머가 "투표 올린다, 채팅 잠근다"고 예고하는 시각
+/* 예고 없이 갑자기 잠그면 참가자가 고장으로 읽습니다. 예고와 투표 사이
+   8초 동안 채팅이 그 신호에 반응하는 구간을 둡니다. */
 const UNLOCK_GAP = 3;    // 투표 마감 후 채팅이 열리기까지(초)
 const LATE_GAP   = 3;    // 마감을 넘겨 투표한 경우에만 쓰는 지연
 
@@ -1717,11 +1953,22 @@ function lockChat(){
   $('inputOff').hidden = true;
 }
 
+/* 입장 시점의 열린 상태. unlockChat()은 투표 뒤의 해제이고 로그가 다릅니다. */
+function openChat(){
+  chatOpen = true;
+  $('feed').hidden = false;
+  $('chatLocked').hidden = true;
+  const off = cond.input === 'off';
+  $('inputRow').hidden = off;
+  $('inputOff').hidden = !off;
+}
+
 function unlockChat(){
   if (chatOpen) return;
   // 이유를 쓰다 만 상태로 해제 시각이 오면 적힌 만큼 자동 제출합니다 —
   // 제출을 기다리면 해제 시각이 사람마다 달라집니다.
   if (cond.why === 'on' && !$('pollWhy').hidden) submitWhy(true);
+  if (vote && !voteLocked) lockVote();
   chatOpen = true;
   $('feed').hidden = false;
   $('chatLocked').hidden = true;
@@ -1753,51 +2000,107 @@ function showPoll(){
     b.type = 'button';
     b.dataset.v = k;
     b.setAttribute('aria-pressed', 'false');
-    b.innerHTML = `${DILEMMA[k].label}<b>${DILEMMA[k].sub}</b>`;
+    b.textContent = DILEMMA[k].label;
+    /* 선택지 위에 커서를 올린 시간. 두 선택지를 오가며 재는 행동이 그대로 남습니다.
+       주의: 체류 시간을 '숙고'로 읽지 않습니다 — 갈등 지표로만 씁니다. */
+    let inAt = 0;
+    b.addEventListener('mouseenter', () => { inAt = performance.now(); });
+    b.addEventListener('mouseleave', () => {
+      if (!inAt) return;
+      const dur = Math.round(performance.now() - inAt);
+      inAt = 0;
+      if (dur < 60) return;                 // 지나가는 커서는 버립니다
+      optHover[k] = (optHover[k] || 0) + dur;
+      optHoverN[k] = (optHoverN[k] || 0) + 1;
+      Logger.add('option_hover', {
+        choice: k, dur_ms: dur, at_sec: +tick.toFixed(2),
+        voted: vote, locked: voteLocked
+      });
+    });
     b.addEventListener('click', () => castVote(k));
     box.appendChild(b);
   });
-  $('lockMsg').textContent = '투표하면 채팅이 열립니다';
+  $('lockMsg').textContent = '투표하면 채팅이 다시 열립니다';
   Logger.add('poll_shown', {at_sec: +tick.toFixed(2), window_sec: cond.pollwin});
 }
 
-function castVote(k){
-  if (vote) return;
-  vote = k;
-  voteAt = tick;
-  const late = !noLimit() && tick > pollDeadline();
-  // 제시간에 투표하면 전원 같은 시각에 열립니다. 늦게 투표한 경우만 짧게 지연.
-  unlockAt = noLimit() ? tick + UNLOCK_GAP
-           : late      ? tick + LATE_GAP
-                       : unlockTime();
+/* 투표는 '보내기' 전까지 바꿀 수 있습니다. 바꾼 이력이 그대로 남습니다 —
+   한 번에 고른 사람과 왔다갔다한 사람은 다른 참가자입니다.
+   확정은 이유를 제출하는 순간입니다. */
+let voteLocked = false;
+let voteClicks = 0, firstVote = null, firstVoteAt = null;
+const optHover = {}, optHoverN = {};
 
-  document.querySelectorAll('#pollOpts button').forEach(b => {
-    b.setAttribute('aria-pressed', String(b.dataset.v === k));
-    b.disabled = true;
-  });
-  $('pollTimer').textContent = '투표함';
+function castVote(k){
+  if (voteLocked) return;
+  const prev = vote;
+  if (prev === k) return;                  // 같은 걸 다시 눌렀으면 변화 없음
+
+  vote = k;
+  voteAt = tick;                           // 마지막으로 고른 시각
+  voteClicks++;
+  if (firstVote === null){ firstVote = k; firstVoteAt = tick; }
+
+  document.querySelectorAll('#pollOpts button').forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.v === k)));
+
+  $('pollTimer').textContent = '선택함';
   const d = $('pollDone');
   d.hidden = false;
-  d.textContent = `${DILEMMA[k].label} 쪽에 투표했습니다.`;
-  Logger.add('vote', {
-    choice: k, label: DILEMMA[k].label,
-    at_sec: +tick.toFixed(2), late, unlock_at: unlockAt
+  d.textContent = `${DILEMMA[k].label} 쪽을 골랐습니다. 아래에 이유를 적고 보내기를 누르면 확정됩니다.`;
+
+  Logger.add('vote_click', {
+    choice: k, label: DILEMMA[k].label, from: prev,
+    changed: prev !== null, seq: voteClicks, at_sec: +tick.toFixed(2)
   });
 
   if (cond.why === 'on'){
     $('pollWhy').hidden = false;
-    $('lockMsg').textContent = '잠시 뒤 채팅이 열립니다';
-    $('whyNote').textContent = '적지 않아도 채팅은 예정대로 열립니다.';
+    $('lockMsg').textContent = '의견을 보내면 채팅이 다시 열립니다';
     $('whyText').focus();
   } else {
-    $('lockMsg').textContent = '잠시 뒤 채팅이 열립니다';
+    lockVote();
   }
+}
+
+/* 확정. 이유를 보낸 시점(또는 이유를 안 받는 조건에서는 투표 시점)에 걸립니다. */
+function lockVote(){
+  if (voteLocked) return;
+  voteLocked = true;
+  document.querySelectorAll('#pollOpts button').forEach(b => { b.disabled = true; });
+
+  const late = !noLimit() && tick > pollDeadline();
+  /* 제한이 있으면 전원 같은 시각에 엽니다. 무제한이면 확정 시점 기준입니다. */
+  unlockAt = noLimit() ? tick + UNLOCK_GAP
+           : late      ? tick + LATE_GAP
+                       : unlockTime();
+
+  $('pollTimer').textContent = '투표함';
+  Logger.add('vote', {
+    choice: vote, label: DILEMMA[vote].label,
+    at_sec: +tick.toFixed(2),
+    first_choice: firstVote,
+    first_at_sec: firstVoteAt === null ? null : +firstVoteAt.toFixed(2),
+    changed: firstVote !== vote,
+    n_clicks: voteClicks,
+    // 처음 고른 뒤 확정까지 걸린 시간 — 망설임의 길이
+    settle_sec: firstVoteAt === null ? null : +(tick - firstVoteAt).toFixed(2),
+    late, unlock_at: unlockAt
+  });
 }
 
 /* auto=true는 해제 시각이 되어 자동 제출된 경우입니다. */
 function submitWhy(auto){
   const el = $('whyText');
   const v = el.value.trim();
+  /* 이유는 사실상 필수입니다. 직접 '보내기'를 누를 때는 비어 있으면 받지 않고,
+     해제 시각이 지나 자동 제출될 때만 빈 값을 허용합니다 — 투표 자체를
+     못 끝내게 막으면 참가자가 이탈합니다. */
+  if (!auto && !v){
+    $('whyNote').textContent = '한 줄만 적어주세요.';
+    el.focus();
+    return false;
+  }
   $('pollWhy').hidden = true;
   if (v){
     Logger.add('vote_reason', {text: v, length: v.length, auto: !!auto,
@@ -1806,21 +2109,31 @@ function submitWhy(auto){
   } else {
     Logger.add('vote_reason', {text: null, length: 0, auto: !!auto});
   }
+  return true;
 }
 
 function sendWhy(){
-  submitWhy(false);
+  if (!vote){
+    $('whyNote').textContent = '먼저 위에서 하나를 골라주세요.';
+    $('whyNote').classList.add('bad');
+    return;
+  }
+  if (!submitWhy(false)) return;
+  lockVote();
+  $('pollDone').textContent = '투표와 의견이 기록됐습니다. 잠시 뒤 채팅이 열립니다.';
   $('lockMsg').textContent = '잠시 뒤 채팅이 열립니다';
 }
 
 /* 구독. 토글이며 취소도 그대로 남깁니다 — 누른 뒤 무른 것과 안 누른 것은 다른 행동입니다. */
 let subscribed = false;
-function toggleSub(){
+function toggleSub(where){
   subscribed = !subscribed;
-  const b = $('subBtn');
-  b.setAttribute('aria-pressed', String(subscribed));
-  b.textContent = subscribed ? '구독중' : '구독';
-  Logger.add('subscribe', {on: subscribed, at_sec: +tick.toFixed(2)});
+  $('subBtn').setAttribute('aria-pressed', String(subscribed));
+  $('subBtn').textContent = subscribed ? '구독중' : '구독';
+  $('endSub').setAttribute('aria-pressed', String(subscribed));
+  $('endSub').textContent = subscribed ? '구독중' : '구독하기';
+  // 어디서 눌렀는지가 중요합니다 — 보는 중에 누른 것과 떠날 때 누른 것은 다른 행동입니다
+  Logger.add('subscribe', {on: subscribed, where, at_sec: +tick.toFixed(2)});
 }
 
 function leave(){
@@ -1834,24 +2147,36 @@ function leave(){
     shown_ai_ratio: shownTotal ? +(shownAI / shownTotal * 100).toFixed(1) : null,
     reaction: react,
     subscribed,
+    // 끝까지 봤는지 — 마무리를 들었는지, 종료 화면까지 갔는지
+    saw_outro: outroed,
+    saw_end: ended,
     // 채팅 스크롤백 — 위로 올린 횟수, 최대 깊이, 바닥에서 떨어져 있던 시간
     scroll: {...scrollStats, away_ms: Math.round(scrollStats.away_ms)},
-    // active_ms = 커서가 움직이는 동안만 적립한 값. 분석에는 이것을 쓴다.
-    hover: hoverSummary(),
-    ...(cond.study === 2 ? {
-      vote,
-      vote_at_sec: voteAt === null ? null : +voteAt.toFixed(2),
-      unlock_at_sec: unlockAt,
-      // 채팅에 실제로 노출된 시간 — 해제가 고정 시각이므로 끝까지 본 사람은 전원 동일
-      chat_exposure_sec: (unlockAt !== null && tick > unlockAt)
-        ? +(tick - unlockAt).toFixed(2) : 0,
-      congruence: cond.cong,
-      shown_congruent: shownCong,
-      shown_incongruent: shownIncong,
-      // 체류 중 실제로 본 입장 발화 중 참가자와 일치한 비율 — 분석에 쓸 값
-      shown_congruence_ratio: (shownCong + shownIncong)
-        ? +(shownCong / (shownCong + shownIncong) * 100).toFixed(1) : null
-    } : {})
+    // 어떤 사용자 카드를 몇 번 열어봤는지 — 호버/클릭을 구분해 남깁니다
+    user_cards: Object.fromEntries(
+      Object.entries(userStats).filter(([, v]) => v.opens > 0)
+        .map(([k, v]) => [k, v.opens])),
+    vote,
+    vote_first_choice: firstVote,
+    vote_changed: firstVote !== null && firstVote !== vote,
+    vote_clicks: voteClicks,
+    // 선택지별 커서 체류 — 어느 쪽을 더 들여다봤는지
+    option_hover_ms: {...optHover},
+    option_hover_n: {...optHoverN},
+    vote_at_sec: voteAt === null ? null : +voteAt.toFixed(2),
+    unlock_at_sec: unlockAt,
+    // 채팅에 실제로 노출된 시간 — 해제가 고정 시각이므로 끝까지 본 사람은 전원 동일
+    chat_exposure_sec: (unlockAt !== null && tick > unlockAt)
+      ? +(tick - unlockAt).toFixed(2) : 0,
+    congruence: cond.cong,
+    shown_congruent: shownCong,
+    shown_incongruent: shownIncong,
+    // 체류 중 실제로 본 입장 발화 중 참가자와 일치한 비율 — 분석에 쓸 값
+    shown_congruence_ratio: (shownCong + shownIncong)
+      ? +(shownCong / (shownCong + shownIncong) * 100).toFixed(1) : null,
+    /* 위는 '피드에 붙은' 기준, 아래는 '화면에 떠 있던' 기준.
+       둘의 차이 자체가 보고할 값입니다 — 크면 측정 방식이 결과를 바꾼다는 뜻입니다. */
+    ...seenSummary()
   });
   watch.classList.remove('on');
   done.classList.add('on');
@@ -1873,62 +2198,12 @@ function send(){
   el.value = '';
 }
 
-/* ── 9. 실험자 패널 배선 ─────────────────── */
-function syncPanel(){
-  document.querySelectorAll('#segSrc button').forEach(b =>
-    b.setAttribute('aria-pressed', String(b.dataset.v === cond.src)));
-  document.querySelectorAll('#segLabel button').forEach(b =>
-    b.setAttribute('aria-pressed', String(b.dataset.v === cond.label)));
-  document.querySelectorAll('#segInput button').forEach(b =>
-    b.setAttribute('aria-pressed', String(b.dataset.v === cond.input)));
-  $('ratio').value = cond.ratio; $('ratioVal').textContent = cond.ratio + '%';
-  $('seed').value = cond.seed;   $('seedVal').textContent = cond.seed;
-  $('viewers').value = cond.viewers;
-  const d = density(cond.viewers);
-  // 설정값이 실제로 몇 %가 되는지 미리 계산해 보여줍니다 (소규모일수록 오차가 큼)
-  const pv = buildTimeline(cond, mulberry32(cond.seed * 7919 + cond.viewers), SPAN);
-  const pi = IdentityAssigner(cond, pv.d.chatters, pv.counts);
-  $('densityNote').textContent =
-    `채팅 ${(d.rate * 60).toFixed(1)}개/분 · 채팅 참여 ${d.chatters}명 · ` +
-    `AI 실제 ${pi.actual.message_ratio}% (화자 ${pi.actual.ai_chatters}/${d.chatters})`;
-  document.documentElement.dataset.theme = cond.theme === 'dark' ? 'dark' : '';
-  document.querySelectorAll('#segTheme button').forEach(b =>
-    b.setAttribute('aria-pressed', String(b.dataset.v === cond.theme)));
-  document.querySelectorAll('#segIntro button').forEach(b =>
-    b.setAttribute('aria-pressed', String(b.dataset.v === cond.intro)));
-  document.querySelectorAll('#segStudy button').forEach(b =>
-    b.setAttribute('aria-pressed', String(+b.dataset.v === cond.study)));
-  document.querySelectorAll('#segCong button').forEach(b =>
-    b.setAttribute('aria-pressed', String(b.dataset.v === cond.cong)));
-  document.querySelectorAll('#segWhy button').forEach(b =>
-    b.setAttribute('aria-pressed', String(b.dataset.v === cond.why)));
-  document.querySelectorAll('#segPollwin button').forEach(b =>
-    b.setAttribute('aria-pressed', String(+b.dataset.v === cond.pollwin)));
-  document.querySelectorAll('#segScen button').forEach(b =>
-    b.setAttribute('aria-pressed', String(b.dataset.v === cond.scen)));
-  document.querySelectorAll('.s2only').forEach(e => {
-    e.style.display = cond.study === 2 ? '' : 'none';
-  });
-
-  const CONG = {all:'전부 일치', half:'절반 일치', none:'전부 불일치'};
-  $('condLine').textContent = cond.study === 2
-    ? `Study 2 · ${CONG[cond.cong]} · ` +
-      `${cond.label === 'mixed' ? 'AI ' + cond.ratio + '%' : '전원 사람'} · ` +
-      `${cond.why === 'on' ? '이유 보임' : '입장만'} · ` +
-      `시나리오 ${cond.scen} · ` +
-      `투표 ${cond.pollwin === 0 ? '무제한' : cond.pollwin + '초'} · seed ${cond.seed}`
-    : `Study 1 · ${cond.src === 'live' ? '실시간 생성' : '고정 스크립트'} · ` +
-      `${cond.label === 'mixed' ? 'AI ' + cond.ratio + '%' : '전원 사람'} · ` +
-      `시청자 ${fmt(cond.viewers)} · seed ${cond.seed}`;
-}
-
 function restart(){
   clearInterval(timer);
   entered = false; tick = 0; chatT = 0;
   shownTotal = 0; shownAI = 0; shownCong = 0; shownIncong = 0;
   vote = null; chatOpen = true; voteAt = null; unlockAt = null;
   react = null;
-  for (const k of Object.keys(hoverStats)) delete hoverStats[k];
   ctx.lastUserMessage = null;
   Renderer.clear();
   $('poll').hidden = true;
@@ -1945,6 +2220,14 @@ function restart(){
   $('reactUp').setAttribute('aria-pressed', 'false');
   $('reactDown').setAttribute('aria-pressed', 'false');
   subscribed = false;
+  announced = false; reactQueue = [];
+  outroed = false; ended = false; outroQueue = [];
+  $('player').classList.remove('off');
+  $('endCard').hidden = true;
+  $('inputOff').textContent = '이 방송은 채팅 입력이 제한되어 있습니다.';
+  voteLocked = false; voteClicks = 0; firstVote = null; firstVoteAt = null;
+  for (const k of Object.keys(optHover)) delete optHover[k];
+  for (const k of Object.keys(optHoverN)) delete optHoverN[k];
   Object.assign(scrollStats, {up_events:0, max_depth_px:0, away_ms:0, reached_top:false});
   $('subBtn').setAttribute('aria-pressed', 'false');
   $('subBtn').textContent = '구독';
@@ -1952,77 +2235,41 @@ function restart(){
   watch.classList.remove('on');
   Logger.start();
 
-  DILEMMA = SCENARIOS[cond.scen] || SCENARIOS.A;
-  $('streamTitle').textContent = cond.study === 2
-    ? '같이 판단 좀 해줘라' : '오늘 있었던 일 좀 들어주라';
+  $('streamTitle').textContent = STREAM_TITLE;
 
   if (cond.intro === 'on'){
-    showIntro();                       // 안내 → 시작하기 → 자극물
-  } else if (cond.study === 2){
-    // study 2는 진입 의향을 보지 않으므로 탐색 화면을 건너뛰고 바로 시청으로 갑니다
-    browse.style.display = 'none';
-    enter();
+    showIntro();                       // 안내 → 시작하기 → 방송
   } else {
-    browse.style.display = '';
-    renderBrowse();
+    enter();                           // 링크를 타고 바로 입장
   }
 }
-
-function seg(id, key){
-  document.querySelectorAll('#' + id + ' button').forEach(b => {
-    b.addEventListener('click', () => { cond[key] = b.dataset.v; syncPanel(); restart(); });
-  });
-}
-seg('segSrc', 'src'); seg('segLabel', 'label'); seg('segInput', 'input');
-seg('segCong', 'cong'); seg('segWhy', 'why'); seg('segScen', 'scen');
-document.querySelectorAll('#segTheme button').forEach(b => {
-  // 테마는 자극 내용과 무관하므로 세션을 다시 시작하지 않습니다
-  b.addEventListener('click', () => { cond.theme = b.dataset.v; syncPanel(); });
+/* ── 시작 ───────────────────────────────── */
+/* 첫 진입도 restart()를 거칩니다. 예전에는 renderBrowse()를 직접 불러서
+   intro=on이어도 첫 화면에 안내 페이지가 안 떴습니다 — 조건을 바꾸거나
+   '다시 시작'을 눌러야 나왔습니다. 참가자에게는 첫 진입이 전부이므로
+   부트 경로와 재시작 경로를 하나로 둡니다. */
+/* ── 배선 ───────────────────────────────── */
+$('introGo').addEventListener('click', introGo);
+$('whyText').addEventListener('input', () => {
+  $('whyText').classList.remove('bad');
+  $('whyNote').classList.remove('bad');
+  $('whyNote').textContent = '';
 });
-document.querySelectorAll('#segStudy button').forEach(b => {
-  b.addEventListener('click', () => { cond.study = +b.dataset.v; syncPanel(); restart(); });
-});
-document.querySelectorAll('#segPollwin button').forEach(b => {
-  b.addEventListener('click', () => { cond.pollwin = +b.dataset.v; syncPanel(); restart(); });
+$('pidEmail').addEventListener('keydown', e => { if (e.key === 'Enter') introGo(); });
+$('pidEmail').addEventListener('input', () => {
+  $('pidEmail').classList.remove('bad');
+  $('idNote').classList.remove('bad');
+  $('idNote').textContent = '설문 응답과 연결하는 데만 씁니다.';
 });
 $('whySend').addEventListener('click', sendWhy);
-$('introGo').addEventListener('click', introGo);
-$('subBtn').addEventListener('click', toggleSub);
+$('subBtn').addEventListener('click', () => toggleSub('header'));
+$('endSub').addEventListener('click', () => toggleSub('endcard'));
 $('reactUp').addEventListener('click', () => setReact('up'));
 $('reactDown').addEventListener('click', () => setReact('down'));
-seg('segIntro', 'intro');
-
-$('ratio').addEventListener('input', e => {
-  cond.ratio = +e.target.value;
-  if (cond.ratio > 0 && cond.label === 'human') cond.label = 'mixed';
-  syncPanel();
-});
-$('ratio').addEventListener('change', restart);
-$('seed').addEventListener('input', e => { cond.seed = +e.target.value; syncPanel(); });
-$('seed').addEventListener('change', restart);
-$('viewers').addEventListener('change', e => {
-  cond.viewers = Math.max(1, +e.target.value || 1); syncPanel(); restart();
-});
-document.querySelectorAll('.presets button').forEach(b => {
-  b.addEventListener('click', () => {
-    const p = b.dataset.p;
-    if (p === 'A') Object.assign(cond, {src:'script', label:'human', ratio:0});
-    if (p === 'B') Object.assign(cond, {src:'script', label:'mixed', ratio:30});
-    if (p === 'C') Object.assign(cond, {src:'script', label:'mixed', ratio:60});
-    if (p === 'D') Object.assign(cond, {src:'live',   label:'mixed', ratio:30});
-    if (b.dataset.v) cond.viewers = +b.dataset.v;
-    syncPanel(); restart();
-  });
-});
-$('toggleLab').addEventListener('click', e => {
-  const open = $('labBody').classList.toggle('open');
-  e.target.setAttribute('aria-expanded', String(open));
-});
-$('restart').addEventListener('click', restart);
 $('leave').addEventListener('click', leave);
-$('again').addEventListener('click', restart);
 $('sendBtn').addEventListener('click', send);
 $('say').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+$('again').addEventListener('click', restart);
 $('dlLog').addEventListener('click', () => {
   const blob = new Blob([Logger.dump()], {type: 'application/json'});
   const a = document.createElement('a');
@@ -2037,13 +2284,9 @@ $('copyLog').addEventListener('click', async () => {
   setTimeout(() => { $('copyLog').textContent = '로그 복사'; }, 1500);
 });
 
-/* ── 시작 ───────────────────────────────── */
-/* 첫 진입도 restart()를 거칩니다. 예전에는 renderBrowse()를 직접 불러서
-   intro=on이어도 첫 화면에 안내 페이지가 안 떴습니다 — 조건을 바꾸거나
-   '다시 시작'을 눌러야 나왔습니다. 참가자에게는 첫 진입이 전부이므로
-   부트 경로와 재시작 경로를 하나로 둡니다. */
 initChatScroll();
-syncPanel();
+initSeen();
+initTextSelect();
 restart();
 </script>
 </body>

@@ -1,0 +1,274 @@
+// ════════════════════════════════════════════════════════════════════════════
+//  p107 세션 로그 — 주석판
+//
+//  - 실제 세션 1회를 끝까지 돌려 받은 로그에 설명 부착
+//  - 원본: p107_sample_log.json (142건). 여기서는 종류별 한둘씩만 수록
+//
+//  시간 필드 2종. 혼동 시 분석 어긋남
+//    t       세션 시작(페이지 로드) 기준 경과 초. 안내 페이지 체류 시간 포함
+//    at_sec  영상 시각. 방송 진입 순간이 0
+//  조건 간 비교에는 거의 항상 at_sec 사용
+// ════════════════════════════════════════════════════════════════════════════
+{
+  "pid": "p107",                      // 안내 페이지에서 받은 참가자 식별자. 설문 응답과 연결하는 열쇠
+  "session_id": "196091d6-806a-4b94-80a0-c5edf92221b0",
+                                      // 세션 1회의 UUID. Supabase events 테이블의 묶음 키
+                                      // 동일인이 두 번 열면 pid 동일, session_id 상이
+
+  // ── 조건. 설문 플랫폼이 링크의 ?c= 코드로 배정 ──────────────────────────
+  "condition": {
+    "code":    "m2",                  // 배정 코드. m2 = 절반 일치 × AI
+    "cong":    "half",                // 의견 일치도. all(100%) | half(50%) | none(0%)
+    "label":   "mixed",               // 채팅 정체성. mixed = AI, human = 실제 이용자
+    "ratio":   100,                   // AI 비율(%). label=human이면 0
+    "viewers": 1243,                  // 표시 시청자 수. 채팅 밀도의 모수
+    "seed":    7,                     // 닉네임·화자 배정 난수 seed. 동일 시 동일 채팅 재생
+    "pollwin": 0,                     // 투표 제한 시간(초). 0 = 무제한(파일럿 기본값)
+    "why":     "on",                  // 다른 시청자의 선택 이유를 문장으로 노출할지
+    "input":   "on",                  // 참가자 채팅 입력 허용
+    "intro":   "on",                  // 안내 페이지 표시
+    "theme":   "light"                // 전 조건 동일 고정
+  },
+
+  "events": [
+
+    // ══ 1. 세션 시작 ══════════════════════════════════════════════════════
+    {"t":0.03, "type":"session_start", "cond":{}},
+                                      // 페이지 열린 순간
+                                      // cond — 조건 전체 중복 기록. 분석 중 조건 유실 방지용
+
+    {"t":0.03, "type":"intro_shown", "viewers":1243, "identity":"ai"},
+                                      // 안내 페이지 노출
+                                      // identity — 참가자가 고지받은 채팅 정체성
+                                      // 조작 인지 확인의 1차 근거. 이 화면 노출은 확실
+
+    {"t":0.69, "type":"participant_id", "value":"p107", "kind":"code"},
+                                      // 입력받은 식별자
+                                      // kind — code(고유 코드) | email(이메일)
+                                      // 공백 제거·소문자 변환 후 값
+
+    {"t":0.69, "type":"intro_done", "at":0.69},
+                                      // '시작하기' 클릭 시각 = 안내 체류 시간
+                                      // 0.69초 → 사실상 미독. 조작 인지 해석 시 참고
+
+    {"t":0.69, "type":"watch_start"},
+                                      // 방송 화면 진입. 이 시점부터 at_sec 기산
+
+    // ══ 2. 이 세션에 실제 적용된 값 ═══════════════════════════════════════
+    {"t":0.69, "type":"density", "viewers":1243, "msg_per_sec":0.704,
+     "chatters":20, "planned_messages":205},
+                                      // 시청자 수에서 파생된 채팅 밀도
+                                      // msg_per_sec      초당 메시지 수. Flores-Saviaga(2019) 실측 보간
+                                      // chatters         실제 발화자 수. 1,243명 중 20명만 작성
+                                      // planned_messages 영상 전체 메시지 총수
+                                      // 밀도는 실험자 조작 대상 아님. 시청자 수 종속 함수
+
+    {"t":0.69, "type":"ai_allocation", "target_ratio":100, "method":"greedy-restart",
+     "chatter_ratio":100, "message_ratio":100,
+     "ai_chatters":20, "chatters":20, "ai_messages":205, "total_messages":205},
+                                      // 설정값 대 실제 배정. 분석 시 실제값 사용
+                                      // target_ratio   설정 AI 비율
+                                      // message_ratio  실제 메시지 기준 AI 비율  ← 분석용
+                                      // chatter_ratio  실제 화자 기준 AI 비율
+                                      // method         배정 알고리즘. 화자 18명 이하 시 exhaustive(전수 탐색)
+                                      // 화자 수가 적으면 설정값 정확 일치 불가. 30% 설정에 실제 25% 가능
+
+    {"t":0.69, "type":"stance_slots", "congruence":"half", "bodySlots":53, "congSlots":27},
+                                      // 입장(찬반) 발화 자리 배분
+                                      // bodySlots  입장 부착 가능 자리 수. 짧은 리액션 제외
+                                      // congSlots  그중 참가자 일치 측 할당 수
+                                      // 27/53 = 50.9%. 홀수라 정확한 50% 불가
+                                      // 문장은 투표 후 결정. 이 시점은 자리만 확보
+
+    // ══ 3. 입장 — 진행 중인 방송에 중도 합류 ═════════════════════════════
+    {"t":0.74, "type":"comment_shown", "name":"하루끝붙박이", "kind":"ai",
+     "text":"ㅋㅋㅋㅋ", "stance":null, "before_join":true},
+                                      // before_join: true — 참가자 입장 전 기존 대화
+                                      // 입장 순간 14줄 일괄 적재. 중도 입장 연출
+                                      // 입장(stance) 없음 → 일치도 분석에서 제외
+                                      // kind — ai | human | me(참가자) | sys(플랫폼 공지)
+
+    {"t":2.25, "type":"comment_shown", "kind":"ai", "name":"wkdwkd28", "text":"오오"},
+                                      // before_join·phase 둘 다 없음 → ① 입장~예고 구간의 평상 잡담
+                                      // 주제 비의존 발화만 사용. 투표 전 의견 오염 방지 목적
+
+    {"t":5.98, "type":"text_select", "at_sec":5, "where":"chat", "chars":16,
+     "text":"drl01시간 왜 이렇게 빨라", "msg_name":"ghkdrl01", "msg_kind":"ai"},
+                                      // 마우스 드래그로 텍스트 선택
+                                      // where     chat | poll(투표 카드) | other
+                                      // msg_name  대상 메시지 작성자   msg_kind  그 작성자의 AI 여부
+                                      // text가 닉네임부터 걸린 이유 — 닉네임 span 안에서 드래그 시작
+                                      // 주의: 복사 의도와 짚어 읽기 구분 불가
+                                      //       '주의 집중'으로 직결 해석 금지. 탐색 지표로만 사용
+
+    {"t":8.29, "type":"visibility", "state":"visible"},
+                                      // 탭 가림·복귀 시각. state — visible | hidden
+                                      // hidden 구간은 체류 시간에서 차감해야 실제 시청 시간 산출
+
+    {"t":8.51, "type":"chat_scroll", "at_sec":7.75, "depth_px":0,
+     "up_events":0, "reached_top":false},
+                                      // 채팅 스크롤. 연속 동작은 0.5초 단위로 1건 병합
+                                      // depth_px     바닥에서 떨어진 거리. 0 = 최신 메시지 열람 중
+                                      // up_events    위로 올린 누적 횟수. 지난 채팅 역방향 열람
+                                      // reached_top  맨 위 도달 여부
+
+    // ══ 4. 밸런스게임 예고 (22초) ════════════════════════════════════════
+    {"t":22.75, "type":"poll_announced", "at_sec":22},
+                                      // 영상에서 스트리머가 "투표 올릴게, 채팅 닫을게" 발화하는 시점
+                                      // 채팅에는 미표시. 실제 플랫폼이 투표 예고를 채팅에 쓰지 않는 관행 반영
+                                      // 실제 클립 투입 시 스트리머 발화를 이 시각에 정렬
+
+    {"t":24, "type":"comment_shown", "name":"나른한오후", "kind":"ai",
+     "text":"채팅 닫는대?", "stance":null, "phase":"pre_poll"},
+                                      // phase: 'pre_poll' — ② 예고 반응 구간(22~30초)
+                                      // 공지 부재 → 이 반응들이 참가자가 받는 유일한 신호
+                                      // 입장 없는 메타 발화. 일치도 조작과 무관
+
+    // ══ 5. 투표 (30초) ═══════════════════════════════════════════════════
+    {"t":30.75, "type":"poll_shown", "at_sec":30, "window_sec":0},
+                                      // 투표 카드 노출 + 채팅 잠김
+                                      // window_sec — 제한 시간. 0이면 무제한
+
+    {"t":34.9, "type":"option_hover", "choice":"A", "dur_ms":1150, "at_sec":34,
+     "voted":null, "locked":false},
+                                      // 선택지 커서 체류. 60ms 미만(통과 커서) 폐기
+                                      // voted   해당 시점 선택. null = 미선택
+                                      // locked  확정 여부. true = 확정 후 재열람
+                                      // 주의: 체류 시간의 '숙고' 해석 금지
+                                      //       Evans et al.(2015) — 반응 시간은 선택지 간 '갈등' 반영
+
+    {"t":37.5, "type":"vote_click", "choice":"A", "label":"맨손 남자 100명",
+     "from":null, "changed":false, "seq":1, "at_sec":36.5},
+    {"t":39.05, "type":"vote_click", "choice":"B", "label":"고릴라 1마리",
+     "from":"A", "changed":true, "seq":2, "at_sec":38.25},
+    {"t":40.9, "type":"vote_click", "choice":"A", "label":"맨손 남자 100명",
+     "from":"B", "changed":true, "seq":3, "at_sec":40},
+                                      // 클릭 단위 기록. 보내기 전까지 변경 자유
+                                      // from     직전 선택. 첫 클릭이면 null
+                                      // changed  변경 여부
+                                      // seq      클릭 순번
+                                      // 본 사례 — A → B → A 회귀. 1회 확정자와 구분 대상
+
+    {"t":42.16, "type":"vote_reason",
+     "text":"고릴라가 아무리 세도 100명이 동시에 덮치면 못 버틸 것 같아서",
+     "length":36, "auto":false, "at_sec":41.25},
+                                      // 노출 전 입장의 서술형 기록. 사실상 필수 항목
+                                      // length  글자 수. 무성의 응답 1차 선별 기준
+                                      // auto    true = 제한 시간 경과로 자동 제출(제한 모드 한정)
+                                      // 인식적 신뢰·공유된 현실감 분석의 기준점
+                                      // 노출 후 참가자 채팅과 대조 → 논거 차용·입장 이동 산출
+
+    {"t":42.16, "type":"vote", "choice":"A", "label":"맨손 남자 100명", "at_sec":41.25,
+     "first_choice":"A", "first_at_sec":36.5, "changed":false,
+     "n_clicks":3, "settle_sec":4.75, "late":false, "unlock_at":44.25},
+                                      // 확정 투표. 보내기 시점에 투표·이유 동시 잠금
+                                      // choice        최종 선택  ← 일치도 조작 기준
+                                      // first_choice  최초 선택
+                                      // changed       최초와 최종의 상이 여부. 본 사례 A→B→A라 false
+                                      // n_clicks      3. 순 변경 없으나 동요 사실 보존
+                                      // first_at_sec  최초 클릭 시각. 카드 노출 후 6.5초
+                                      // settle_sec    최초 선택 후 확정까지 4.75초. 망설임 길이
+                                      // late          제한 시간 초과 투표 여부
+                                      // unlock_at     채팅 해제 예정 시각. 무제한이면 확정 + 3초
+
+    {"t":45, "type":"chat_unlocked", "at_sec":44.25, "scheduled_at":44.25},
+                                      // 채팅 재개. 이 시점부터 입장 부착 발화 유입
+                                      // 무제한 모드라 참가자별 상이 → 분석 시 공변량 투입
+                                      // 제한 모드(pollwin>0)에서는 전 참가자 동일 시각
+
+    // ══ 6. 노출 — 일치/불일치 발화 ═══════════════════════════════════════
+    {"t":45.5, "type":"comment_shown", "kind":"ai", "name":"야식금지95",
+     "text":"고릴라는 원래 싸우는 동물이 아니라고 들었음", "stance":"A"},
+                                      // stance 존재 = 입장 부착 발화
+                                      // 참가자 투표가 A → stance:"A" 일치, "B" 불일치
+                                      // stance는 절대 입장값. '일치 여부' 아님 → 투표와 대조 필수
+                                      // 문장은 투표 후 결정. 투표 전에는 자리만 존재
+
+    {"t":46, "type":"comment_shown", "kind":"ai", "name":"주말만기다려",
+     "text":"가죽이랑 근육 두께가 차원이 다름", "stance":"B"},
+                                      // 불일치 발화. half 조건이라 A·B 교대 배치
+
+    // ══ 7. 참가자 행동 ═══════════════════════════════════════════════════
+    {"t":54.45, "type":"user_card_open", "name":"하루끝붙박이", "is_ai":true,
+     "how":"hover", "at_sec":53.5, "opens":1},
+    {"t":55, "type":"user_card_close", "name":"하루끝붙박이", "how":"hover",
+     "dur_ms":553, "at_sec":54.25},
+                                      // 채팅 사용자 카드 열람. 해당 사용자의 유형·메시지 수 표시
+                                      // how     hover(커서 거치) | click(닉네임 클릭 고정)
+                                      // opens   해당 사용자 카드 누적 열람 횟수
+                                      // dur_ms  열람 지속 시간
+                                      // 닉네임만으로 AI 식별 불가(라벨만 상이)
+                                      //   → 카드 열람 = 정보 확인 행동
+                                      // 주의: 호버는 비용 0 → '정보 탐색'으로 해석 금지
+                                      //       Kang et al.(2009)는 희소 자원 지불이 전제. click은 비용 존재
+
+    {"t":55.88, "type":"user_card_open", "name":"하루끝붙박이", "is_ai":true,
+     "how":"click", "at_sec":55, "opens":2},
+                                      // 동일 사용자를 클릭으로 재열람. opens 2로 증가
+
+    {"t":57.73, "type":"user_comment", "text":"나도 숫자가 이긴다고 봄"},
+                                      // 참가자 작성 채팅 전문. 작성은 선택 사항
+                                      // 글자 수·횟수·유무 모두 DV. 질은 평가 대상 아님
+                                      // 입장 코딩 후 vote_reason과 대조 → 노출 후 이동 산출
+
+    {"t":61.83, "type":"reaction", "value":"up", "at_sec":61},
+                                      // 좋아요·싫어요. value — up | down | null(취소)
+                                      // 클릭 유도 안내 없음. 자리만 배치 후 자발적 클릭만 측정
+
+    {"t":64.41, "type":"subscribe", "on":true, "where":"header", "at_sec":63.5},
+                                      // 구독 토글. on:false = 취소
+                                      // where — header(시청 중 영상 하단) | endcard(방송 종료 후 추천 화면)
+                                      // 동일 구독이어도 상이한 행동. 종료 시점 구독이 '붙잡힘'에 근접
+
+    // ══ 8. 방송 마무리와 종료 ════════════════════════════════════════════
+    {"t":67, "type":"outro_started", "at_sec":200},
+                                      // 스트리머 마무리 발화 시점. 채팅이 인사로 전환
+                                      // 이후 comment_shown에 phase:"outro" 부착
+                                      // t와 at_sec의 큰 격차 — 테스트에서 시계 건너뜀
+                                      // 실제 세션에서는 양자 동행
+
+    {"t":72, "type":"stream_ended", "at_sec":230},
+                                      // 화면 종료 + 추천 화면 노출 시각
+                                      // 이 시점까지 잔류했다는 사실 자체가 체류 DV
+
+    {"t":73.84, "type":"next_video_click", "index":1,
+     "title":"밸런스게임 모음 2시간", "at_sec":230},
+                                      // 종료 화면 추천 영상 클릭. 실제 이동 없음
+                                      // 이동 허용 시 자극물 이탈로 이후 행동 관측 불가
+
+    // ══ 9. 종료 요약 — 세션 1회를 1행으로 ════════════════════════════════
+    {"t":74.49, "type":"leave",
+     "dwell_sec":230,                 // 총 체류 시간. 영상 시각 기준
+     "comments_typed":2,              // 참가자 작성 채팅 수
+     "shown_messages":42,             // 체류 중 실제 화면 노출 메시지 수
+     "shown_ai":42,                   // 그중 AI 라벨 부착 수
+     "shown_ai_ratio":100,            // 실제 노출 AI 비율(%)  ← 설정값 아닌 이 값 사용
+     "reaction":"up",                 // 최종 반응 상태
+     "subscribed":true,               // 최종 구독 여부
+     "saw_outro":true,                // 마무리 청취 여부
+     "saw_end":true,                  // 종료 화면 도달 여부
+     "scroll":{"up_events":1, "max_depth_px":0, "away_ms":0, "reached_top":false},
+                                      // 스크롤백 요약. away_ms — 바닥 이탈 총 시간(ms)
+     "user_cards":{"하루끝붙박이":2},   // 사용자별 카드 열람 횟수
+     "vote":"A", "vote_first_choice":"A", "vote_changed":false, "vote_clicks":3,
+                                      // 투표 요약. 순 변경 없음, 클릭 3회
+     "option_hover_ms":{"A":3258, "B":3607},
+     "option_hover_n":{"A":3, "B":2},
+                                      // 선택지별 누적 체류·횟수. B 체류가 길었으나 A 선택
+     "unlock_at_sec":44.25,           // 채팅 해제 시각
+     "chat_exposure_sec":185.75,      // 해제 후 잔류 시간 = 조작 노출 실시간
+     "congruence":"half",             // 설정 일치도
+     "shown_congruent":9,             // 실제 노출 일치 발화 수
+     "shown_incongruent":13,          // 실제 노출 불일치 발화 수
+     "shown_congruence_ratio":40.9},  // 실제 일치 비율(%)
+                                      // ★ 설정 50% 대 실제 40.9%
+                                      //   중도 이탈·스크롤 미하강 시 설정값과 괴리 발생
+                                      //   조건 효과는 설정값(congruence)으로 묶되
+                                      //   실측값은 공변량 또는 처치강도로 병기
+
+    {"t":75.33, "type":"page_hide"}
+                                      // 탭·창 종료 시각. 잔여 이벤트 서버 전송 시점
+                                      // '방송 나가기' 미클릭 후 창만 닫은 참가자
+                                      //   → leave 없이 page_hide만 잔존. 이탈로 처리
+  ]
+}
