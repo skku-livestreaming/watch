@@ -266,12 +266,20 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 }
 .msg.sys .nm,.msg.sys .ic{cursor:default}
 /* ── 시청 화면 ─────────────────────────── */
-.watch{display:none;grid-template-columns:minmax(0,1fr) 352px;gap:0}
+.watch{display:none;grid-template-columns:minmax(0,1fr) var(--chatw,352px);gap:0}
 .watch.on{display:grid;height:calc(100vh - 56px);height:calc(100dvh - 56px);min-height:520px}
 .stage{min-width:0;overflow-y:auto;overscroll-behavior:contain;padding:20px 22px 30px}
 .stage::-webkit-scrollbar{width:10px}
 .stage::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px;border:3px solid var(--page)}
+/* 영상이 16:9를 꽉 채우면 화면이 낮을 때 제목·채널 줄이 접힘선 아래로 밀립니다.
+   영상 아래 블록이 들어갈 높이를 빼고 남은 만큼으로 가로폭 상한을 둬서,
+   영상이 먼저 줄어들게 합니다. */
 .stagein{max-width:1240px;margin:0 auto}
+.playwrap{
+  max-width:min(1240px, calc((100vh - 232px) * 16 / 9));
+  max-width:min(1240px, calc((100dvh - 232px) * 16 / 9));
+  margin:0 auto;
+}
 .playwrap{position:relative}
 .player{
   position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden;
@@ -375,24 +383,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
   padding:3px 7px;border-radius:4px;
 }
 
-/* 재생 컨트롤 바. 장식입니다 — 포인터 이벤트를 빼서 죽은 클릭이 생기지 않게 합니다. */
-.pbar{
-  position:absolute;left:0;right:0;bottom:0;z-index:4;
-  pointer-events:none;user-select:none;padding:22px 12px 9px;
-  background:linear-gradient(transparent,rgba(0,0,0,.66));
-}
-.pbar .track{height:3px;border-radius:2px;background:rgba(255,255,255,.26);overflow:hidden}
-.pbar .track i{display:block;height:100%;width:100%;background:var(--live)}
-.pbar .row{display:flex;align-items:center;gap:14px;color:#eef1f6;margin-top:9px}
-.pbar svg{width:18px;height:18px;fill:currentColor;display:block}
-.pbar .vol{display:flex;align-items:center;gap:7px}
-.pbar .volbar{width:50px;height:3px;border-radius:2px;background:rgba(255,255,255,.32)}
-.pbar .volbar i{display:block;height:100%;width:64%;background:#fff;border-radius:2px}
-.pbar .clock{font-size:12px;font-variant-numeric:tabular-nums;color:rgba(255,255,255,.82)}
-.pbar .sp{flex:1}
-@media (max-width:620px){
-  .pbar .vol .volbar{display:none}
-  .pbar .row{gap:11px}
+/* 경과 시간만 남깁니다. 볼륨·재생·위치조절바는 눌러도 아무 일이 없어
+   참가자가 한 번 눌러보는 순간 자극물이 깨집니다 — 전부 뺐습니다. */
+.player .clock{
+  position:absolute;right:12px;bottom:12px;z-index:4;
+  font-size:11.5px;color:rgba(255,255,255,.75);font-variant-numeric:tabular-nums;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(4px);padding:3px 8px;border-radius:4px;
 }
 
 /* ── 스트리머 행 ─────────────────────────── */
@@ -481,7 +477,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 /* ── 반응 버튼 ─────────────────────────── */
 .reacts{display:inline-flex;gap:6px}
 /* 방송 종료 화면 */
-.player.off .scene,.player.off .ph-tag,.player.off .plrow,.player.off .pbar{opacity:0}
+.player.off .scene,.player.off .ph-tag,.player.off .plrow,.player.off .clock{opacity:0}
 .player.off{background:#07080b}
 .endcard{
   position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;
@@ -604,6 +600,15 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
    높이를 내용에 맡기면 채팅이 쌓일수록 늘어나므로 바깥 칸을 기준으로 깝니다. */
 .chatcol{position:relative;min-width:0}
 .chatcol>.chat{position:absolute;inset:0}
+/* 채팅창 폭 조절. 실제 플랫폼에도 있는 손잡이이고, 참가자가 채팅을 넓혔는지
+   좁혔는지 자체가 기록할 만한 행동입니다(chat_resize). */
+.chatgrip{
+  position:absolute;left:-3px;top:0;bottom:0;width:7px;z-index:7;
+  cursor:col-resize;background:transparent;border:0;padding:0;
+}
+.chatgrip:hover,.chatgrip.on{background:var(--accent-tint)}
+.chatgrip:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+body.resizing{cursor:col-resize;user-select:none}
 .chat header{
   padding:0 8px 0 15px;height:52px;flex:none;
   border-bottom:1px solid var(--line);background:var(--bg);
@@ -680,6 +685,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 @media (max-width:860px){
   .watch.on{grid-template-columns:minmax(0,1fr);height:auto;min-height:0}
   .stage{overflow:visible;padding:12px 12px 16px}
+  .chatgrip{display:none}
   .chatcol{position:static}
   .chatcol>.chat{
     position:static;height:min(62vh,470px);
@@ -775,22 +781,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
         </div>
         <span class="ph-tag">영상 자리</span>
 
-        <!-- 재생 컨트롤. 실제 플랫폼 화면에 늘 있는 요소라 자리만 둡니다. -->
-        <div class="pbar" aria-hidden="true">
-          <div class="track"><i></i></div>
-          <div class="row">
-            <svg viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
-            <span class="vol">
-              <svg viewBox="0 0 24 24"><path d="M4 9h3.2L12 5v14L7.2 15H4zM15.5 8.5a5 5 0 0 1 0 7l1.4 1.4a7 7 0 0 0 0-9.8z"/></svg>
-              <span class="volbar"><i></i></span>
-            </span>
-            <span class="clock" id="clock">0:00</span>
-            <span class="sp"></span>
-            <svg viewBox="0 0 24 24"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zm9-1.1-1.4-2.4-2.3.7a7.6 7.6 0 0 0-1.6-.9L15.3 2H8.7l-.4 2.4c-.6.2-1.1.5-1.6.9l-2.3-.7L3 7.4l1.8 1.6a7.4 7.4 0 0 0 0 1.9L3 12.6 4.4 15l2.3-.7c.5.4 1 .7 1.6.9l.4 2.4h6.6l.4-2.4c.6-.2 1.1-.5 1.6-.9l2.3.7L21 12.6l-1.8-1.6a7.4 7.4 0 0 0 0-1.9z"/></svg>
-            <svg viewBox="0 0 24 24"><path d="M3 5h18v14H3zm2 2v10h14V7z"/></svg>
-            <svg viewBox="0 0 24 24"><path d="M4 4h6v2H6v4H4zm10 0h6v6h-2V6h-4zM4 14h2v4h4v2H4zm14 0h2v6h-6v-2h4z"/></svg>
-          </div>
-        </div>
+        <span class="clock" id="clock">0:00</span>
 
         <!-- 방송 종료 후 추천. 실제 플랫폼이 영상이 끝나면 띄우는 화면입니다.
              여기서의 구독·다음 영상 클릭이 마지막 행동 지표입니다. -->
@@ -869,7 +860,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
       </section>
     </div></div>
 
-    <div class="chatcol"><aside class="chat">
+    <div class="chatcol" id="chatcol">
+      <button class="chatgrip" id="chatGrip" aria-label="채팅창 폭 조절"></button>
+      <aside class="chat">
       <header>실시간 채팅 <span class="aiq" id="chatAi"></span>
         <span class="hic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zm9-1.1-1.4-2.4-2.3.7a7.6 7.6 0 0 0-1.6-.9L15.3 2H8.7l-.4 2.4c-.6.2-1.1.5-1.6.9l-2.3-.7L3 7.4l1.8 1.6a7.4 7.4 0 0 0 0 1.9L3 12.6 4.4 15l2.3-.7c.5.4 1 .7 1.6.9l.4 2.4h6.6l.4-2.4c.6-.2 1.1-.5 1.6-.9l2.3.7L21 12.6l-1.8-1.6a7.4 7.4 0 0 0 0-1.9z"/></svg></span>
       </header>
@@ -1538,6 +1531,51 @@ document.addEventListener('click', e => {
   }
 });
 
+/* 채팅창 폭 조절. 끌어 놓은 결과만 한 건 남깁니다 — 끄는 내내 남기면
+   로그가 좌표로 뒤덮입니다. */
+const CHAT_MIN = 288, CHAT_MAX = 560, CHAT_DEF = 352;
+function initChatResize(){
+  const grip = $('chatGrip'), col = $('chatcol');
+  if (!grip || !col) return;
+  let dragging = false, startX = 0, startW = 0;
+  const widthNow = () => col.getBoundingClientRect().width;
+  const apply = w => watch.style.setProperty('--chatw', Math.round(w) + 'px');
+
+  grip.addEventListener('pointerdown', e => {
+    dragging = true; startX = e.clientX; startW = widthNow();
+    grip.setPointerCapture(e.pointerId);
+    grip.classList.add('on'); document.body.classList.add('resizing');
+    e.preventDefault();
+  });
+  grip.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    apply(Math.min(CHAT_MAX, Math.max(CHAT_MIN, startW - (e.clientX - startX))));
+  });
+  const stop = e => {
+    if (!dragging) return;
+    dragging = false;
+    grip.classList.remove('on'); document.body.classList.remove('resizing');
+    const to = Math.round(widthNow());
+    if (Math.abs(to - startW) >= 4){
+      Logger.add('chat_resize', {from: Math.round(startW), to,
+                                 delta: to - Math.round(startW), at_sec: +tick.toFixed(2)});
+    }
+  };
+  grip.addEventListener('pointerup', stop);
+  grip.addEventListener('pointercancel', stop);
+  // 키보드로도 조절 가능하게 둡니다 — 포인터만 지원하면 접근성 기준에 걸립니다
+  grip.addEventListener('keydown', e => {
+    const step = e.shiftKey ? 48 : 16;
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const from = Math.round(widthNow());
+    apply(Math.min(CHAT_MAX, Math.max(CHAT_MIN, from + (e.key === 'ArrowLeft' ? step : -step))));
+    const to = Math.round(widthNow());
+    if (to !== from) Logger.add('chat_resize', {from, to, delta: to - from,
+                                                how: 'key', at_sec: +tick.toFixed(2)});
+    e.preventDefault();
+  });
+}
+
 /* 아바타 색. 닉네임만으로 정해지므로 조건·세션을 넘어 같은 닉네임은 같은 색입니다.
    채도·명도는 고정이라 어떤 닉네임에서도 흰 글자가 읽힙니다. */
 function avColor(s){
@@ -1755,26 +1793,46 @@ function seenSummary(){
    읽는 것일 수도 있습니다. 어느 쪽인지는 해석하지 않고 사실만 남깁니다.
    선택이 끝난 시점(mouseup/touchend)에 한 번만 기록합니다. */
 function initTextSelect(){
+  /* mouseup에 걸면 놓치는 경우가 생깁니다 — 창 밖에서 손을 떼거나, 더블클릭으로
+     단어를 잡거나, 키보드·터치로 고를 때입니다. selectionchange는 어떤 방식이든
+     잡습니다. 다만 드래그하는 내내 계속 울리므로, 손을 멈춘 뒤 한 번만 남깁니다. */
+  let timer = 0, last = '';
   const record = () => {
     const sel = document.getSelection();
-    if (!sel || sel.isCollapsed) return;
+    if (!sel || sel.isCollapsed){ last = ''; return; }
     const txt = sel.toString().trim();
-    if (txt.length < 2) return;
+    if (txt.length < 2){ last = ''; return; }
+    if (txt === last) return;              // 같은 선택을 두 번 남기지 않습니다
+    last = txt;
+    /* 아바타 글자와 AI·입장 배지는 긁은 '내용'이 아니므로 로그에서 뺍니다.
+       CSS로 선택을 막으면 그 위에서 시작한 드래그가 통째로 안 잡힙니다. */
+    let body = txt;
+    try {
+      const frag = sel.getRangeAt(0).cloneContents();
+      frag.querySelectorAll('.ic,.aib,.stance').forEach(n => n.remove());
+      const t = frag.textContent.trim();
+      if (t.length >= 2) body = t;
+    } catch (e) {}
     const node = sel.anchorNode;
     const el = node && (node.nodeType === 1 ? node : node.parentElement);
     const msg = el && el.closest('.msg');
     const inChat = Boolean(el && el.closest('.chat'));
+    const ic = msg && msg.querySelector('.ic');
     Logger.add('text_select', {
       at_sec: +tick.toFixed(2),
       where: inChat ? 'chat' : (el && el.closest('.poll') ? 'poll' : 'other'),
-      chars: txt.length,
-      text: txt.slice(0, 120),
-      msg_name: msg ? (msg.querySelector('.nm') || {}).textContent || null : null,
-      msg_kind: msg ? (msg.querySelector('.ic') ? msg.querySelector('.ic').className.replace('ic ', '') : null) : null
+      chars: body.length,
+      text: body.slice(0, 120),
+      lines: msg ? 1 : null,               // 한 줄 안인지, 여러 줄에 걸쳤는지
+      msg_name: msg ? ((msg.querySelector('.nm') || {}).textContent || null) : null,
+      msg_kind: ic ? ic.className.replace('ic ', '') : null,
+      is_ai: msg ? Boolean(msg.querySelector('.aib')) : null
     });
   };
-  document.addEventListener('mouseup', () => setTimeout(record, 0));
-  document.addEventListener('touchend', () => setTimeout(record, 0), {passive: true});
+  document.addEventListener('selectionchange', () => {
+    clearTimeout(timer);
+    timer = setTimeout(record, 280);       // 손을 멈춘 뒤
+  });
 }
 
 /* ── 6. 로거 ─────────────────────────────── */
@@ -1928,6 +1986,10 @@ function buildSources(){
 }
 
 let shownTotal = 0, shownAI = 0;            // 참가자가 실제로 본 메시지 기준 집계
+/* 화면에 올라간 모든 줄의 대본. 이벤트에는 줄 번호(i)만 남기고 본문은 여기 한 번만
+   들고 있다가, 종료할 때 chat_script 한 건으로 내보냅니다 — 줄마다 본문을 남기면
+   로그의 대부분이 채팅 대본이 되어 정작 행동 이벤트가 묻힙니다. */
+const shownLines = [];
 let shownCong = 0, shownIncong = 0;         // study 2: 노출된 일치/불일치 발화
 let vote = null, chatOpen = true;           // study 2: 참가자 투표와 채팅 잠금 상태
 let voteAt = null, unlockAt = null;         // 투표 시각과 확정된 해제 시각
@@ -1944,18 +2006,18 @@ function loop(){
   while (reactQueue.length && reactQueue[0].t <= tick){
     const m = reactQueue.shift();
     Renderer.push({kind: m.kind, name: m.name, text: m.text});
-    Logger.add('comment_shown', {
-      name: m.name, kind: m.kind, text: m.text, stance: null, phase: 'pre_poll'
-    });
+    shownLines.push({i: shownLines.length, name: m.name, kind: m.kind,
+                     stance: null, ph: 'pre_poll', t: +tick.toFixed(2), text: m.text});
+    Logger.add('comment_shown', {i: shownLines.length - 1, kind: m.kind, ph: 'pre_poll'});
   }
   if (!vote && tick >= POLL_AT && $('poll').hidden){ showPoll(); lockChat(); }
   if (!outroed && tick >= OUTRO_AT) startOutro();
   while (outroQueue.length && outroQueue[0].t <= tick){
     const m = outroQueue.shift();
     Renderer.push({kind: m.kind, name: m.name, text: m.text});
-    Logger.add('comment_shown', {
-      name: m.name, kind: m.kind, text: m.text, stance: null, phase: 'outro'
-    });
+    shownLines.push({i: shownLines.length, name: m.name, kind: m.kind,
+                     stance: null, ph: 'outro', t: +tick.toFixed(2), text: m.text});
+    Logger.add('comment_shown', {i: shownLines.length - 1, kind: m.kind, ph: 'outro'});
   }
   if (!ended && tick >= END_AT){ endStream(); return; }
   if (!$('poll').hidden && !vote) tickTimer();
@@ -1983,8 +2045,10 @@ function loop(){
     if (r.stance) (r.stance === vote ? shownCong++ : shownIncong++);
 
     Renderer.push(c);
-    Logger.add('comment_shown',
-      {kind: c.kind, name: c.name, text: c.text, ...(r.stance ? {stance: r.stance} : {})});
+    shownLines.push({i: shownLines.length, name: c.name, kind: c.kind,
+                     stance: r.stance || null, ph: 'main', t: +tick.toFixed(2), text: c.text});
+    Logger.add('comment_shown', {i: shownLines.length - 1, kind: c.kind,
+                                 ...(r.stance ? {stance: r.stance} : {})});
   }
 }
 
@@ -2150,9 +2214,9 @@ function seedBacklog(){
   for (const raw of source.pre){
     const c = ident.assign(raw);          // 화자 배분도 타임라인과 같은 규칙을 따릅니다
     Renderer.push({kind: c.kind, name: c.name, text: c.text});
-    Logger.add('comment_shown', {
-      name: c.name, kind: c.kind, text: c.text, stance: null, before_join: true
-    });
+    shownLines.push({i: shownLines.length, name: c.name, kind: c.kind,
+                     stance: null, ph: 'before_join', t: 0, text: c.text});
+    Logger.add('comment_shown', {i: shownLines.length - 1, kind: c.kind, ph: 'before_join'});
   }
   feed.scrollTop = feed.scrollHeight;
 }
@@ -2489,6 +2553,9 @@ function leave(){
        둘의 차이 자체가 보고할 값입니다 — 크면 측정 방식이 결과를 바꾼다는 뜻입니다. */
     ...seenSummary()
   });
+  /* 채팅 대본은 마지막에 한 건으로 내보냅니다. 줄 번호(i)가 comment_shown과
+     per_line 노출 기록의 열쇠입니다. */
+  Logger.add('chat_script', {lines: shownLines.length, script: shownLines});
   watch.classList.remove('on');
   done.classList.add('on');
   $('logbox').value = Logger.dump();
@@ -2513,6 +2580,7 @@ function restart(){
   clearInterval(timer);
   entered = false; tick = 0; chatT = 0;
   shownTotal = 0; shownAI = 0; shownCong = 0; shownIncong = 0;
+  shownLines.length = 0;
   vote = null; chatOpen = true; voteAt = null; unlockAt = null;
   react = null;
   ctx.lastUserMessage = null;
@@ -2598,6 +2666,7 @@ $('copyLog').addEventListener('click', async () => {
 initChatScroll();
 initSeen();
 initTextSelect();
+initChatResize();
 restart();
 </script>
 </body>
