@@ -1,12 +1,18 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>라이브 스트리밍 자극물 프로토타입</title>
+<!-- 본문 글꼴은 Pretendard. 국내 서비스가 실제로 쓰는 글꼴이라 '만든 티'가 덜합니다.
+     jsdelivr가 막힌 환경(아티팩트 미리보기 등)에서는 Noto Sans KR로 떨어집니다. -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" as="style" crossorigin
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script>
   /* 첫 페인트 전에 테마를 적용합니다. 기본은 화이트이므로 dark일 때만 속성을 붙입니다. */
   try {
@@ -52,6 +58,11 @@
   --stance-a-ink:#2a52b4;
   --stance-b-bg:rgba(224,49,39,.12);
   --stance-b-ink:#c22a21;
+  --msg-hover:rgba(22,24,28,.045);  /* 채팅 한 줄에 커서 — 실제 플랫폼의 행 강조 */
+  --chip:#eef0f4;                   /* 카테고리·언어 태그 */
+  --chip-ink:#4b5260;
+  --chip-line:#e2e5eb;
+  --shade:rgba(22,24,28,.065);      /* 아이콘 버튼 hover */
   /* 영상 안쪽은 어느 테마에서도 어둡습니다 — 고정값 */
   --video-1:#232833;
   --video-2:#141820;
@@ -64,7 +75,9 @@
   --svg-body:#39414f;
   --svg-head:#4a5363;
   --svg-dark:#1b1f27;
-  --font:'Noto Sans KR',system-ui,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  --font:'Pretendard Variable',Pretendard,'Noto Sans KR',system-ui,-apple-system,
+         'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  --page:#f1f2f5;     /* 콘텐츠 바깥 바닥색 */
 }
 /* ── 다크 테마 (theme=dark) ─────────────── */
 :root[data-theme="dark"]{
@@ -102,6 +115,12 @@
   --stance-b-ink:#f08b82;
   --badge-bg:rgba(0,0,0,.72);
   --badge-ink:#ffffff;
+  --msg-hover:rgba(255,255,255,.055);
+  --chip:#232833;
+  --chip-ink:#aab3c2;
+  --chip-line:#2e3441;
+  --shade:rgba(255,255,255,.08);
+  --page:#07080a;
 }
 *,*::before,*::after{box-sizing:inherit}
 /* display를 지정한 요소(.locked, .poll-why, .feed 등)에서 hidden 속성이
@@ -109,15 +128,17 @@
 [hidden]{display:none!important}
 html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
 body{
-  margin:0;height:100%;background:var(--bg);color:var(--ink);
+  margin:0;height:100%;background:var(--page);color:var(--ink);
   font-family:var(--font);font-size:15px;line-height:1.5;
-  -webkit-font-smoothing:antialiased;
+  letter-spacing:-.003em;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
 }
 button{font-family:inherit;font-size:inherit;cursor:pointer}
 button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
   outline:2px solid var(--accent);outline-offset:2px;
 }
-.wrap{max-width:1180px;margin:0 auto;padding:0 16px 64px}
+/* 시청 화면은 화면을 꽉 채웁니다. 안내·종료 화면만 가운데 좁은 단으로 둡니다. */
+.wrap{margin:0;padding:0}
 
 /* ── 실험자 패널 ───────────────────────── */
 #lab{
@@ -167,17 +188,53 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .presets button:hover{color:var(--ink)}
 .hint{grid-column:1/-1;font-size:12.5px;color:var(--ink-faint);margin:0;line-height:1.7}
 
-/* ── 공통 헤더(플랫폼 흉내) ─────────────── */
+/* ── 공통 헤더(플랫폼 흉내) ──────────────
+   검색창·알림·프로필은 전부 장식입니다. 포인터 이벤트와 탭 순서에서 빼
+   둬서, 눌렀는데 아무 일도 없는 경험이 생기지 않게 합니다. */
 .site{
+  position:sticky;top:env(safe-area-inset-top,0px);z-index:30;
   border-bottom:1px solid var(--line);background:var(--bg);
 }
 .site .inner{
-  max-width:1180px;margin:0 auto;padding:13px 16px;
-  display:flex;align-items:center;gap:14px;
+  margin:0;padding:0 22px;height:56px;
+  display:flex;align-items:center;gap:24px;
 }
-.logo{font-weight:700;letter-spacing:-.02em;font-size:17px}
-.logo em{font-style:normal;color:var(--accent)}
-.navdim{color:var(--ink-faint);font-size:13.5px}
+.logo{
+  display:flex;align-items:center;gap:8px;
+  font-weight:700;letter-spacing:-.025em;font-size:16.5px;
+}
+.logo .mk{
+  width:24px;height:24px;border-radius:7px;flex:none;
+  background:var(--ink);display:grid;place-items:center;
+}
+.logo .mk svg{width:10px;height:10px;fill:var(--bg);display:block}
+.nav{display:flex;align-items:center;gap:19px;font-size:14px}
+.nav span{color:var(--ink-faint)}
+.nav span.sel{color:var(--ink);font-weight:600}
+.search{
+  margin-left:auto;display:flex;align-items:center;gap:8px;
+  width:clamp(160px,26vw,290px);height:34px;padding:0 12px;
+  background:var(--panel);border:1px solid var(--line);border-radius:17px;
+  color:var(--ink-faint);font-size:13.5px;
+}
+.search svg{width:15px;height:15px;fill:currentColor;flex:none}
+.site .ico{
+  width:34px;height:34px;border-radius:50%;flex:none;
+  display:grid;place-items:center;color:var(--ink-dim);
+}
+.site .ico svg{width:19px;height:19px;fill:currentColor;display:block}
+.site .me{
+  width:30px;height:30px;border-radius:50%;flex:none;
+  display:grid;place-items:center;overflow:hidden;
+  background:var(--chip);color:var(--ink-faint);
+}
+.site .me svg{width:26px;height:26px;fill:currentColor;display:block;margin-bottom:-4px}
+.site .deco{pointer-events:none;user-select:none}
+@media (max-width:860px){
+  .nav,.site .ico{display:none}
+  .search{margin-left:auto;width:auto;flex:1;max-width:none}
+}
+@media (max-width:460px){.search{display:none}.site .inner{gap:14px}}
 
 /* ── 탐색 화면 ─────────────────────────── */
 /* 채팅 사용자 카드 — 플랫폼의 프로필 팝오버와 같은 역할. */
@@ -189,11 +246,10 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 }
 .uc-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .uc-ic{
-  width:26px;height:26px;border-radius:50%;flex:none;
-  display:grid;place-items:center;font-size:10px;font-weight:800;
-  background:var(--ic-bg);color:var(--ic-ink);
+  width:30px;height:30px;border-radius:50%;flex:none;
+  display:grid;place-items:center;font-size:13px;font-weight:700;
+  background:#7a828f;color:#fff;
 }
-.uc-ic.ai{background:var(--ai-tint);color:var(--ai);border:1px solid var(--ai-border)}
 .uc-nm{font-weight:700;font-size:13px;word-break:break-all}
 .uc-rows{display:flex;flex-direction:column;gap:4px}
 .uc-row{display:flex;justify-content:space-between;gap:10px}
@@ -210,91 +266,206 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 }
 .msg.sys .nm,.msg.sys .ic{cursor:default}
 /* ── 시청 화면 ─────────────────────────── */
-.watch{display:none;grid-template-columns:minmax(0,1fr) 336px;gap:18px;margin-top:22px}
-.watch.on{display:grid}
-.stage{min-width:0}
+.watch{display:none;grid-template-columns:minmax(0,1fr) 352px;gap:0}
+.watch.on{display:grid;height:calc(100vh - 56px);height:calc(100dvh - 56px);min-height:520px}
+.stage{min-width:0;overflow-y:auto;overscroll-behavior:contain;padding:20px 22px 30px}
+.stage::-webkit-scrollbar{width:10px}
+.stage::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px;border:3px solid var(--page)}
+.stagein{max-width:1240px;margin:0 auto}
 .playwrap{position:relative}
 .player{
-  position:relative;aspect-ratio:16/9;border-radius:10px;overflow:hidden;
-  background:linear-gradient(170deg,var(--video-1),var(--video-2) 68%);
+  position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden;
+  background:#0a0c11;box-shadow:0 2px 14px rgba(16,20,28,.1);
 }
+
+/* ── 영상 장면 ───────────────────────────
+   실제 클립으로 교체할 자리입니다. 늦은 밤 저챗 방송의 방 한 칸을 깔아 둡니다 —
+   얼굴은 그리지 않습니다. 그려 넣은 외형은 조건과 무관한 변수가 되고,
+   또렷한 그림은 영상이 아니라 삽화로 읽힙니다. */
+.scene{position:absolute;inset:0;overflow:hidden;background:#0a0c10}
+/* 뒷벽 — 오른쪽 위 조명이 번지고 왼쪽은 떨어집니다 */
+.vs-wall{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(58% 64% at 72% 18%,rgba(255,196,136,.26),transparent 74%),
+    radial-gradient(46% 54% at 22% 42%,rgba(86,106,158,.18),transparent 76%),
+    linear-gradient(176deg,#141821,#0a0c11 62%,#06070a);
+  animation:breathe 11s ease-in-out infinite alternate;
+}
+@keyframes breathe{from{opacity:.9}to{opacity:1}}
+/* 벽 LED 띠 — 한국 저챗 방에서 흔한 요소입니다 */
+.vs-led{
+  position:absolute;left:4%;right:34%;top:15%;height:4px;border-radius:3px;
+  background:linear-gradient(90deg,rgba(120,98,220,0),rgba(126,104,226,.5),rgba(72,142,222,.42),rgba(72,142,222,0));
+  filter:blur(5px);
+}
+/* 선반 — 실루엣 두 줄과 그 위 소품 */
+.vs-shelf{position:absolute;left:3%;top:26%;width:30%;height:34%;filter:blur(3px)}
+.vs-shelf i{position:absolute;left:0;right:0;height:5px;background:#0b0e14;border-radius:1px}
+.vs-shelf i:nth-child(1){top:0}
+.vs-shelf i:nth-child(2){top:54%}
+.vs-shelf b{position:absolute;bottom:100%;width:9px;background:#0d1118;border-radius:1px 1px 0 0}
+/* 모니터 역광 — 인물 왼쪽 가장자리를 차갑게 띄웁니다 */
+.vs-mon{
+  position:absolute;left:12%;bottom:12%;width:30%;height:36%;
+  background:radial-gradient(60% 70% at 70% 40%,rgba(118,168,244,.19),transparent 74%);
+  filter:blur(10px);
+}
+.vs-bokeh{position:absolute;inset:0;filter:blur(9px)}
+.vs-bokeh i{position:absolute;border-radius:50%;display:block}
+/* 마이크 암 — 화면 오른쪽에서 들어옵니다 */
+.vs-mic{position:absolute;right:6%;top:26%;width:24%;height:38%;filter:blur(6px);opacity:.78}
+.vs-mic .arm{
+  position:absolute;right:0;top:0;width:100%;height:5px;background:#0b0e15;
+  transform:rotate(17deg);transform-origin:right center;border-radius:3px;
+}
+.vs-mic .cap{
+  position:absolute;left:4%;top:10%;width:15%;height:30%;background:#0b0e15;
+  border-radius:44%/36%;
+}
+/* 인물 — 머리와 어깨만. 윤곽은 흐리게 두고 조명 쪽 가장자리만 살립니다. */
+.vs-fig{
+  position:absolute;left:47%;bottom:11%;width:36%;max-width:252px;height:60%;
+  transform:translateX(-50%);filter:blur(2.5px);
+}
+.vs-fig .hd{
+  position:absolute;left:50%;top:0;width:36%;height:30%;transform:translateX(-50%);
+  border-radius:48%;background:#070910;
+  box-shadow:5px -3px 18px 1px rgba(255,198,142,.17),-6px 2px 16px 0 rgba(118,168,244,.12);
+}
+.vs-fig .bd{
+  position:absolute;left:0;right:0;top:27%;bottom:0;background:#070910;
+  border-radius:52% 52% 0 0/46% 46% 0 0;
+  box-shadow:6px -4px 22px 0 rgba(255,198,142,.1),-7px 0 20px 0 rgba(118,168,244,.08);
+}
+/* 책상 앞면 — 위 모서리에만 반사광 */
+.vs-desk{
+  position:absolute;left:0;right:0;bottom:0;height:14%;
+  background:linear-gradient(#0b0e14,#04050800 2px),linear-gradient(#0a0d12,#040507 70%);
+  box-shadow:inset 0 1px 0 rgba(255,196,146,.11);
+}
+/* 렌즈 느낌 — 입자와 비네트. 둘 다 없으면 평평한 벡터 그림처럼 보입니다. */
+.vs-grain{
+  position:absolute;inset:-50%;opacity:.055;pointer-events:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='120' height='120' filter='url(%23n)'/></svg>");
+}
+.vs-vig{
+  position:absolute;inset:0;
+  box-shadow:inset 0 0 120px 36px rgba(0,0,0,.66),inset 0 -40px 60px -20px rgba(0,0,0,.5);
+}
+
+/* 영상 위 배지. LIVE와 시청자 수는 실제 플랫폼이 왼쪽 위에 함께 둡니다. */
+.plrow{position:absolute;left:12px;top:12px;z-index:3;display:flex;align-items:center;gap:7px}
+.player .live{
+  display:flex;align-items:center;gap:5px;background:var(--live);color:#fff;
+  padding:3px 8px;border-radius:4px;font-size:11.5px;font-weight:700;letter-spacing:.02em;
+}
+.dot{width:6px;height:6px;border-radius:50%;background:#fff;animation:pulse 2s infinite}
+@keyframes pulse{50%{opacity:.35}}
+.live-stat{
+  display:flex;align-items:center;gap:5px;color:#eef1f6;
+  background:rgba(0,0,0,.52);backdrop-filter:blur(4px);
+  padding:3px 9px;border-radius:4px;
+  font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums;
+}
+.live-stat .eye{width:13px;height:13px;fill:currentColor;display:block;opacity:.8}
 .ph-tag{
-  position:absolute;left:12px;bottom:12px;z-index:3;
-  font-size:11px;color:var(--on-video);background:rgba(0,0,0,.5);
+  position:absolute;right:12px;top:12px;z-index:3;
+  font-size:10px;color:rgba(255,255,255,.4);background:rgba(0,0,0,.3);
   padding:3px 7px;border-radius:4px;
 }
-/* 영상 위 상시 수치 패널 — 시청 중에도 조작값이 계속 보이게. */
-.live-stat{
-  position:absolute;right:12px;top:12px;z-index:4;
-  display:flex;gap:16px;align-items:flex-end;
-  background:rgba(10,12,16,.82);backdrop-filter:blur(6px);
-  border:1px solid rgba(255,255,255,.16);border-radius:10px;
-  padding:10px 16px;color:#fff;
+
+/* 재생 컨트롤 바. 장식입니다 — 포인터 이벤트를 빼서 죽은 클릭이 생기지 않게 합니다. */
+.pbar{
+  position:absolute;left:0;right:0;bottom:0;z-index:4;
+  pointer-events:none;user-select:none;padding:22px 12px 9px;
+  background:linear-gradient(transparent,rgba(0,0,0,.66));
 }
-.live-stat .unit{display:flex;flex-direction:column;gap:2px;line-height:1}
-.live-stat .lbl{font-size:11px;opacity:.75;letter-spacing:.02em}
-.live-stat .num{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
-.live-stat .num small{font-size:13px;font-weight:500;margin-left:1px;opacity:.85}
-.live-stat .unit.ai .num{color:#6fe3c2}
-.live-stat .unit.ai .lbl{color:#9fe8d3}
-.live-stat .sep{width:1px;align-self:stretch;background:rgba(255,255,255,.2)}
-@media (max-width:860px){
-  .live-stat{right:8px;top:8px;padding:7px 11px;gap:11px}
-  .live-stat .num{font-size:19px}
+.pbar .track{height:3px;border-radius:2px;background:rgba(255,255,255,.26);overflow:hidden}
+.pbar .track i{display:block;height:100%;width:100%;background:var(--live)}
+.pbar .row{display:flex;align-items:center;gap:14px;color:#eef1f6;margin-top:9px}
+.pbar svg{width:18px;height:18px;fill:currentColor;display:block}
+.pbar .vol{display:flex;align-items:center;gap:7px}
+.pbar .volbar{width:50px;height:3px;border-radius:2px;background:rgba(255,255,255,.32)}
+.pbar .volbar i{display:block;height:100%;width:64%;background:#fff;border-radius:2px}
+.pbar .clock{font-size:12px;font-variant-numeric:tabular-nums;color:rgba(255,255,255,.82)}
+.pbar .sp{flex:1}
+@media (max-width:620px){
+  .pbar .vol .volbar{display:none}
+  .pbar .row{gap:11px}
 }
-.player .live{
-  position:absolute;left:12px;top:12px;z-index:3;display:flex;align-items:center;gap:6px;
-  background:rgba(0,0,0,.55);padding:4px 9px;border-radius:5px;font-size:12px;font-weight:700;
+
+/* ── 스트리머 행 ─────────────────────────── */
+.info{padding:15px 2px 17px;border-bottom:1px solid var(--line)}
+.info h2{margin:0;font-size:18.5px;font-weight:700;letter-spacing:-.015em;line-height:1.35}
+.info .row{display:flex;align-items:center;gap:11px;margin-top:13px;flex-wrap:wrap}
+.chan{display:flex;align-items:center;gap:10px;min-width:0}
+.chan .av{
+  width:42px;height:42px;border-radius:50%;flex:none;
+  display:grid;place-items:center;font-size:16px;font-weight:700;color:#fff;
+  background:linear-gradient(145deg,#4a6ea8,#2f4570);
 }
-.dot{width:7px;height:7px;border-radius:50%;background:var(--live);animation:pulse 2s infinite}
-@keyframes pulse{50%{opacity:.35}}
-.player .clock{
-  position:absolute;right:10px;bottom:10px;z-index:3;font-size:12px;color:var(--on-video);
-  background:rgba(0,0,0,.55);padding:3px 8px;border-radius:4px;font-variant-numeric:tabular-nums;
-}
-.scene{position:absolute;inset:0;display:grid;place-items:center}
-.scene svg{width:58%;max-width:330px;height:auto}
-.mouth{transform-origin:center;animation:talk 1.1s infinite}
-@keyframes talk{0%,100%{transform:scaleY(.4)}45%{transform:scaleY(1.15)}}
-.info{padding:14px 2px 0;border-bottom:1px solid var(--line);padding-bottom:16px}
-.info h2{margin:0;font-size:17px;font-weight:700}
-.info .row{display:flex;align-items:center;gap:10px;margin-top:9px;flex-wrap:wrap}
-.who{font-size:14px;font-weight:500}
-.cnt{font-size:14.5px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.chan .txt{display:flex;flex-direction:column;gap:1px;min-width:0}
+.who{font-size:14.5px;font-weight:700;letter-spacing:-.01em}
+.cnt{font-size:12.5px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
 .cnt.ai{color:var(--ai)}
-.leave{
-  margin-left:auto;background:var(--panel-2);border:1px solid var(--line);
-  color:var(--ink-dim);border-radius:7px;padding:7px 13px;font-size:13.5px;
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{
+  background:var(--chip);border:1px solid var(--chip-line);color:var(--chip-ink);
+  border-radius:12px;padding:3px 10px;font-size:12px;font-weight:500;
 }
+.acts-r{display:flex;align-items:center;gap:8px;margin-left:auto}
+.leave{
+  background:transparent;border:1px solid var(--line);
+  color:var(--ink-faint);border-radius:18px;padding:7px 14px;font-size:13px;
+}
+@media (max-width:860px){.tags{display:none}}
 /* 구독 버튼. 누르라는 안내는 두지 않습니다 — 반응 버튼과 같은 원칙. */
 .sub{
   background:var(--accent);color:var(--on-accent);
-  border:1px solid var(--accent);border-radius:7px;
-  padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
+  border:1px solid var(--accent);border-radius:18px;
+  padding:7px 17px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
 }
+.sub:hover{filter:brightness(1.08)}
 .sub[aria-pressed="true"]{
-  background:var(--panel-2);color:var(--ink-dim);border-color:var(--line-2);font-weight:600;
+  background:var(--panel-2);color:var(--ink-dim);border-color:var(--line);font-weight:600;
 }
-.leave:hover{color:var(--ink)}
+.leave:hover{color:var(--ink-dim);border-color:var(--line-2)}
+
+/* ── 방송 정보 ─────────────────────────── */
+.about{
+  margin-top:16px;background:var(--bg);border:1px solid var(--line);
+  border-radius:12px;padding:17px 19px;
+}
+.ab-hd{margin:0 0 9px;font-size:14px;font-weight:700;letter-spacing:-.015em}
+.ab-txt{margin:0 0 15px;font-size:13.5px;color:var(--ink-dim);line-height:1.7;max-width:62ch}
+.ab-rows{display:flex;flex-wrap:wrap;gap:9px 34px}
+.ab-row{display:flex;align-items:baseline;gap:10px;font-size:13px}
+.ab-row .k{color:var(--ink-faint);min-width:58px}
+.ab-row .v{font-weight:600;font-variant-numeric:tabular-nums}
 
 /* ── 안내 페이지 ───────────────────────── */
-.intro{display:none;max-width:580px;margin:56px auto 0}
+.intro{display:none;max-width:498px;margin:72px auto 0;padding:0 18px 64px}
 .intro.on{display:block}
-.intro h1{font-size:21px;font-weight:700;margin:0 0 12px}
-.intro-lead{margin:0 0 20px;font-size:14.5px;color:var(--ink-dim);line-height:1.7}
+.intro h1{font-size:25px;font-weight:700;margin:0 0 14px;letter-spacing:-.025em;line-height:1.3}
+.intro-lead{margin:0 0 24px;font-size:15px;color:var(--ink-dim);line-height:1.8}
 .intro-card{
-  background:var(--panel);border:1px solid var(--line);border-radius:10px;
-  padding:18px 20px;display:flex;flex-direction:column;gap:11px;
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:6px 18px;display:flex;flex-direction:column;
 }
-.intro-row{display:flex;align-items:baseline;gap:12px;font-size:14.5px}
-.intro-row .k{color:var(--ink-faint);font-size:13px;min-width:78px}
+.intro-row{
+  display:flex;align-items:baseline;gap:14px;font-size:14.5px;
+  padding:13px 0;border-top:1px solid var(--line);
+}
+.intro-row:first-child{border-top:0}
+.intro-row .k{color:var(--ink-faint);font-size:13px;min-width:72px;flex:none}
 .intro-row .v{font-weight:700;font-variant-numeric:tabular-nums}
 .intro-row .v.ai{color:var(--ai)}
-.intro-note{margin:16px 0 0;font-size:13px;color:var(--ink-faint);line-height:1.7}
-.intro-id{display:flex;flex-direction:column;gap:7px;margin:20px 0 4px}
-.intro-id label{font-size:14px;font-weight:600}
+.intro-note{margin:14px 2px 0;font-size:13px;color:var(--ink-faint);line-height:1.7}
+.intro-id{display:flex;flex-direction:column;gap:8px;margin:30px 0 4px}
+.intro-id label{font-size:14px;font-weight:600;line-height:1.5}
 .intro-id input{
-  font:inherit;font-size:15px;padding:11px 13px;border-radius:8px;
+  font:inherit;font-size:15px;padding:13px 14px;border-radius:9px;
   border:1px solid var(--line-2);background:var(--bg);color:var(--ink);
 }
 .intro-id input:focus{outline:2px solid var(--accent);outline-offset:-1px}
@@ -302,63 +473,76 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .id-note{font-size:12.5px;color:var(--ink-faint)}
 .id-note.bad{color:var(--live);font-weight:600}
 .intro-go{
-  margin-top:22px;background:var(--accent);border:0;border-radius:8px;
-  color:var(--on-accent);font-weight:700;padding:12px 26px;font-size:14.5px;
+  margin-top:26px;width:100%;background:var(--accent);border:0;border-radius:9px;
+  color:var(--on-accent);font-weight:700;padding:14px 26px;font-size:15px;
 }
+.intro-go:hover{filter:brightness(1.08)}
 
 /* ── 반응 버튼 ─────────────────────────── */
 .reacts{display:inline-flex;gap:6px}
 /* 방송 종료 화면 */
-.player.off .scene,.player.off .ph-tag,.player.off .live,.player.off .clock{opacity:0}
-.player.off{background:#0b0d11}
+.player.off .scene,.player.off .ph-tag,.player.off .plrow,.player.off .pbar{opacity:0}
+.player.off{background:#07080b}
 .endcard{
   position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:10px;padding:18px;
-  background:rgba(8,10,14,.92);color:#eef1f6;text-align:center;
+  align-items:center;justify-content:center;gap:11px;padding:18px;
+  background:radial-gradient(70% 70% at 50% 40%,rgba(22,27,37,.95),rgba(6,7,10,.97));
+  color:#eef1f6;text-align:center;
 }
-.ec-hd{margin:0;font-size:15px;font-weight:700}
+.ec-hd{margin:0;font-size:15.5px;font-weight:700;letter-spacing:-.01em}
 .ec-sub{
-  background:var(--accent);color:var(--on-accent);border:0;border-radius:8px;
-  padding:9px 22px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;
+  background:var(--accent);color:#fff;border:0;border-radius:19px;
+  padding:9px 24px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;
 }
 .ec-sub[aria-pressed="true"]{background:rgba(255,255,255,.14);color:#cfd5df}
-.ec-lb{margin:6px 0 0;font-size:12px;color:rgba(255,255,255,.6)}
-.ec-grid{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.ec-lb{margin:8px 0 0;font-size:12px;color:rgba(255,255,255,.55)}
+.ec-grid{display:flex;gap:11px;flex-wrap:wrap;justify-content:center}
 .ec-item{
-  width:140px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
-  border-radius:8px;padding:0 0 8px;overflow:hidden;cursor:pointer;
+  width:142px;background:transparent;border:0;padding:0;overflow:hidden;cursor:pointer;
   color:#eef1f6;font-family:inherit;text-align:left;
 }
-.ec-item:hover{background:rgba(255,255,255,.13)}
-.ec-thumb{display:block;height:62px;background:linear-gradient(140deg,#2a3140,#1a1f29)}
-.ec-t{display:block;font-size:12px;font-weight:600;line-height:1.35;padding:7px 8px 0}
-.ec-v{display:block;font-size:11px;color:rgba(255,255,255,.55);padding:3px 8px 0}
+.ec-item:hover .ec-thumb{filter:brightness(1.22)}
+.ec-item:hover .ec-t{color:#fff}
+.ec-thumb{
+  display:block;height:80px;border-radius:7px;position:relative;
+  background:linear-gradient(145deg,#2c3545,#13171f);
+}
+.ec-thumb:after{
+  content:attr(data-d);position:absolute;right:5px;bottom:5px;
+  background:rgba(0,0,0,.76);color:#fff;font-size:10.5px;font-weight:600;
+  padding:1px 5px;border-radius:3px;font-variant-numeric:tabular-nums;
+}
+.ec-t{display:block;font-size:12.5px;font-weight:600;line-height:1.35;padding:8px 1px 0;color:#dde2ea}
+.ec-v{display:block;font-size:11px;color:rgba(255,255,255,.5);padding:3px 1px 0}
 @media (max-width:860px){
-  .endcard{gap:7px;padding:12px}
-  .ec-item{width:118px}
-  .ec-thumb{height:52px}
+  .endcard{gap:8px;padding:12px}
+  .ec-item{width:116px}
+  .ec-thumb{height:64px}
 }
 
+.reacts{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:1px;gap:0}
 .react{
-  background:var(--panel-2);border:1px solid var(--line);color:var(--ink-dim);
-  border-radius:7px;padding:6px 11px;font-size:13px;line-height:1;
+  background:transparent;border:0;color:var(--ink-dim);
+  border-radius:17px;padding:6px 13px;font-size:13px;line-height:1;
   font-variant-numeric:tabular-nums;
   display:inline-flex;align-items:center;gap:5px;cursor:pointer;
 }
+.react:first-child{box-shadow:1px 0 0 var(--line)}
 /* 엄지 아이콘은 SVG로 둡니다. 이모지(👍)는 기기마다 글꼴이 달라
    참가자가 보는 자극물이 윈도우·맥·안드로이드에서 제각각이 됩니다. */
 .react .th{width:16px;height:16px;fill:currentColor;display:block}
 .react.down .th{transform:rotate(180deg)}
-.react:hover{color:var(--ink)}
-.react[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:700}
+.react:hover{color:var(--ink);background:var(--shade)}
+.react[aria-pressed="true"]{color:var(--accent);font-weight:700}
 .react .rc{margin-left:3px}
 
 /* ── Study 2: 영상 위 투표 오버레이 ──────────
    영상 위라 어느 테마에서도 어둡습니다 — 고정 색을 씁니다. */
 .poll{
-  position:absolute;left:12px;right:12px;bottom:12px;z-index:5;
-  background:rgba(14,16,20,.93);border:1px solid rgba(255,255,255,.14);
-  border-radius:10px;padding:13px 15px;backdrop-filter:blur(6px);color:#eef1f6;
+  position:absolute;left:12px;right:12px;bottom:52px;z-index:5;
+  background:rgba(12,14,18,.94);border:1px solid rgba(255,255,255,.13);
+  border-radius:12px;padding:14px 16px;backdrop-filter:blur(8px);color:#eef1f6;
+  box-shadow:0 14px 40px rgba(0,0,0,.45);
   max-width:560px;animation:pollIn .22s ease-out;
 }
 @keyframes pollIn{from{opacity:0;transform:translateY(10px)}}
@@ -368,13 +552,14 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
   background:var(--live);color:#fff;padding:2px 7px;border-radius:3px;
 }
 .poll-timer{font-size:12px;color:#aab3c2;font-variant-numeric:tabular-nums;margin-left:auto}
-.poll-q{margin:0;font-size:14.5px;font-weight:700;line-height:1.4}
-.poll-body{margin:7px 0 0;font-size:13px;color:#b7c0cf;line-height:1.55;white-space:pre-line}
+.poll-q{margin:0;font-size:16px;font-weight:700;line-height:1.4;letter-spacing:-.015em}
+.poll-body{margin:8px 0 0;font-size:13.5px;color:#aeb8c8;line-height:1.6;white-space:pre-line}
 .poll-opts{display:flex;gap:9px;margin-top:12px;flex-wrap:wrap}
 .poll-opts button{
-  flex:1 1 180px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);
-  color:#eef1f6;border-radius:8px;padding:13px;font-size:14px;font-weight:600;
+  flex:1 1 180px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);
+  color:#eef1f6;border-radius:10px;padding:15px;font-size:15px;font-weight:600;
   text-align:center;line-height:1.35;cursor:pointer;font-family:inherit;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07);transition:background .12s,border-color .12s;
 }
 .poll-opts button:hover:not(:disabled){border-color:#8fa8ef;background:rgba(255,255,255,.12)}
 .poll-opts button:disabled{opacity:.45;cursor:default}
@@ -402,7 +587,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:10px;color:var(--ink-faint);font-size:13.5px;text-align:center;padding:20px;
 }
-.lock-ic{font-size:24px;opacity:.5}
+.lock-ic svg{width:26px;height:26px;fill:currentColor;opacity:.42;display:block}
 .msg .stance{
   display:inline-block;font-size:10.5px;font-weight:700;border-radius:3px;
   padding:0 4px;margin-right:5px;vertical-align:1px;
@@ -412,42 +597,71 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .msg .why{color:var(--ink-dim)}
 
 .chat{
-  display:flex;flex-direction:column;background:var(--panel);
-  border:1px solid var(--line);border-radius:10px;overflow:hidden;height:min(74vh,620px);
+  display:flex;flex-direction:column;background:var(--bg);overflow:hidden;
+  border-left:1px solid var(--line);
 }
+/* 채팅은 화면 오른쪽 끝에 붙어 세로로 꽉 찹니다 — 실제 플랫폼의 자리입니다.
+   높이를 내용에 맡기면 채팅이 쌓일수록 늘어나므로 바깥 칸을 기준으로 깝니다. */
+.chatcol{position:relative;min-width:0}
+.chatcol>.chat{position:absolute;inset:0}
 .chat header{
-  padding:10px 13px;border-bottom:1px solid var(--line);
-  font-size:13.5px;color:var(--ink-dim);display:flex;align-items:center;gap:8px;
+  padding:0 8px 0 15px;height:52px;flex:none;
+  border-bottom:1px solid var(--line);background:var(--bg);
+  font-size:14px;font-weight:700;letter-spacing:-.015em;color:var(--ink);
+  display:flex;align-items:center;gap:8px;
 }
-.chat header .aiq{margin-left:auto;color:var(--ai);font-size:12.5px}
-.feed{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:9px}
-.msg{font-size:14px;line-height:1.45;word-break:break-word;animation:in .18s ease-out}
+.chat header .hic{
+  margin-left:auto;width:30px;height:30px;border-radius:50%;flex:none;
+  display:grid;place-items:center;color:var(--ink-faint);pointer-events:none;
+}
+.chat header .hic svg{width:17px;height:17px;fill:currentColor;display:block}
+.chat header .aiq{color:var(--ai);font-size:12.5px;font-weight:500}
+/* 채팅은 아래에서부터 쌓입니다. flex-end 대신 첫 줄에 margin-top:auto를 줘야
+   줄이 넘칠 때 위로 스크롤이 막히지 않습니다. */
+.feed{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px;min-height:0}
+.feed>.msg:first-child{margin-top:auto}
+.feed::-webkit-scrollbar{width:9px}
+.feed::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:5px;border:3px solid var(--bg)}
+.msg{
+  font-size:14px;line-height:1.55;word-break:break-word;animation:in .18s ease-out;
+  padding:6px 8px;border-radius:7px;
+}
+.msg:hover{background:var(--msg-hover)}
 @keyframes in{from{opacity:0;transform:translateY(5px)}}
-.msg .nm{font-weight:700;margin-right:5px}
+.msg .nm{font-weight:700;margin-right:4px;letter-spacing:-.01em}
+.msg .nm:after{content:':';color:var(--ink-faint);font-weight:400;margin-left:1px}
 .msg .nm.human{color:var(--nick)}
-.msg .nm.ai{color:var(--ai)}
+.msg .nm.ai{color:var(--nick)}   /* 닉네임 색까지 다르면 조건 간 차이가 라벨 하나를 넘어섭니다 */
 .msg .nm.me{color:var(--lab)}
+/* 프로필 사진 자리. 닉네임에서 색을 뽑아 모든 채터가 같은 모양을 갖습니다 —
+   빈 회색 점만 두면 사람 조건의 채팅창이 눈에 띄게 비어 보입니다. */
 .ic{
-  display:inline-block;width:15px;height:15px;border-radius:4px;margin-right:5px;
-  vertical-align:-2px;font-size:9.5px;line-height:15px;text-align:center;font-weight:700;
+  display:inline-block;width:20px;height:20px;border-radius:50%;margin-right:6px;
+  vertical-align:-5px;font-size:10.5px;line-height:20px;text-align:center;
+  font-weight:700;color:#fff;background:#7a828f;
 }
-.ic.human{background:var(--ic-bg);color:var(--ic-ink);border-radius:50%}  /* 글자가 없는 칸이라 사각형이면 깨진 이미지처럼 보입니다 — 기본 프로필 점으로 */
-.ic.ai{background:var(--ai-tint);color:var(--ai);border:1px solid var(--ai-border)}
-.ic.me{background:var(--lab-tint);color:var(--lab)}
-.chat footer{padding:10px;border-top:1px solid var(--line);display:flex;gap:8px}
+.ic.me{background:#8a5d00}
+/* 조건 간 유일한 차이. 실제 플랫폼이 닉네임 앞에 붙이는 배지 자리와 같습니다. */
+.aib{
+  display:inline-block;vertical-align:1px;margin-right:5px;
+  background:var(--ai-tint);color:var(--ai);border:1px solid var(--ai-border);
+  border-radius:3px;padding:0 4px;font-size:10px;font-weight:800;letter-spacing:.03em;
+}
+.chat footer{padding:12px;border-top:1px solid var(--line);display:flex;gap:8px;flex:none}
 .chat input{
-  flex:1;min-width:0;background:var(--panel-2);border:1px solid var(--line);
-  border-radius:7px;color:var(--ink);padding:9px 11px;font-family:inherit;font-size:14px;
+  flex:1;min-width:0;background:var(--panel);border:1px solid var(--line);
+  border-radius:8px;color:var(--ink);padding:10px 12px;font-family:inherit;font-size:14px;
 }
+.chat input:focus{outline:none;border-color:var(--line-2);background:var(--bg)}
 .chat input::placeholder{color:var(--ink-faint)}
 .chat button.send{
-  background:var(--accent);border:0;border-radius:7px;color:var(--on-accent);
-  font-weight:700;padding:0 15px;font-size:13.5px;
+  background:var(--accent);border:0;border-radius:8px;color:var(--on-accent);
+  font-weight:700;padding:0 16px;font-size:13.5px;
 }
 .chat .off{padding:11px 13px;font-size:13px;color:var(--ink-faint);border-top:1px solid var(--line)}
 
 /* ── 종료/로그 ─────────────────────────── */
-.done{display:none;margin:40px auto;max-width:640px;text-align:center}
+.done{display:none;margin:48px auto;max-width:640px;padding:0 18px 64px;text-align:center}
 .done.on{display:block}
 .done h2{font-size:20px;margin:0 0 10px}
 .done p{color:var(--ink-dim);margin:0 0 20px}
@@ -464,8 +678,13 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .done .acts button:hover{color:var(--ink)}
 
 @media (max-width:860px){
-  .watch.on{grid-template-columns:minmax(0,1fr)}
-  .chat{height:min(60vh,460px)}
+  .watch.on{grid-template-columns:minmax(0,1fr);height:auto;min-height:0}
+  .stage{overflow:visible;padding:12px 12px 16px}
+  .chatcol{position:static}
+  .chatcol>.chat{
+    position:static;height:min(62vh,470px);
+    border-left:0;border-top:1px solid var(--line);
+  }
   /* 좁은 화면에서는 영상 위에 겹치지 않습니다. 딜레마 본문이 3줄이라
      16:9 영역 안에 들어가지 않고, 겹치면 질문 첫 줄부터 잘립니다. */
   .poll{
@@ -487,9 +706,17 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 
 <!-- ══ 플랫폼 헤더 ══ -->
 <div class="site" id="siteBar"><div class="inner">
-  <span class="logo">Live Streaming</span>
-  <span class="navdim">라이브</span>
-  <span class="navdim">카테고리</span>
+  <span class="logo deco">
+    <span class="mk"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.6 0.6 8.9 5 1.6 9.4z"/></svg></span>
+    오늘라이브
+  </span>
+  <nav class="nav deco"><span class="sel">라이브</span><span>팔로잉</span><span>카테고리</span></nav>
+  <span class="search deco">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 1.4-1.4-5.4-5.4A8 8 0 0 0 10 2zm0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12z"/></svg>
+    채널, 카테고리 검색
+  </span>
+  <span class="ico deco"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a6 6 0 0 0-6 6v3.6l-1.7 3.1A1 1 0 0 0 5.2 16h13.6a1 1 0 0 0 .9-1.3L18 11.6V8a6 6 0 0 0-6-6zm0 19a3 3 0 0 0 2.8-2H9.2a3 3 0 0 0 2.8 2z"/></svg></span>
+  <span class="me deco" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 12a4.6 4.6 0 1 0 0-9.2 4.6 4.6 0 0 0 0 9.2zm0 1.9c-3.6 0-8 1.8-8 4.3V21h16v-2.8c0-2.5-4.4-4.3-8-4.3z"/></svg></span>
 </div></div>
 
 <div class="wrap">
@@ -514,27 +741,56 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 
   <!-- ══ 시청 화면 ══ -->
   <section class="watch" id="watch">
-    <div class="stage">
+    <div class="stage"><div class="stagein">
       <!-- 영상과 투표 카드를 한 상자에 둡니다. 투표 카드는 넓은 화면에서
            이 상자 기준으로 영상 아래쪽에 겹치고, 좁은 화면에서는 아래로 흐릅니다. -->
       <div class="playwrap">
       <div class="player" id="player">
-        <div class="live"><span class="dot"></span>LIVE</div>
-        <span class="ph-tag">영상 자리 · 실제 클립으로 교체</span>
-        <div class="live-stat" id="liveStat"></div>
-        <div class="scene">
-          <svg viewBox="0 0 300 190" aria-hidden="true">
-            <rect x="0" y="150" width="300" height="40" fill="var(--svg-floor)"/>
-            <rect x="196" y="36" width="74" height="52" rx="3" fill="var(--svg-prop)"/>
-            <rect x="34" y="60" width="48" height="66" rx="4" fill="var(--svg-prop)"/>
-            <path d="M104 150c0-28 18-46 46-46s46 18 46 46z" fill="var(--svg-body)"/>
-            <circle cx="150" cy="78" r="27" fill="var(--svg-head)"/>
-            <circle cx="140" cy="74" r="2.6" fill="var(--svg-dark)"/>
-            <circle cx="160" cy="74" r="2.6" fill="var(--svg-dark)"/>
-            <ellipse class="mouth" cx="150" cy="89" rx="7" ry="4" fill="var(--svg-dark)"/>
-          </svg>
+        <!-- 영상 자리. 얼굴·표정을 그리지 않고 역광 실루엣만 둡니다. -->
+        <div class="scene" aria-hidden="true">
+          <div class="vs-wall"></div>
+          <div class="vs-led"></div>
+          <div class="vs-shelf">
+            <i><b style="left:14%;height:17px"></b><b style="left:30%;height:11px"></b><b style="left:44%;height:20px"></b></i>
+            <i><b style="left:22%;height:14px"></b><b style="left:52%;height:18px"></b></i>
+          </div>
+          <div class="vs-mon"></div>
+          <div class="vs-bokeh">
+            <i style="left:9%;top:20%;width:22px;height:22px;background:rgba(255,196,128,.2)"></i>
+            <i style="left:26%;top:33%;width:11px;height:11px;background:rgba(255,214,160,.17)"></i>
+            <i style="right:16%;top:13%;width:30px;height:30px;background:rgba(150,180,255,.15)"></i>
+            <i style="right:28%;top:28%;width:14px;height:14px;background:rgba(255,186,120,.15)"></i>
+            <i style="right:5%;top:52%;width:19px;height:19px;background:rgba(190,170,255,.12)"></i>
+          </div>
+          <div class="vs-mic"><span class="arm"></span><span class="cap"></span></div>
+          <div class="vs-fig"><span class="hd"></span><span class="bd"></span></div>
+          <div class="vs-desk"></div>
+          <div class="vs-grain"></div>
+          <div class="vs-vig"></div>
         </div>
-        <span class="clock" id="clock">0:00</span>
+
+        <div class="plrow">
+          <div class="live"><span class="dot"></span>LIVE</div>
+          <span class="live-stat" id="liveStat"></span>
+        </div>
+        <span class="ph-tag">영상 자리</span>
+
+        <!-- 재생 컨트롤. 실제 플랫폼 화면에 늘 있는 요소라 자리만 둡니다. -->
+        <div class="pbar" aria-hidden="true">
+          <div class="track"><i></i></div>
+          <div class="row">
+            <svg viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+            <span class="vol">
+              <svg viewBox="0 0 24 24"><path d="M4 9h3.2L12 5v14L7.2 15H4zM15.5 8.5a5 5 0 0 1 0 7l1.4 1.4a7 7 0 0 0 0-9.8z"/></svg>
+              <span class="volbar"><i></i></span>
+            </span>
+            <span class="clock" id="clock">0:00</span>
+            <span class="sp"></span>
+            <svg viewBox="0 0 24 24"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zm9-1.1-1.4-2.4-2.3.7a7.6 7.6 0 0 0-1.6-.9L15.3 2H8.7l-.4 2.4c-.6.2-1.1.5-1.6.9l-2.3-.7L3 7.4l1.8 1.6a7.4 7.4 0 0 0 0 1.9L3 12.6 4.4 15l2.3-.7c.5.4 1 .7 1.6.9l.4 2.4h6.6l.4-2.4c.6-.2 1.1-.5 1.6-.9l2.3.7L21 12.6l-1.8-1.6a7.4 7.4 0 0 0 0-1.9z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M3 5h18v14H3zm2 2v10h14V7z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M4 4h6v2H6v4H4zm10 0h6v6h-2V6h-4zM4 14h2v4h4v2H4zm14 0h2v6h-6v-2h4z"/></svg>
+          </div>
+        </div>
 
         <!-- 방송 종료 후 추천. 실제 플랫폼이 영상이 끝나면 띄우는 화면입니다.
              여기서의 구독·다음 영상 클릭이 마지막 행동 지표입니다. -->
@@ -574,9 +830,16 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
       <div class="info">
         <h2 id="streamTitle">오늘 있었던 일 좀 들어주라</h2>
         <div class="row">
-          <span class="who">하루끝 harukkeut</span>
-          <span class="cnt" id="watchCnt"></span>
-          <span class="cnt" id="watchAi"></span>
+          <span class="chan">
+            <span class="av" aria-hidden="true">하</span>
+            <span class="txt">
+              <span class="who">하루끝 harukkeut</span>
+              <span class="cnt" id="watchCnt"></span>
+            </span>
+          </span>
+          <span class="tags" aria-hidden="true"><span class="tag">저챗</span><span class="tag">한국어</span></span>
+          <span class="cnt ai" id="watchAi"></span>
+          <span class="acts-r">
           <!-- 반응 버튼. 누르라고 유도하지 않고 자리만 둡니다 — 노트의
                "명시적으로 행동을 강요하지말고" 반영. -->
           <span class="reacts">
@@ -588,16 +851,31 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
             </button>
           </span>
           <button class="sub" id="subBtn" aria-pressed="false">구독</button>
-          <button class="leave" id="leave">방송 나가기</button>
+          <button class="leave" id="leave">나가기</button>
+          </span>
         </div>
       </div>
-    </div>
 
-    <aside class="chat">
-      <header>실시간 채팅 <span class="aiq" id="chatAi"></span></header>
+      <!-- 채널 소개. 참가자가 방송 중간에 들어왔다는 설정을 '방송 시작' 줄이 한 번 더
+           받쳐 줍니다. 딜레마 쪽으로 기우는 표현은 넣지 않습니다. -->
+      <section class="about">
+        <p class="ab-hd">방송 정보</p>
+        <p class="ab-txt">밤에 혼자 떠드는 채널입니다. 사연 읽고, 잡담하고, 가끔 게임도 하고.</p>
+        <div class="ab-rows">
+          <span class="ab-row"><span class="k">방송 시작</span><span class="v">3시간 31분 전</span></span>
+          <span class="ab-row"><span class="k">카테고리</span><span class="v">저챗</span></span>
+          <span class="ab-row"><span class="k">언어</span><span class="v">한국어</span></span>
+        </div>
+      </section>
+    </div></div>
+
+    <div class="chatcol"><aside class="chat">
+      <header>실시간 채팅 <span class="aiq" id="chatAi"></span>
+        <span class="hic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zm9-1.1-1.4-2.4-2.3.7a7.6 7.6 0 0 0-1.6-.9L15.3 2H8.7l-.4 2.4c-.6.2-1.1.5-1.6.9l-2.3-.7L3 7.4l1.8 1.6a7.4 7.4 0 0 0 0 1.9L3 12.6 4.4 15l2.3-.7c.5.4 1 .7 1.6.9l.4 2.4h6.6l.4-2.4c.6-.2 1.1-.5 1.6-.9l2.3.7L21 12.6l-1.8-1.6a7.4 7.4 0 0 0 0-1.9z"/></svg></span>
+      </header>
       <div class="feed" id="feed"></div>
       <div class="locked" id="chatLocked" hidden>
-        <span class="lock-ic" aria-hidden="true">🔒</span>
+        <span class="lock-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 0 0-5 5v3H6a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1h-1V7a5 5 0 0 0-5-5zm0 2a3 3 0 0 1 3 3v3H9V7a3 3 0 0 1 3-3z"/></svg></span>
         <span id="lockMsg">투표가 끝나면 채팅이 열립니다</span>
       </div>
       <footer id="inputRow">
@@ -605,7 +883,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
         <button class="send" id="sendBtn">전송</button>
       </footer>
       <div class="off" id="inputOff" hidden>이 방송은 채팅 입력이 제한되어 있습니다.</div>
-    </aside>
+    </aside></div>
   </section>
 
   <!-- ══ 종료 ══ -->
@@ -1225,8 +1503,11 @@ function showUserCard(anchor, name, isAI, how){
   const st = userStats[name] || (userStats[name] = {msgs: 0, first_at: null, opens: 0});
   st.opens++;
   const card = $('ucard');
-  $('ucIc').className = 'uc-ic' + (isAI ? ' ai' : '');
-  $('ucIc').textContent = isAI ? 'AI' : name.slice(0, 2).toUpperCase();
+  /* 카드 안의 프로필도 채팅 줄과 같은 아바타를 씁니다. AI 여부는 아래 '유형' 줄이
+     글로 들고 있으므로, 아바타 모양까지 바꾸면 차이가 둘로 늘어납니다. */
+  $('ucIc').className = 'uc-ic';
+  $('ucIc').style.background = avColor(name);
+  $('ucIc').textContent = [...name][0] || '·';
   $('ucNm').textContent = name;
   $('ucRows').innerHTML = userRows(name, isAI).map(([k, v, ai]) =>
     `<div class="uc-row"><span class="k">${k}</span><span class="v${ai ? ' ai' : ''}">${v}</span></div>`
@@ -1257,6 +1538,14 @@ document.addEventListener('click', e => {
   }
 });
 
+/* 아바타 색. 닉네임만으로 정해지므로 조건·세션을 넘어 같은 닉네임은 같은 색입니다.
+   채도·명도는 고정이라 어떤 닉네임에서도 흰 글자가 읽힙니다. */
+function avColor(s){
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return `hsl(${h % 360} 33% 44%)`;
+}
+
 const Renderer = {
   push(c){
     const el = document.createElement('div');
@@ -1267,13 +1556,34 @@ const Renderer = {
       feed.scrollTop = feed.scrollHeight;
       return;
     }
+    /* 프로필 사진 자리. 모든 채터가 같은 모양·같은 규칙의 아바타를 갖습니다.
+       색은 닉네임에서 뽑으므로 AI 조건과 사람 조건에서 같은 닉네임은 같은 색입니다 —
+       조건 간 차이는 AI 배지 하나로 유지됩니다. */
     const ic = document.createElement('span');
     ic.className = 'ic ' + c.kind;
-    ic.textContent = c.kind === 'ai' ? 'AI' : (c.kind === 'me' ? '나' : '');
+    if (c.kind === 'me'){
+      ic.textContent = '나';
+    } else {
+      ic.textContent = [...c.name][0] || '·';
+      ic.style.background = avColor(c.name);
+    }
     const nm = document.createElement('span');
     nm.className = 'nm ' + c.kind;
     nm.textContent = c.name;
-    el.append(ic, nm);
+    el.append(ic);
+    if (c.kind === 'ai'){
+      const b = document.createElement('span');
+      b.className = 'aib'; b.textContent = 'AI';
+      el.append(b);
+    }
+    // study 2: 입장 배지. 다른 배지와 같은 자리(닉네임 앞)에 둡니다.
+    if (c.stance){
+      const st = document.createElement('span');
+      st.className = 'stance ' + c.stance.toLowerCase();
+      st.textContent = c.stance;
+      el.append(st);
+    }
+    el.append(nm);
 
     if (c.kind !== 'me'){
       const isAI = c.kind === 'ai';
@@ -1301,13 +1611,6 @@ const Renderer = {
         if (uc.who) hideUserCard();
         open('click');
       });
-    }
-    // study 2: 입장 배지. 이유 노출을 끄면 배지만 남습니다.
-    if (c.stance){
-      const st = document.createElement('span');
-      st.className = 'stance ' + c.stance.toLowerCase();
-      st.textContent = c.stance;
-      el.append(st);
     }
     el.append(document.createTextNode(c.text));
     feed.appendChild(el);
@@ -1704,16 +2007,18 @@ function enter(){
   Logger.add('watch_start');
   watch.classList.add('on');
   const isAI = cond.label === 'mixed';
-  $('watchCnt').textContent = `시청자 ${fmt(cond.viewers)}명`;
+  $('watchCnt').textContent = `팔로워 4.2만`;
   /* 시청 화면에서는 AI 비율을 띄우지 않습니다. 정체성은 채팅 각 줄의
      AI 아이콘·닉네임이 그대로 들고 있고, 비율 수치는 탐색 화면과 안내 페이지의
      조작입니다. 시청 중에 숫자를 계속 띄우면 참가자가 비율 자체를 과제로 삼습니다. */
   $('watchAi').textContent = '';
   $('watchAi').className = 'cnt';
   $('chatAi').textContent = '';
-  $('liveStat').innerHTML = `
-    <span class="unit"><span class="lbl">시청자</span>
-      <span class="num">${fmt(cond.viewers)}<small>명</small></span></span>`;
+  $('liveStat').innerHTML =
+    `<svg class="eye" viewBox="0 0 24 24" aria-hidden="true">` +
+    `<path d="M12 5C6.8 5 2.7 9.2 1.5 12c1.2 2.8 5.3 7 10.5 7s9.3-4.2 10.5-7C21.3 9.2 17.2 5 12 5z` +
+    `m0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-2.3a2.2 2.2 0 1 0 0-4.4 2.2 2.2 0 0 0 0 4.4z"/>` +
+    `</svg>${fmt(cond.viewers)}`;
   const off = cond.input === 'off';
   $('inputRow').hidden = off;
   $('inputOff').hidden = !off;
@@ -1776,9 +2081,9 @@ function announcePoll(){
 /* 종료 후 추천 영상. 클릭해도 이동하지 않고 클릭 사실만 남깁니다 —
    자극물 밖으로 나가면 이후 행동을 못 봅니다. */
 const END_VIDEOS = [
-  {t: '새벽에 하는 고민 상담', v: '12만 회'},
-  {t: '밸런스게임 모음 2시간', v: '31만 회'},
-  {t: '구독자 사연 읽기', v: '8.7만 회'}
+  {t: '새벽에 하는 고민 상담', v: '12만 회', d: '2:41:05'},
+  {t: '밸런스게임 모음 2시간', v: '31만 회', d: '1:58:22'},
+  {t: '구독자 사연 읽기', v: '8.7만 회', d: '3:07:14'}
 ];
 function renderEndCard(){
   const g = $('ecGrid'); g.innerHTML = '';
@@ -1786,7 +2091,7 @@ function renderEndCard(){
     const el = document.createElement('button');
     el.type = 'button';
     el.className = 'ec-item';
-    el.innerHTML = `<span class="ec-thumb"></span>
+    el.innerHTML = `<span class="ec-thumb" data-d="${v.d || '1:12:40'}"></span>
       <span class="ec-t">${v.t}</span><span class="ec-v">조회수 ${v.v}</span>`;
     el.addEventListener('click', () => {
       el.style.outline = '2px solid var(--accent)';
@@ -2103,9 +2408,15 @@ function submitWhy(auto){
   }
   $('pollWhy').hidden = true;
   if (v){
+    /* 투표 때 적은 이유는 채팅창에 띄우지 않습니다. 세 가지가 걸립니다.
+       ① 측정 — 이 값은 '노출 전 사적 입장'입니다. 채팅에 올라가면 공적 발화가 되어
+          해제 뒤 채팅(user_comment)과 구분이 사라지고, 사적 투표·공적 발화·사후 설문
+          삼중 대조가 성립하지 않습니다.
+       ② 조작 — 지금은 채팅이 잠긴 구간입니다. 내 글만 올라가면 설정이 깨집니다.
+       ③ 자기 일관성 — 자기 입장을 공개로 박아 두면 이후 노출에 따른 의견 변화가
+          억제됩니다. 그 변화가 이 연구의 핵심 종속변수입니다. */
     Logger.add('vote_reason', {text: v, length: v.length, auto: !!auto,
                                at_sec: +tick.toFixed(2)});
-    Renderer.push({kind:'me', name:'나', text: v, stance: vote});
   } else {
     Logger.add('vote_reason', {text: null, length: 0, auto: !!auto});
   }
@@ -2291,3 +2602,5 @@ restart();
 </script>
 </body>
 </html>
+
+</body></html>
