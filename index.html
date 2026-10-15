@@ -1,4 +1,3 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -1584,6 +1583,29 @@ function avColor(s){
   return `hsl(${h % 360} 33% 44%)`;
 }
 
+/* 참가자가 채팅을 긁는 동안에는 자동 스크롤을 멈춥니다.
+   멈추지 않으면 새 줄이 올 때마다 피드가 내려가고, 버튼을 누르고 있는 동안
+   브라우저는 커서 위치를 따라 선택을 늘립니다 — 손을 가만히 둬도 아랫줄이
+   한 줄씩 선택에 딸려 들어와 "한 줄만 긁었는데 다른 댓글이 계속 들어오는"
+   현상이 됩니다. 실제 플랫폼도 채팅을 건드리는 동안에는 흐름을 멈춥니다. */
+let feedHold = false;
+function selectingInFeed(){
+  const sel = document.getSelection();
+  if (!sel || sel.isCollapsed) return false;
+  for (const node of [sel.anchorNode, sel.focusNode]){
+    const el = node && (node.nodeType === 1 ? node : node.parentElement);
+    if (el && feed.contains(el)) return true;
+  }
+  return false;
+}
+function feedPinned(){ return feedHold || selectingInFeed(); }
+function initFeedHold(){
+  feed.addEventListener('pointerdown', () => { feedHold = true; });
+  // 창 밖에서 손을 떼는 경우까지 받으려면 document에 걸어야 합니다
+  document.addEventListener('pointerup', () => { feedHold = false; });
+  document.addEventListener('pointercancel', () => { feedHold = false; });
+}
+
 const Renderer = {
   push(c){
     const el = document.createElement('div');
@@ -1659,7 +1681,7 @@ const Renderer = {
       msgObserver.observe(el);
     }
     const near = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 90;
-    if (near) feed.scrollTop = feed.scrollHeight;
+    if (near && !feedPinned()) feed.scrollTop = feed.scrollHeight;
     /* 스크롤백을 열어둡니다 — 지나간 채팅을 거슬러 읽는 행동 자체가 측정 대상입니다.
        상한은 메모리 보호용이고, 3,180명·180초에서도 600줄을 넘지 않습니다. */
     while (feed.children.length > 600){
@@ -1688,7 +1710,7 @@ const Renderer = {
 const scrollStats = {up_events: 0, max_depth_px: 0, away_ms: 0, reached_top: false};
 function initChatScroll(){
   const el = feed;
-  let lastTop = 0, awaySince = 0, settle = 0;
+  let lastTop = 0, awaySince = 0, settle = 0, lastSig = '';
   el.addEventListener('scroll', () => {
     const depth = el.scrollHeight - el.scrollTop - el.clientHeight;
     const away = depth > 90;
@@ -1702,6 +1724,13 @@ function initChatScroll(){
     settle = setTimeout(() => {
       if (awaySince) scrollStats.away_ms += performance.now() - awaySince;
       if (awaySince) awaySince = performance.now();
+      /* 새 메시지가 붙을 때마다 바닥으로 끌어내리는 자동 스크롤도 scroll 이벤트를
+         냅니다. 그대로 두면 참가자가 손도 안 댔는데 depth_px:0 줄이 수십 건 쌓여
+         정작 사람이 올린 기록이 묻힙니다. 값이 달라졌을 때만 남깁니다. */
+      const sig = [Math.round(depth / 20), scrollStats.up_events,
+                   scrollStats.reached_top].join('|');
+      if (sig === lastSig) return;
+      lastSig = sig;
       Logger.add('chat_scroll', {
         at_sec: +tick.toFixed(2), depth_px: Math.round(depth),
         up_events: scrollStats.up_events, reached_top: scrollStats.reached_top
@@ -1775,11 +1804,16 @@ function seenSummary(){
      shown_*  타임라인 발화만 (백로그·예고 반응·참가자 본인 글 제외)
      lines_*  채팅창에 들어온 모든 줄
      둘을 직접 빼지 마십시오. 비교는 입장(stance) 기준 필드로만 하십시오. */
+  /* visible_ms_* 는 줄 하나하나가 화면에 떠 있던 시간을 전부 더한 값입니다.
+     채팅은 여러 줄이 동시에 보이므로 체류 시간보다 큽니다 — 48초 세션에서
+     779,000ms가 나오는 것이 정상입니다. 체류 시간과 직접 비교하지 마십시오.
+     한 줄이 평균 몇 초나 떠 있었는지는 visible_ms_per_line으로 봅니다. */
   return {
     lines_total: seen.msgs.length,                     // 피드에 들어온 모든 줄
     lines_seen: n,                                     // 그중 1초 이상 화면에 있던 줄
     lines_offscreen: off,                              // 한 번도 화면에 안 뜬 줄
-    visible_ms_total: Math.round(msAll),
+    visible_ms_total: Math.round(msAll),               // 줄 × 노출시간의 합 (체류시간 아님)
+    visible_ms_per_line: seen.msgs.length ? Math.round(msAll / seen.msgs.length) : null,
     seen_congruent: cong,
     seen_incongruent: incong,
     seen_congruence_ratio: tot ? +(cong / tot * 100).toFixed(1) : null,
@@ -1796,39 +1830,84 @@ function initTextSelect(){
   /* mouseup에 걸면 놓치는 경우가 생깁니다 — 창 밖에서 손을 떼거나, 더블클릭으로
      단어를 잡거나, 키보드·터치로 고를 때입니다. selectionchange는 어떤 방식이든
      잡습니다. 다만 드래그하는 내내 계속 울리므로, 손을 멈춘 뒤 한 번만 남깁니다. */
-  let timer = 0, last = '';
-  const record = () => {
-    const sel = document.getSelection();
-    if (!sel || sel.isCollapsed){ last = ''; return; }
-    const txt = sel.toString().trim();
-    if (txt.length < 2){ last = ''; return; }
-    if (txt === last) return;              // 같은 선택을 두 번 남기지 않습니다
-    last = txt;
-    /* 아바타 글자와 AI·입장 배지는 긁은 '내용'이 아니므로 로그에서 뺍니다.
-       CSS로 선택을 막으면 그 위에서 시작한 드래그가 통째로 안 잡힙니다. */
-    let body = txt;
+  let timer = 0, last = '', lastEv = null, lastAt = 0;
+
+  /* 선택 영역을 읽습니다. 아바타 글자와 AI·입장 배지는 긁은 '내용'이 아니므로 빼고,
+     여러 줄에 걸쳤으면 줄 사이를 끊어 둡니다 — 그냥 이으면 앞줄 본문에 뒷줄
+     닉네임이 붙어 "…깔려서 끝wkdwkd28한두 명…" 처럼 읽을 수 없게 됩니다.
+     CSS로 선택을 막지는 않습니다. 아바타 위에서 시작한 드래그가 통째로 안 잡힙니다. */
+  const readSel = (sel) => {
+    const plain = sel.toString().trim();
     try {
       const frag = sel.getRangeAt(0).cloneContents();
       frag.querySelectorAll('.ic,.aib,.stance').forEach(n => n.remove());
+      const rows = frag.querySelectorAll('.msg');
+      if (rows.length){
+        const names = [], parts = [];
+        rows.forEach(r => {
+          const nm = r.querySelector('.nm');
+          /* 닉네임 뒤 콜론은 CSS가 그리는 것이라 textContent에 안 담깁니다 —
+             그냥 이으면 "wjsdml99아까 얘기"가 되므로 넣어 줍니다. */
+          const whole = r.textContent.trim();
+          if (nm){
+            names.push(nm.textContent);
+            const body = whole.slice(whole.indexOf(nm.textContent) + nm.textContent.length).trim();
+            parts.push(body ? nm.textContent + ': ' + body : nm.textContent);
+          } else if (whole) {
+            parts.push(whole);
+          }
+        });
+        return {text: parts.join('\n'), lines: rows.length, names};
+      }
       const t = frag.textContent.trim();
-      if (t.length >= 2) body = t;
-    } catch (e) {}
+      return {text: t.length >= 2 ? t : plain, lines: 1, names: null};
+    } catch (e) {
+      return {text: plain, lines: null, names: null};
+    }
+  };
+
+  const record = () => {
+    const sel = document.getSelection();
+    if (!sel || sel.isCollapsed){ last = ''; return; }
+    const raw = sel.toString().trim();
+    if (raw.length < 2){ last = ''; return; }
+    if (raw === last) return;              // 같은 선택을 두 번 남기지 않습니다
+
     const node = sel.anchorNode;
     const el = node && (node.nodeType === 1 ? node : node.parentElement);
     const msg = el && el.closest('.msg');
-    const inChat = Boolean(el && el.closest('.chat'));
     const ic = msg && msg.querySelector('.ic');
-    Logger.add('text_select', {
+    const got = readSel(sel);
+    const now = performance.now();
+
+    /* 천천히 끌면 선택이 자라는 동안 중간 상태가 여러 건 남습니다. 앞 기록을
+       그대로 품고 자란 선택이면 새 줄을 쌓지 않고 그 기록을 늘립니다. */
+    const grew = lastEv && last && raw.startsWith(last) && (now - lastAt) < 5000;
+    last = raw; lastAt = now;
+
+    const data = {
       at_sec: +tick.toFixed(2),
-      where: inChat ? 'chat' : (el && el.closest('.poll') ? 'poll' : 'other'),
-      chars: body.length,
-      text: body.slice(0, 120),
-      lines: msg ? 1 : null,               // 한 줄 안인지, 여러 줄에 걸쳤는지
+      where: el && el.closest('.chat') ? 'chat'
+           : el && el.closest('.poll') ? 'poll'
+           : el && el.closest('.about') ? 'about' : 'other',
+      chars: got.text.length,
+      text: got.text.slice(0, 300),
+      lines: got.lines,
       msg_name: msg ? ((msg.querySelector('.nm') || {}).textContent || null) : null,
+      msg_names: got.names && got.names.length > 1 ? got.names.slice(0, 8) : null,
       msg_kind: ic ? ic.className.replace('ic ', '') : null,
       is_ai: msg ? Boolean(msg.querySelector('.aib')) : null
-    });
+    };
+
+    if (grew){
+      Object.assign(lastEv, data);         // 자란 선택 — 마지막 상태만 남깁니다
+      lastEv.extended = (lastEv.extended || 1) + 1;
+      return;
+    }
+    Logger.add('text_select', data);
+    lastEv = Logger.ev[Logger.ev.length - 1];
   };
+
   document.addEventListener('selectionchange', () => {
     clearTimeout(timer);
     timer = setTimeout(record, 280);       // 손을 멈춘 뒤
@@ -2664,6 +2743,7 @@ $('copyLog').addEventListener('click', async () => {
 });
 
 initChatScroll();
+initFeedHold();
 initSeen();
 initTextSelect();
 initChatResize();
@@ -2671,5 +2751,3 @@ restart();
 </script>
 </body>
 </html>
-
-</body></html>
