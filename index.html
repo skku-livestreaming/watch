@@ -481,7 +481,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .ec-lb{margin:8px 0 0;font-size:12px;color:rgba(255,255,255,.55)}
 .ec-grid{display:flex;gap:11px;flex-wrap:wrap;justify-content:center}
 .ec-item{
-  width:142px;background:transparent;border:0;padding:0;overflow:hidden;cursor:pointer;
+  width:152px;background:transparent;border:0;padding:0;overflow:hidden;cursor:pointer;
   color:#eef1f6;font-family:inherit;text-align:left;
 }
 .ec-item:hover .ec-thumb{filter:brightness(1.22)}
@@ -496,10 +496,18 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
   padding:1px 5px;border-radius:3px;font-variant-numeric:tabular-nums;
 }
 .ec-t{display:block;font-size:12.5px;font-weight:600;line-height:1.35;padding:8px 1px 0;color:#dde2ea}
-.ec-v{display:block;font-size:11px;color:rgba(255,255,255,.5);padding:3px 1px 0}
+.ec-v{
+  display:block;font-size:11px;color:rgba(255,255,255,.5);
+  padding:4px 1px 0;white-space:nowrap;
+}
+.ec-ai{
+  display:inline-block;margin:6px 1px 0;
+  background:rgba(87,195,166,.18);color:#6fd6b8;border:1px solid rgba(87,195,166,.4);
+  border-radius:3px;padding:1px 5px;font-size:9.5px;font-weight:800;letter-spacing:.03em;
+}
 @media (max-width:860px){
   .endcard{gap:8px;padding:12px}
-  .ec-item{width:116px}
+  .ec-item{width:124px}
   .ec-thumb{height:64px}
 }
 
@@ -1069,7 +1077,12 @@ const DILEMMA = {
             '투표 결과 보고싶다', '나 진짜 고민된다', '둘 다 말 되긴 함'],
 };
 
-const STREAM_TITLE = '같이 판단 좀 해줘라';
+/* 월일만 씁니다. 어떤 낱말이든 제목에 들어가면 그 자체가 교란이 됩니다 —
+   '판단', '사연', '고민' 모두 참가자의 해석 틀을 미리 정합니다.
+   장기 저챗 채널은 실제로 날짜만 달아 둡니다. */
+const mmdd = d => `${d.getMonth() + 1}월 ${d.getDate()}일`;
+const daysAgo = n => new Date(Date.now() - n * 86400000);
+const STREAM_TITLE = `${mmdd(new Date())} 방송`;
 
 /* ── 2-1. 밀도 모델 ──────────────────────────
    Flores-Saviaga et al. (2019) HT'19 규모별 실측치를 구간별 로그-로그 보간.
@@ -2229,9 +2242,9 @@ function announcePoll(){
 /* 종료 후 추천 영상. 클릭해도 이동하지 않고 클릭 사실만 남깁니다 —
    자극물 밖으로 나가면 이후 행동을 못 봅니다. */
 const END_VIDEOS = [
-  {t: '새벽에 하는 고민 상담', v: '12만 회', d: '2:41:05'},
-  {t: '밸런스게임 모음 2시간', v: '31만 회', d: '1:58:22'},
-  {t: '구독자 사연 읽기', v: '8.7만 회', d: '3:07:14'}
+  {t: `${mmdd(daysAgo(2))} 방송`,  v: '12만 회',  d: '2:41:05'},
+  {t: `${mmdd(daysAgo(5))} 방송`,  v: '8.7만 회', d: '1:58:22'},
+  {t: `${mmdd(daysAgo(9))} 방송`,  v: '31만 회',  d: '3:07:14'}
 ];
 function renderEndCard(){
   const g = $('ecGrid'); g.innerHTML = '';
@@ -2239,8 +2252,13 @@ function renderEndCard(){
     const el = document.createElement('button');
     el.type = 'button';
     el.className = 'ec-item';
+    /* AI 조건에서는 지난 방송 카드에도 같은 표시를 답니다. 이 방송에만 AI가
+       있었던 것처럼 읽히면, 참가자가 AI를 이번 회차의 특별한 사건으로 받아들입니다.
+       사람 조건에서는 아무것도 붙지 않습니다 — 조건 간 차이는 이 표시 하나입니다. */
+    const aiTag = cond.label === 'mixed' ? '<span class="ec-ai">AI 시청자</span>' : '';
     el.innerHTML = `<span class="ec-thumb" data-d="${v.d || '1:12:40'}"></span>
-      <span class="ec-t">${v.t}</span><span class="ec-v">조회수 ${v.v}</span>`;
+      <span class="ec-t">${v.t}</span>
+      <span class="ec-v">조회수 ${v.v}</span>${aiTag}`;
     el.addEventListener('click', () => {
       el.style.outline = '2px solid var(--accent)';
       Logger.add('next_video_click', {index: i, title: v.t, at_sec: +tick.toFixed(2)});
