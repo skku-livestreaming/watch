@@ -266,17 +266,17 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .msg.sys .nm,.msg.sys .ic{cursor:default}
 /* ── 시청 화면 ─────────────────────────── */
 .watch{display:none;grid-template-columns:minmax(0,1fr) var(--chatw,352px);gap:0}
-.watch.on{display:grid;height:calc(100vh - 56px);height:calc(100dvh - 56px);min-height:520px}
-.stage{min-width:0;overflow-y:auto;overscroll-behavior:contain;padding:20px 22px 30px}
+.watch.on{display:grid;height:calc(100vh - 57px);height:calc(100dvh - 57px);min-height:520px}
+.stage{min-width:0;overflow-y:auto;overscroll-behavior:contain;padding:20px 22px 22px}
 .stage::-webkit-scrollbar{width:10px}
 .stage::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px;border:3px solid var(--page)}
 /* 영상이 16:9를 꽉 채우면 화면이 낮을 때 제목·채널 줄이 접힘선 아래로 밀립니다.
    영상 아래 블록이 들어갈 높이를 빼고 남은 만큼으로 가로폭 상한을 둬서,
    영상이 먼저 줄어들게 합니다. */
-.stagein{max-width:1240px;margin:0 auto}
+.stagein{max-width:1600px;margin:0 auto}
 .playwrap{
-  max-width:min(1240px, calc((100vh - 232px) * 16 / 9));
-  max-width:min(1240px, calc((100dvh - 232px) * 16 / 9));
+  max-width:min(1600px, calc((100vh - 232px) * 16 / 9));
+  max-width:min(1600px, calc((100dvh - 232px) * 16 / 9));
   margin:0 auto;
 }
 .playwrap{position:relative}
@@ -412,32 +412,20 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .acts-r{display:flex;align-items:center;gap:8px;margin-left:auto}
 .leave{
   background:transparent;border:1px solid var(--line);
-  color:var(--ink-faint);border-radius:18px;padding:7px 14px;font-size:13px;
+  color:var(--ink-faint);border-radius:18px;padding:0 15px;height:32px;font-size:13px;
 }
 @media (max-width:860px){.tags{display:none}}
 /* 구독 버튼. 누르라는 안내는 두지 않습니다 — 반응 버튼과 같은 원칙. */
 .sub{
   background:var(--accent);color:var(--on-accent);
   border:1px solid var(--accent);border-radius:18px;
-  padding:7px 17px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
+  padding:0 18px;height:32px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
 }
 .sub:hover{filter:brightness(1.08)}
 .sub[aria-pressed="true"]{
   background:var(--panel-2);color:var(--ink-dim);border-color:var(--line);font-weight:600;
 }
 .leave:hover{color:var(--ink-dim);border-color:var(--line-2)}
-
-/* ── 방송 정보 ─────────────────────────── */
-.about{
-  margin-top:16px;background:var(--bg);border:1px solid var(--line);
-  border-radius:12px;padding:17px 19px;
-}
-.ab-hd{margin:0 0 9px;font-size:14px;font-weight:700;letter-spacing:-.015em}
-.ab-txt{margin:0 0 15px;font-size:13.5px;color:var(--ink-dim);line-height:1.7;max-width:62ch}
-.ab-rows{display:flex;flex-wrap:wrap;gap:9px 34px}
-.ab-row{display:flex;align-items:baseline;gap:10px;font-size:13px}
-.ab-row .k{color:var(--ink-faint);min-width:58px}
-.ab-row .v{font-weight:600;font-variant-numeric:tabular-nums}
 
 /* ── 안내 페이지 ───────────────────────── */
 .intro{display:none;max-width:498px;margin:72px auto 0;padding:0 18px 64px}
@@ -474,7 +462,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .intro-go:hover{filter:brightness(1.08)}
 
 /* ── 반응 버튼 ─────────────────────────── */
-.reacts{display:inline-flex;gap:6px}
+
 /* 방송 종료 화면 */
 .player.off .scene,.player.off .ph-tag,.player.off .plrow,.player.off .clock{opacity:0}
 .player.off{background:#07080b}
@@ -515,14 +503,18 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
   .ec-thumb{height:64px}
 }
 
-.reacts{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:1px;gap:0}
+.reacts{
+  display:inline-flex;align-items:stretch;gap:0;overflow:hidden;
+  background:var(--panel);border:1px solid var(--line);border-radius:18px;
+}
 .react{
-  background:transparent;border:0;color:var(--ink-dim);
-  border-radius:17px;padding:6px 13px;font-size:13px;line-height:1;
+  background:transparent;border:0;border-radius:0;color:var(--ink-dim);
+  padding:0 15px;height:30px;font-size:13px;line-height:1;
   font-variant-numeric:tabular-nums;
   display:inline-flex;align-items:center;gap:5px;cursor:pointer;
 }
-.react:first-child{box-shadow:1px 0 0 var(--line)}
+.react:first-child{border-right:1px solid var(--line)}
+.react:focus-visible{outline-offset:-2px}
 /* 엄지 아이콘은 SVG로 둡니다. 이모지(👍)는 기기마다 글꼴이 달라
    참가자가 보는 자극물이 윈도우·맥·안드로이드에서 제각각이 됩니다. */
 .react .th{width:16px;height:16px;fill:currentColor;display:block}
@@ -576,6 +568,17 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 }
 .why-note{font-size:12px;color:var(--note);line-height:1.5}
 .why-note.bad{color:var(--live);font-weight:600}
+
+/* 잠김·열림 구분선 */
+.msg.divider{
+  display:flex;align-items:center;gap:10px;
+  color:var(--ink-faint);font-size:11.5px;font-weight:600;letter-spacing:-.01em;
+  padding:9px 6px;margin:5px 0;
+}
+.msg.divider:before,.msg.divider:after{
+  content:'';flex:1;height:1px;background:var(--line);
+}
+.msg.divider:hover{background:transparent}
 
 /* 채팅 */
 .locked{
@@ -827,7 +830,7 @@ body.resizing{cursor:col-resize;user-select:none}
               <span class="cnt" id="watchCnt"></span>
             </span>
           </span>
-          <span class="tags" aria-hidden="true"><span class="tag">저챗</span><span class="tag">한국어</span></span>
+          <span class="tags" aria-hidden="true"><span class="tag">저챗</span><span class="tag">한국어</span><span class="tag">3시간 31분째</span></span>
           <span class="cnt ai" id="watchAi"></span>
           <span class="acts-r">
           <!-- 반응 버튼. 누르라고 유도하지 않고 자리만 둡니다 — 노트의
@@ -846,17 +849,6 @@ body.resizing{cursor:col-resize;user-select:none}
         </div>
       </div>
 
-      <!-- 채널 소개. 참가자가 방송 중간에 들어왔다는 설정을 '방송 시작' 줄이 한 번 더
-           받쳐 줍니다. 딜레마 쪽으로 기우는 표현은 넣지 않습니다. -->
-      <section class="about">
-        <p class="ab-hd">방송 정보</p>
-        <p class="ab-txt">밤에 혼자 떠드는 채널입니다. 사연 읽고, 잡담하고, 가끔 게임도 하고.</p>
-        <div class="ab-rows">
-          <span class="ab-row"><span class="k">방송 시작</span><span class="v">3시간 31분 전</span></span>
-          <span class="ab-row"><span class="k">카테고리</span><span class="v">저챗</span></span>
-          <span class="ab-row"><span class="k">언어</span><span class="v">한국어</span></span>
-        </div>
-      </section>
     </div></div>
 
     <div class="chatcol" id="chatcol">
@@ -1097,8 +1089,17 @@ function density(v){
   return {rate, chatters, reactShare};
 }
 
-/* 입장 직전까지 보이는 대화 줄 수. 시청자가 적으면 그만큼 줄어듭니다. */
-const BACKLOG_N = 14;
+/* 입장 직전까지 쌓여 있는 대화 줄 수.
+   고정값으로 두면 채팅창이 큰 화면에서 위쪽이 텅 빕니다 — 참가자가 '방금 열린 방'에
+   들어온 것처럼 읽혀 중도 입장 설정과 어긋납니다. 채팅창 높이에 맞춰 채웁니다.
+   시청자가 적은 조건에서는 그만큼 덜 쌓입니다. */
+const BACKLOG_MIN = 8, BACKLOG_MAX = 70, LINE_PX = 30;
+function backlogTarget(c){
+  const h = (typeof feed !== 'undefined' && feed && feed.clientHeight) || 560;
+  const fit = Math.ceil(h / LINE_PX) + 4;          // 한 줄 약 30px + 위로 조금 더
+  const scale = Math.min(1, c.viewers / 600);
+  return Math.max(BACKLOG_MIN, Math.min(BACKLOG_MAX, Math.round(fit * scale)));
+}
 
 /* ── 2-2. 타임라인 생성 ──────────────────────
    텍스트·타이밍·화자 구조만 결정하고 정체성(사람/AI)은 붙이지 않습니다.
@@ -1122,8 +1123,7 @@ function buildTimeline(c, rnd, span){
   /* 입장 직전까지 흘렀던 대화를 같은 타임라인의 앞부분으로 만듭니다.
      따로 뽑으면 백로그에서 쓴 줄이 입장 직후 다시 나와 반복 구간이 생깁니다.
      한 대본을 이어서 쓰면 백로그와 그 이후가 한 편의 대화가 됩니다. */
-  const preN = Math.max(5, Math.min(BACKLOG_N,
-    Math.round(BACKLOG_N * Math.min(1, c.viewers / 600))));
+  const preN = backlogTarget(c);
   for (let k = 0; k < preN; k++){
     const useReact = si >= SCRIPT.length || rnd() < d.reactShare;
     const ci = pickChatter();
@@ -1608,8 +1608,18 @@ function initFeedHold(){
 
 const Renderer = {
   push(c){
+    /* 새 줄을 붙이기 전에 잰 값입니다. 붙인 뒤에 재면 그 줄 높이(약 34px)가
+       간격에 더해져, 바닥에서 조금만 떠 있어도 기준을 넘겨 자동 스크롤이
+       영영 안 붙습니다. */
+    const wasNear = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 90;
     const el = document.createElement('div');
-    el.className = 'msg' + (c.kind === 'sys' ? ' sys' : '');
+    el.className = 'msg' + (c.kind === 'sys' ? ' sys' : c.kind === 'divider' ? ' divider' : '');
+    if (c.kind === 'divider'){
+      el.append(document.createTextNode(c.text));
+      feed.appendChild(el);
+      if (wasNear && !feedPinned()) feed.scrollTop = feed.scrollHeight;
+      return;
+    }
     if (c.kind === 'sys'){
       el.append(document.createTextNode(c.text));
       feed.appendChild(el);
@@ -1636,13 +1646,9 @@ const Renderer = {
       b.className = 'aib'; b.textContent = 'AI';
       el.append(b);
     }
-    // study 2: 입장 배지. 다른 배지와 같은 자리(닉네임 앞)에 둡니다.
-    if (c.stance){
-      const st = document.createElement('span');
-      st.className = 'stance ' + c.stance.toLowerCase();
-      st.textContent = c.stance;
-      el.append(st);
-    }
+    /* 입장(A/B)은 화면에 표시하지 않습니다. 실제 채팅에는 없는 표식이고,
+       참가자가 찬반 비율을 세는 과제로 받아들이게 만듭니다.
+       분석에 필요한 값은 comment_shown.stance와 chat_script에 그대로 남습니다. */
     el.append(nm);
 
     if (c.kind !== 'me'){
@@ -1680,8 +1686,7 @@ const Renderer = {
       seen.msgs.push(el.__seen);
       msgObserver.observe(el);
     }
-    const near = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 90;
-    if (near && !feedPinned()) feed.scrollTop = feed.scrollHeight;
+    if (wasNear && !feedPinned()) feed.scrollTop = feed.scrollHeight;
     /* 스크롤백을 열어둡니다 — 지나간 채팅을 거슬러 읽는 행동 자체가 측정 대상입니다.
        상한은 메모리 보호용이고, 3,180명·180초에서도 600줄을 넘지 않습니다. */
     while (feed.children.length > 600){
@@ -2393,7 +2398,14 @@ const noLimit      = () => cond.pollwin === 0;
 const pollDeadline = () => POLL_AT + cond.pollwin;
 const unlockTime   = () => pollDeadline() + UNLOCK_GAP;   // 제한이 있을 때 전 참가자 공통
 
+/* 잠김·열림 자리에 구분선을 남깁니다. 해제 뒤 위로 올려 보면 어디서 끊겼는지
+   보이고, 노출 집계에는 들어가지 않습니다(채터 발화가 아니므로). */
+function pushDivider(text){
+  Renderer.push({kind: 'divider', text});
+}
+
 function lockChat(){
+  pushDivider('채팅이 잠겼습니다');
   chatOpen = false;
   $('feed').hidden = true;
   $('chatLocked').hidden = false;
@@ -2420,6 +2432,11 @@ function unlockChat(){
   chatOpen = true;
   $('feed').hidden = false;
   $('chatLocked').hidden = true;
+  pushDivider('채팅이 열렸습니다');
+  feed.scrollTop = feed.scrollHeight;
+  // 줄이 들어오는 애니메이션이 끝나면 높이가 조금 더 늘어납니다 — 그 뒤 한 번 더
+  requestAnimationFrame(() => { feed.scrollTop = feed.scrollHeight; });
+  setTimeout(() => { if (!feedPinned()) feed.scrollTop = feed.scrollHeight; }, 260);
   const off = cond.input === 'off';
   $('inputRow').hidden = off;
   $('inputOff').hidden = !off;
