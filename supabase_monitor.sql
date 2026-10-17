@@ -50,3 +50,78 @@ group by code, cong, label
 order by code;
 
 revoke all on condition_counts from anon, authenticated;
+
+-- ════════════════════════════════════════════════════════════════
+-- 사람별로 보기
+-- ════════════════════════════════════════════════════════════════
+
+-- ① 사람별 핵심 결과 한 줄. 분석에 바로 쓰는 값만 옆으로 펼쳤습니다.
+create or replace view participant_results
+with (security_invoker = true)
+as
+select
+  s.started_at,
+  s.pid,
+  s.condition->>'code'                                                        as code,
+  s.condition->>'label'                                                       as label,
+  s.condition->>'cong'                                                        as cong,
+  max(e.data->>'label')       filter (where e.type = 'vote')                  as vote,
+  max(e.data->>'text')        filter (where e.type = 'vote_reason')           as reason,
+  bool_or(e.type = 'poll_missed')                                             as missed_vote,
+  max((e.data->>'mine_share')::numeric) filter (where e.type = 'poll_result_shown') as result_mine_share,
+  count(*)                    filter (where e.type = 'text_select')           as drags,
+  count(*)                    filter (where e.type = 'user_comment')          as comments,
+  count(*)                    filter (where e.type = 'user_card_open')        as card_opens,
+  count(*)                    filter (where e.type = 'next_video_click')      as next_video_clicks,
+  max(e.data->>'subscribed')  filter (where e.type = 'leave')                 as subscribed,
+  max(e.data->>'reaction')    filter (where e.type = 'leave')                 as reaction,
+  max((e.data->>'seen_congruence_ratio')::numeric) filter (where e.type = 'leave') as seen_congruence_ratio,
+  max((e.data->>'after_end_sec')::numeric)         filter (where e.type = 'leave') as after_end_sec,
+  max(e.data->>'via')         filter (where e.type = 'leave')                 as leave_via,
+  s.id                                                                        as session_id
+from sessions s
+left join events e on e.session_id = s.id
+group by s.id
+order by s.started_at desc;
+
+revoke all on participant_results from anon, authenticated;
+
+-- ② 사람별 전체 기록 한 줄. events 열을 누르면 그 사람의 행동이 시간순 JSON으로 보입니다
+--    (실험 화면의 'JSON 내려받기'와 같은 모양).
+create or replace view participant_log
+with (security_invoker = true)
+as
+select
+  s.started_at,
+  s.pid,
+  s.condition->>'code'  as code,
+  count(e.id)           as n_events,
+  coalesce(
+    jsonb_agg(jsonb_build_object('t', e.t, 'type', e.type) || (e.data - 't' - 'type')
+              order by e.t, e.id) filter (where e.id is not null),
+    '[]'::jsonb)        as events,
+  s.id                  as session_id
+from sessions s
+left join events e on e.session_id = s.id
+group by s.id
+order by s.started_at desc;
+
+revoke all on participant_log from anon, authenticated;
+
+-- ③ 한 사람의 행동을 시간순 표로. Table Editor에서 pid로 필터하면 그 사람만 보입니다.
+create or replace view participant_timeline
+with (security_invoker = true)
+as
+select
+  s.pid,
+  s.condition->>'code'  as code,
+  e.t,
+  e.type,
+  e.data - 't' - 'type' as detail,
+  s.started_at,
+  s.id                  as session_id
+from events e
+join sessions s on s.id = e.session_id
+order by s.started_at desc, e.t, e.id;
+
+revoke all on participant_timeline from anon, authenticated;
