@@ -16,12 +16,17 @@ create table if not exists sessions (
 -- 이벤트 1건 = 행동 1개
 create table if not exists events (
   id          bigserial primary key,
-  session_id  uuid references sessions(id),
+  session_id  uuid references sessions(id) on delete cascade,  -- 세션을 지우면 이벤트도 함께
   t           numeric,      -- 세션 시작 기준 경과 초
   type        text,
   data        jsonb,
   created_at  timestamptz default now()
 );
+
+-- 이미 테이블을 만든 경우에도 cascade가 걸리도록 다시 정의합니다.
+alter table events drop constraint if exists events_session_id_fkey;
+alter table events add constraint events_session_id_fkey
+  foreign key (session_id) references sessions(id) on delete cascade;
 
 create index if not exists events_session_idx on events (session_id);
 create index if not exists events_type_idx    on events (type);

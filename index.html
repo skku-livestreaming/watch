@@ -346,6 +346,62 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
   background:var(--panel-2);color:var(--ink-dim);border-color:var(--line);font-weight:600;
 }
 .leave:hover{color:var(--ink-dim);border-color:var(--line-2)}
+/* 방송이 끝나면 나가기가 참여를 마치는 버튼이 됩니다. 눌러야 종료 요약이 서버로
+   갑니다 — 이 버튼만큼은 놓치지 않게 강조합니다. 방송 중에는 그대로 둡니다
+   (이탈을 부추기지 않게). */
+.leave.must{
+  background:var(--live);border-color:var(--live);color:#fff;font-weight:700;
+  padding:0 20px;animation:mustPulse 1.6s ease-in-out infinite;
+}
+.leave.must:hover{color:#fff;filter:brightness(1.08)}
+@keyframes mustPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(229,57,53,.55)}
+  50%{box-shadow:0 0 0 9px rgba(229,57,53,0)}
+}
+.ec-note{
+  margin:0;padding:7px 14px;border-radius:8px;background:rgba(255,255,255,.14);
+  font-size:13px;color:#fff;animation:noteIn .2s ease-out;
+}
+@keyframes noteIn{from{opacity:0;transform:translateY(4px)}
+}
+.ec-exit{
+  margin-top:10px;display:flex;flex-direction:column;align-items:center;gap:8px;
+  padding:12px 16px;border-radius:10px;background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.16);
+}
+.ec-exit p{margin:0;font-size:13.5px;line-height:1.5;color:#eef1f6}
+.ec-exit b{color:#ff8a80}
+.ec-exit button{
+  background:var(--live);color:#fff;border:0;border-radius:19px;
+  padding:9px 24px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;
+}
+
+/* 안내 페이지의 나가기 예시 — 실제 방송 화면 아래 줄을 축소해 그립니다. */
+.intro-exit{
+  margin:26px 0 0;border:2px solid var(--live);border-radius:12px;
+  padding:16px 18px;background:var(--panel);
+}
+.intro-exit h3{margin:0 0 6px;font-size:15.5px;font-weight:700;color:var(--live);letter-spacing:-.015em}
+.intro-exit p{margin:0 0 14px;font-size:14px;line-height:1.7;color:var(--ink-dim)}
+.intro-exit p b{color:var(--ink)}
+.ix-mock{
+  position:relative;border:1px solid var(--line);border-radius:9px;background:var(--bg);
+  overflow:hidden;
+}
+.ix-video{
+  height:74px;background:#07080b;color:rgba(255,255,255,.75);font-size:12.5px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;
+}
+.ix-row{display:flex;align-items:center;gap:8px;padding:9px 11px;font-size:12px;color:var(--ink-faint)}
+.ix-row .av{width:22px;height:22px;border-radius:50%;background:var(--chip);flex:none}
+.ix-row .sp{margin-left:auto}
+.ix-sub{background:var(--accent);color:var(--on-accent);border-radius:14px;padding:4px 11px;font-weight:700}
+.ix-leave{
+  position:relative;background:var(--live);color:#fff;border-radius:14px;padding:4px 12px;font-weight:700;
+  animation:mustPulse 1.6s ease-in-out infinite;
+}
+.ix-ptr{position:absolute;right:-6px;bottom:-15px;width:20px;height:20px}
+.ix-steps{margin:12px 0 0;padding:0 0 0 18px;font-size:13px;line-height:1.75;color:var(--ink-dim)}
 
 /* ── 안내 페이지 ───────────────────────── */
 .intro{display:none;max-width:498px;margin:72px auto 0;padding:0 18px 64px}
@@ -488,17 +544,21 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 /* 결과 — 비율(%)은 띄우지 않고 표를 받은 사람 수만 씁니다. 막대 길이는 같은 수를
    그림으로 옮긴 것이라 따로 숫자를 달지 않습니다. */
 .poll-res{display:flex;flex-direction:column;gap:9px;margin-top:12px}
-.poll-res .row{position:relative;border:1px solid #dfe2e8;border-radius:10px;overflow:hidden;background:#f4f5f8}
-.poll-res .bar{position:absolute;inset:0 auto 0 0;background:#dfe5f3}
-.poll-res .row.mine .bar{background:rgba(47,91,197,.2)}
-.poll-res .row.mine{border-color:#2f5bc5}
+/* 색의 역할을 나눕니다.
+   - 막대(몇 명이 골랐나): 두 선택지 모두 같은 주황. 선택지마다 색이 다르면
+     색 자체가 한쪽 인상을 만들므로 한 색으로 둡니다.
+   - 내 선택: 파란 테두리 + 파란 배지. 막대와 다른 색이라 섞여 보이지 않습니다.
+   주황 위 글자(#16181c) 대비는 4.5:1 이상입니다. */
+.poll-res .row{position:relative;border:1.5px solid #c9ced8;border-radius:10px;overflow:hidden;background:#ffffff}
+.poll-res .bar{position:absolute;inset:0 auto 0 0;background:#f6b94f}
+.poll-res .row.mine{border:2.5px solid #2f5bc5}
 .poll-res .ln{
   position:relative;display:flex;align-items:center;gap:8px;
   padding:12px 14px;font-size:14.5px;font-weight:600;
 }
-.poll-res .mine-tag{font-size:11px;font-weight:700;color:#2a52b4}
-.poll-res .n{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:700}
-.poll-res .n small{font-weight:500;color:#5f6676;font-size:12.5px}
+.poll-res .mine-tag{font-size:11px;font-weight:700;background:#2f5bc5;color:#fff;padding:1px 6px;border-radius:4px}
+.poll-res .n{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:800;font-size:16.5px}
+.poll-res .n small{font-weight:600;color:#3a3f4a;font-size:12.5px}
 
 /* 이유 작성 — 투표 카드 안 */
 .poll-why{margin-top:14px;display:flex;flex-direction:column;gap:9px;width:100%;text-align:left}
@@ -672,6 +732,29 @@ body.resizing{cursor:col-resize;user-select:none}
     <p class="intro-lead" id="introLead"></p>
     <div class="intro-card" id="introCard"></div>
     <p class="intro-note" id="introNote"></p>
+    <!-- 종료 안내. 나가기를 안 누르고 창을 닫으면 종료 요약(leave)이 빠집니다. -->
+    <div class="intro-exit">
+      <h3>방송이 끝나면 꼭 [나가기]를 눌러주세요</h3>
+      <p>방송이 끝난 뒤 화면 <b>오른쪽 아래의 빨간 [나가기] 버튼</b>을 눌러야
+         참여가 <b>정상적으로 완료</b>됩니다. 버튼을 누르지 않고 창을 닫으면
+         참여가 완료되지 않을 수 있습니다.</p>
+      <div class="ix-mock" aria-hidden="true">
+        <div class="ix-video">방송이 종료되었습니다</div>
+        <div class="ix-row">
+          <span class="av"></span><span>하루끝 harukkeut</span>
+          <span class="sp"></span>
+          <span class="ix-sub">구독</span>
+          <span class="ix-leave">나가기
+            <svg class="ix-ptr" viewBox="0 0 24 24"><path d="M4 2l15 9.5-6.6 1.3 3.9 7.4-2.7 1.4-3.9-7.4L4 18.6z" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/></svg>
+          </span>
+        </div>
+      </div>
+      <ol class="ix-steps">
+        <li>방송을 끝까지 시청합니다.</li>
+        <li>"방송이 종료되었습니다"가 뜨면 빨간 <b>[나가기]</b>를 누릅니다.</li>
+        <li>"참여가 완료되었습니다" 화면이 보이면 끝입니다.</li>
+      </ol>
+    </div>
     <!-- 참가자 식별. 설문 응답과 로그를 묶는 열쇠입니다. -->
     <div class="intro-id">
       <label for="pidEmail">참가자 고유 코드(없을 경우 이메일주소)를 입력해주세요.</label>
@@ -709,6 +792,11 @@ body.resizing{cursor:col-resize;user-select:none}
           <button class="ec-sub" id="endSub" aria-pressed="false">구독하기</button>
           <p class="ec-lb">하루끝 harukkeut 의 다른 영상</p>
           <div class="ec-grid" id="ecGrid"></div>
+          <p class="ec-note" id="ecNote" hidden role="status"></p>
+          <div class="ec-exit">
+            <p>참여를 마치려면 <b>[나가기]</b>를 눌러주세요. 눌러야 정상적으로 종료됩니다.</p>
+            <button id="endLeave">나가기 · 참여 완료</button>
+          </div>
         </div>
 
       </div>
@@ -789,13 +877,17 @@ body.resizing{cursor:col-resize;user-select:none}
 
   <!-- ══ 종료 ══ -->
   <section class="done" id="done">
-    <h2>세션이 끝났습니다</h2>
+    <h2>참여가 완료되었습니다</h2>
     <p id="sinkNote"></p>
+    <!-- 로그 상자는 실험자 점검용입니다. 서버로 보내는 동안에는 참가자에게 숨기고,
+         ?debug=1 이거나 서버 설정이 비어 있을 때만 보입니다. -->
+    <div id="doneDebug" hidden>
     <textarea class="logbox" id="logbox" readonly></textarea>
     <div class="acts">
       <button id="copyLog">로그 복사</button>
       <button id="dlLog">JSON 내려받기</button>
       <button id="again">다시 시작</button>
+    </div>
     </div>
   </section>
 </div>
@@ -1182,7 +1274,7 @@ const NICK_IDB = ['day','night','star','sky','one','two','zip','box','map','log'
      7–35  말랑이 자랑("말랑이 마켓 해야 될 것 같아요")
     39–60  "오늘 하려던 게 있다, 밸런스 게임 가져왔다"
     62–98  고릴라 vs 맨손 성인 남자 100명 설명, "투표 올릴게요, 의견 달아주세요"
-   98–128  "바로 투표 시작" → "투표하는 동안 댓글창 막아둘게요"
+   98–128  "바로 투표 시작" → "투표하는 동안 댓글창 막아둘게요" (잠금 120초 → 투표 카드 121초)
   150–167  "10초 뒤 마감" → "4 3 2 1, 투표 종료"     (채팅 잠김)
    169.6~  "자 결과 한번 볼게요" → "재밌다, 다음에도 해야겠다"
   플랫폼 공지는 띄우지 않습니다 — 실제 플랫폼은 예고를 스트리머가 말로 합니다.
@@ -1208,7 +1300,7 @@ const CUES = [
   {t:  88.5, text: '투표 ㄱㄱ', core: true},
   {t:  95.5, text: '의견도 쓰면 되는거죠?'},
   {t: 101.0, text: 'ㅇㅋ 기다림'},
-  {t: 106.0, text: '투표 떴다', core: true},
+  {t: 106.0, text: '투표 언제 올라와요?', core: true},
   {t: 110.5, text: '벌써 고민됨'},
   {t: 114.0, text: '이거 진짜 어려운데'},
   {t: 118.4, text: '아 채팅 닫는대', core: true},
@@ -1936,7 +2028,11 @@ addEventListener('visibilitychange', () => {
   Logger.add('visibility', {state: document.visibilityState});
   if (document.visibilityState === 'hidden') Sink.flush(true);
 });
-addEventListener('pagehide', () => { Logger.add('page_hide'); Sink.flush(true); });
+addEventListener('pagehide', () => {
+  Logger.add('page_hide');
+  if (entered && !left){ left = true; Logger.add('leave', leaveSummary('closed')); }
+  Sink.flush(true);
+});
 
 /* ── 7. 플레이 루프 ──────────────────────── */
 const SPAN = 250;          // 영상 길이(초). stream.mp4 = 250.6초
@@ -2004,9 +2100,9 @@ function loop(){
   // 수백 건이 동시에 터집니다.
   chatT += elapsed;
 
-  /* 입장 발화는 결과가 공개된 뒤에만 나옵니다. 투표 카드가 떠 있고 채팅이 아직
-     열린 구간(POLL_AT~LOCK_AT)에 일찍 투표한 참가자에게만 입장이 보이면,
-     참가자마다 노출 시작점이 달라집니다. */
+  /* 입장 발화는 결과가 공개된 뒤에만 나옵니다. 투표 카드는 채팅이 잠긴 뒤에
+     뜨지만, 순서가 바뀌더라도 투표한 참가자에게만 입장이 먼저 보이는 일이 없게
+     결과 공개를 기준으로 둡니다. */
   const post = resultShown;
   for (const raw of source.next(chatT)){
     const r = post ? resolveStance(raw, vote) : {text: raw.text, stance: null};
@@ -2141,6 +2237,12 @@ function renderEndCard(){
     el.addEventListener('click', () => {
       el.style.outline = '2px solid var(--accent)';
       Logger.add('next_video_click', {index: i, title: v.t, at_sec: +tick.toFixed(2)});
+      /* 눌러도 아무 반응이 없으면 고장으로 알고 연타합니다. 짧게 알려 줍니다. */
+      const n = $('ecNote');
+      n.textContent = '지금은 볼 수 없는 영상입니다. 참여를 마치려면 [나가기]를 눌러주세요.';
+      n.hidden = false;
+      clearTimeout(n._t);
+      n._t = setTimeout(() => { n.hidden = true; }, 3000);
     });
     g.appendChild(el);
   });
@@ -2148,6 +2250,7 @@ function renderEndCard(){
 
 /* 방송 마무리. 스트리머가 접으려 하고 채팅이 인사를 합니다. */
 let outroed = false, ended = false;
+let endedAt = 0;   // 방송 종료 시각(performance.now). 영상 시계는 종료 뒤 멈추므로 따로 잽니다.
 let outroQueue = [];
 function startOutro(){
   outroed = true;
@@ -2175,6 +2278,7 @@ function endStream(){
   $('streamVideo').pause();
   $('videoRetry').hidden = true;
   ended = true;
+  endedAt = performance.now();
   clearInterval(timer);
   Logger.add('stream_ended', {at_sec: +tick.toFixed(2)});
   $('player').classList.add('off');
@@ -2188,6 +2292,8 @@ function endStream(){
   $('inputRow').hidden = true;
   $('inputOff').hidden = false;
   $('inputOff').textContent = '방송이 종료되어 채팅을 보낼 수 없습니다.';
+  $('leave').classList.add('must');
+  $('leave').textContent = '나가기 · 참여 완료';
 }
 
 /* 입장 직전까지 흘렀던 대화. 타임라인과 같은 화자·같은 정체성 배분을 쓰되
@@ -2282,7 +2388,7 @@ function setReact(v){
    참가자마다 달라지면 안 되므로, 해제는 투표 시점이 아니라 스트리머가 결과를
    여는 시각에 일어납니다. 빨리 투표한 사람이 채팅을 더 오래 보는 일이 없습니다. */
 const ANNOUNCE_AT    = 39;    // "오늘 하려고 했던 게 있거든요" — 밸런스 게임 예고
-const POLL_AT        = 104;   // "바로 투표 시작하도록 할게요" — 투표 카드 등장
+const POLL_AT        = 121;   // 채팅을 막은 직후 투표 카드가 올라옵니다(잠금 → 투표 순서)
 const LOCK_AT        = 120;   // "투표할 동안은 댓글창 막아두도록 하겠습니다"
 const COUNTDOWN      = 10;    // "이제부터 한 10초 뒤에 마감" — 마감 전 이만큼만 남은 시간 표시
 const CLOSE_AT       = 166.5; // "4 3 2 1, 투표 종료"
@@ -2377,11 +2483,11 @@ function showResult(){
 
   const box = $('pollRes');
   box.innerHTML = '';
-  ['A','B'].forEach(k => {
+  ['B','A'].forEach(k => {   // 고릴라 1마리가 위, 맨몸 남자 100명이 아래
     const row = document.createElement('div');
     row.className = 'row' + (vote === k ? ' mine' : '');
     row.innerHTML = `<span class="bar" style="width:${(result[k] / total * 100).toFixed(1)}%"></span>
-      <span class="ln"><span class="lb"></span>${vote === k ? '<span class="mine-tag">내 선택</span>' : ''}
+      <span class="ln"><span class="lb"></span>${vote === k ? '<span class="mine-tag">✓ 내 선택</span>' : ''}
       <span class="n">${fmt(result[k])}<small> / ${fmt(total)}명</small></span></span>`;
     row.querySelector('.lb').textContent = DILEMMA[k].label;
     box.appendChild(row);
@@ -2426,7 +2532,7 @@ function showPoll(){
   const box = $('pollOpts');
   box.hidden = false;
   box.innerHTML = '';
-  ['A','B'].forEach(k => {
+  ['B','A'].forEach(k => {   // 고릴라 1마리가 위, 맨몸 남자 100명이 아래
     const b = document.createElement('button');
     b.type = 'button';
     b.dataset.v = k;
@@ -2561,12 +2667,15 @@ function toggleSub(where){
   Logger.add('subscribe', {on: subscribed, where, at_sec: +tick.toFixed(2)});
 }
 
-function leave(){
-  $('streamVideo').pause();
-  $('videoRetry').hidden = true;
-  clearInterval(timer);
-  Logger.add('leave', {
+/* 나가기를 누르지 않고 창을 닫아도 종료 요약은 남깁니다(via: 'closed').
+   via로 정상 종료와 구분합니다. */
+let left = false;
+function leaveSummary(via){
+  return {
+    via,
     dwell_sec: +tick.toFixed(2),
+    // 방송 종료 화면에서 머문 시간. dwell_sec는 영상 시계라 종료 뒤로는 늘지 않습니다.
+    after_end_sec: ended ? +((performance.now() - endedAt) / 1000).toFixed(2) : null,
     comments_typed: Logger.ev.filter(e => e.type === 'user_comment').length,
     // 체류 중 실제로 노출된 메시지 기준 AI 비율 — 분석에 쓸 값
     shown_messages: shownTotal,
@@ -2604,7 +2713,16 @@ function leave(){
     /* 위는 '피드에 붙은' 기준, 아래는 '화면에 떠 있던' 기준.
        둘의 차이 자체가 보고할 값입니다 — 크면 측정 방식이 결과를 바꾼다는 뜻입니다. */
     ...seenSummary()
-  });
+  };
+}
+
+function leave(via){
+  if (left) return;
+  left = true;
+  $('streamVideo').pause();
+  $('videoRetry').hidden = true;
+  clearInterval(timer);
+  Logger.add('leave', leaveSummary(typeof via === 'string' ? via : (ended ? 'header_after_end' : 'header')));
   /* 채팅 본문은 로그에 남기지 않습니다. 참가자가 드래그한 글만 text_select로 남습니다.
      노출량은 위 leave 요약의 집계값으로 봅니다. */
   watch.classList.remove('on');
@@ -2612,8 +2730,11 @@ function leave(){
   $('logbox').value = Logger.dump();
   /* 세션 종료 시점에 남은 이벤트를 전부 밀어 넣습니다. */
   Sink.flush(true);
+  const debug = new URLSearchParams(location.search).get('debug') === '1';
+  $('doneDebug').hidden = Sink.enabled() && !debug;
   $('sinkNote').textContent = Sink.enabled()
-    ? `서버로 전송했습니다. session_id: ${Sink.id()}`
+    ? (debug ? `서버로 전송했습니다. session_id: ${Sink.id()}`
+             : '응답이 저장되었습니다. 이제 창을 닫으셔도 됩니다.')
     : '서버 설정이 비어 있어 로컬에만 쌓였습니다. 아래에서 JSON으로 내려받으세요.';
 }
 
@@ -2659,8 +2780,12 @@ function restart(){
   pollShown = false; pollClosed = false; locked = false;
   resultShown = false; resultHidden = false; result = null;
   outroed = false; ended = false; outroQueue = [];
+  left = false;
+  $('leave').classList.remove('must');
+  $('leave').textContent = '나가기';
   $('player').classList.remove('off');
   $('endCard').hidden = true;
+  $('ecNote').hidden = true;
   $('inputOff').textContent = '이 방송은 채팅 입력이 제한되어 있습니다.';
   voteLocked = false; voteClicks = 0; firstVote = null; firstVoteAt = null;
   for (const k of Object.keys(optHover)) delete optHover[k];
@@ -2703,7 +2828,8 @@ $('subBtn').addEventListener('click', () => toggleSub('header'));
 $('endSub').addEventListener('click', () => toggleSub('endcard'));
 $('reactUp').addEventListener('click', () => setReact('up'));
 $('reactDown').addEventListener('click', () => setReact('down'));
-$('leave').addEventListener('click', leave);
+$('leave').addEventListener('click', () => leave());
+$('endLeave').addEventListener('click', () => leave('endcard'));
 $('sendBtn').addEventListener('click', send);
 $('say').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
 $('again').addEventListener('click', restart);
