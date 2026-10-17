@@ -34,7 +34,8 @@ anon 키는 공개되는 값입니다. 자극물이 브라우저에서 돌아가
 
 ### 2-2. 테이블 생성
 
-Supabase 대시보드 → SQL Editor에 그대로 붙여넣고 실행합니다.
+[supabase_setup.sql](supabase_setup.sql) 전체를 Supabase 대시보드 → SQL Editor에 붙여넣고 실행합니다.
+아래는 핵심만 옮긴 것이며, 참가자 코드를 세션 행에 채우는 `set_pid` 함수는 파일에만 있습니다.
 
 ```sql
 -- 세션 1건 = 참가자 1명의 자극물 1회 실행
@@ -107,8 +108,8 @@ order by s.pid, e.t;
 
 이벤트 1건이 대략 0.3KB입니다. 참가자 1명이 수백~2천 건이면 한 명당 0.1~0.6MB,
 330명이면 **최대 200MB 수준**입니다. 무료 티어(500MB)에 들어갑니다.
-밀도가 높은 조건(9,238명)을 많이 돌릴 계획이면 `comment_shown` 이벤트에서
-`text` 필드를 빼는 것만으로 절반 이하로 떨어집니다.
+채팅 본문은 로그에 남기지 않으므로(참가자가 드래그한 글만 `text_select`로 남음)
+밀도가 높은 조건에서도 이벤트 수가 채팅량에 비례해 늘지 않습니다.
 
 ---
 
@@ -204,7 +205,6 @@ https://skku-livestreaming.github.io/watch/?c=m2
 | `watch_start` | 방송 화면 진입 |
 | `user_card_open` / `user_card_close` | 채팅 사용자 카드를 연 상대·방식(호버/클릭)·머문 시간 |
 | `density` / `ai_allocation` | 적용된 밀도와 실제 AI 배정 결과 |
-| `comment_shown` | 노출된 모든 채팅 — 시각, 작성자, AI 여부, 입장 |
 | `chat_scroll` | 위로 올린 횟수, 최대 깊이, 맨 위 도달 여부 |
 | `poll_shown` | 투표 카드 노출 |
 | `chat_locked` | 채팅 잠금 시각 |
@@ -226,7 +226,7 @@ https://skku-livestreaming.github.io/watch/?c=m2
 
 ### 노출 기준 2종 — 섞어 쓰지 말 것
 
-`comment_shown`은 **피드에 붙었다**는 사실이지 본 것이 아닙니다. 스크롤이 위에 가 있으면 화면 밖에 쌓이고,
+`leave.shown_*`은 **피드에 붙었다**는 사실이지 본 것이 아닙니다. 스크롤이 위에 가 있으면 화면 밖에 쌓이고,
 밀도가 높으면 읽기 전에 밀려 올라가고, 탭을 가린 동안에도 쌓입니다.
 그래서 종료 요약에 두 기준을 나란히 둡니다.
 

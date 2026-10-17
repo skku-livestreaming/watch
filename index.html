@@ -452,16 +452,19 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .react .rc{margin-left:3px}
 
 /* ── Study 2: 영상 위 투표 오버레이 ──────────
+   영상 오른쪽에 세로로 붙습니다. 스트리머 얼굴·손이 가운데에 있어서
+   아래쪽 가로 카드는 화면을 가립니다.
    흰 카드입니다. 영상 위라 테마와 무관하게 고정 색을 씁니다 — 다크 테마에서도
    흰 카드로 남아야 조건 간 자극물이 같습니다. */
 .poll{
-  position:absolute;left:12px;right:12px;bottom:52px;z-index:5;
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);z-index:5;
+  width:min(300px,38%);max-height:calc(100% - 24px);overflow-y:auto;
   background:#ffffff;border:1px solid #e3e6ec;
   border-radius:12px;padding:14px 16px;color:#16181c;
   box-shadow:0 14px 40px rgba(0,0,0,.28);
-  max-width:520px;animation:pollIn .22s ease-out;
+  animation:pollIn .22s ease-out;
 }
-@keyframes pollIn{from{opacity:0;transform:translateY(10px)}}
+@keyframes pollIn{from{opacity:0;transform:translate(14px,-50%)}}
 .poll-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .poll-tag{
   font-size:11px;font-weight:700;letter-spacing:.03em;
@@ -469,9 +472,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 }
 .poll-timer{font-size:12px;color:#5f6676;font-variant-numeric:tabular-nums;margin-left:auto}
 .poll-q{margin:0;font-size:16px;font-weight:700;line-height:1.4;letter-spacing:-.015em}
-.poll-opts{display:flex;gap:9px;margin-top:12px;flex-wrap:wrap}
+.poll-opts{display:flex;flex-direction:column;gap:9px;margin-top:12px}
 .poll-opts button{
-  flex:1 1 180px;background:#f4f5f8;border:1px solid #dfe2e8;
+  flex:none;background:#f4f5f8;border:1px solid #dfe2e8;
   color:#16181c;border-radius:10px;padding:15px;font-size:15px;font-weight:600;
   text-align:center;line-height:1.35;cursor:pointer;font-family:inherit;
   transition:background .12s,border-color .12s;
@@ -630,8 +633,8 @@ body.resizing{cursor:col-resize;user-select:none}
   /* 좁은 화면에서는 영상 위에 겹치지 않습니다. 이유 입력란까지 열리면
      16:9 영역 안에 들어가지 않고, 겹치면 질문 첫 줄부터 잘립니다. */
   .poll{
-    position:static;margin-top:10px;max-width:none;padding:12px 13px;
-    left:auto;right:auto;bottom:auto;
+    position:static;margin-top:10px;width:auto;max-height:none;padding:12px 13px;
+    transform:none;animation:none;
   }
   .poll-opts{gap:7px}
   .poll-opts button{flex:1 1 100%}
@@ -684,7 +687,7 @@ body.resizing{cursor:col-resize;user-select:none}
   <section class="watch" id="watch">
     <div class="stage"><div class="stagein">
       <!-- 영상과 투표 카드를 한 상자에 둡니다. 투표 카드는 넓은 화면에서
-           이 상자 기준으로 영상 아래쪽에 겹치고, 좁은 화면에서는 아래로 흐릅니다. -->
+           이 상자 기준으로 영상 오른쪽에 겹치고, 좁은 화면에서는 아래로 흐릅니다. -->
       <div class="playwrap">
       <div class="player" id="player">
         <!-- 방송 영상. 컨트롤을 두지 않습니다 — 되감거나 건너뛰면 투표·채팅 시각이 어긋납니다. -->
@@ -882,7 +885,7 @@ const SCRIPT = [
   '방금 들어왔는데 무슨 얘기중','아 요약좀','ㅋㅋㅋ 설명 불가','그냥 보세요','ㅇㅇ',
   '아까부터 계속 웃고있음','손 엄청 바쁘시네','말랑이 몇 개 만드신거예요','ㅎㅎ','오',
   '마지막으로 뭐 하나 더 해주세요','ㅇㅈ','저도 그거 궁금','ㄱㄱ','ㅋㅋㅋㅋ',
-  '목소리 많이 쉬셨네','쉬엄쉬엄 하세요','ㅇㅇ','진짜요?','우와',
+  '쉬엄쉬엄 하세요','ㅇㅇ','진짜요?','우와',
   '아 그거 아까 나왔는데','ㅋㅋ 또 나옴','ㅇㅋㅇㅋ','ㅎㅎ','ㅋㅋㅋ'
 ];
 
@@ -913,25 +916,27 @@ function pickReact(rnd){
 const DILEMMA = {
   /* 질문 한 줄과 선택지만 띄웁니다. 조건(맨손·성인 남자)은 스트리머가 영상에서
      말로 설명하므로 카드에 본문을 따로 두지 않습니다. */
-  q: '고릴라 1마리 vs 성인 남자 100명, 누가 이길까?',
+  q: '고릴라 1마리 vs 맨몸 남자 100명, 누가 이길까?',
   /* 선택지에는 설명을 달지 않습니다. "수가 너무 많다" 같은 한 줄이 붙으면
      그 자체가 한쪽 논거가 되어 투표를 유도합니다. */
-  A: {label: '성인 남자 100명'},
+  A: {label: '맨몸 남자 100명'},
   B: {label: '고릴라 1마리'},
   /* 다른 시청자의 입장 발화. **어느 쪽을 골랐는지만** 드러내고 이유는 붙이지 않습니다 —
      논거가 붙으면 노출 효과가 '다수 의견'이 아니라 '설득력 있는 논거'로 바뀝니다.
      양쪽 풀은 같은 개수·같은 말투로 짝을 맞춥니다(한쪽만 길거나 강하면 그게 변수가 됩니다). */
   saysA: [
-    '100명', '100명 찍음', '사람 100명', '100명 쪽', '난 100명', '100명이지',
-    '사람 쪽 찍었음', '100명 ㄱㄱ', '나도 100명', '100명에 한 표', '사람 100명 찍었어요',
-    '100명 골랐음', '당연히 100명', '100명 ㅇㅇ', '사람팀', '100명 쪽임',
-    '저도 100명이요', '100명 1표', '100명 찍었다', '사람 쪽',
+    '당연히 맨몸 남자 100명이지', '맨몸 남자 100명', '100명 찍음', '당연히 100명이지',
+    '난 맨몸 남자 100명', '100명이지', '맨몸 100명 쪽 찍었음', '100명 ㄱㄱ',
+    '나도 맨몸 남자 100명', '100명에 한 표', '맨몸 남자 100명 찍었어요', '당연히 사람 100명',
+    '100명 골랐음', '맨몸 100명 ㅇㅇ', '사람팀', '100명 쪽임',
+    '저도 맨몸 남자 100명이요', '100명 1표', '당연히 100명 아님?', '맨몸 남자 100명 쪽',
   ],
   saysB: [
-    '고릴라', '고릴라 찍음', '고릴라 1마리', '고릴라 쪽', '난 고릴라', '고릴라지',
-    '고릴라 쪽 찍었음', '고릴라 ㄱㄱ', '나도 고릴라', '고릴라에 한 표', '고릴라 찍었어요',
-    '고릴라 골랐음', '당연히 고릴라', '고릴라 ㅇㅇ', '고릴라팀', '고릴라 쪽임',
-    '저도 고릴라요', '고릴라 1표', '고릴라 찍었다', '고릴라 쪽',
+    '당연히 고릴라지', '고릴라 1마리', '고릴라 찍음', '당연히 고릴라 1마리지',
+    '난 고릴라 1마리', '고릴라지', '고릴라 1마리 쪽 찍었음', '고릴라 ㄱㄱ',
+    '나도 고릴라 1마리', '고릴라에 한 표', '고릴라 1마리 찍었어요', '당연히 고릴라',
+    '고릴라 골랐음', '고릴라 1마리 ㅇㅇ', '고릴라팀', '고릴라 쪽임',
+    '저도 고릴라 1마리요', '고릴라 1표', '당연히 고릴라 아님?', '고릴라 1마리 쪽',
   ],
   neutral: ['이거 인터넷에서 맨날 싸우는 주제ㅋㅋ', '진지하게 고민됐음',
             '해보면 알텐데', '이런거 왜 이렇게 재밌지', '결과 신기하다',
@@ -1536,7 +1541,7 @@ const Renderer = {
     }
     /* 입장(A/B)은 화면에 표시하지 않습니다. 실제 채팅에는 없는 표식이고,
        참가자가 찬반 비율을 세는 과제로 받아들이게 만듭니다.
-       분석에 필요한 값은 comment_shown.stance와 chat_script에 그대로 남습니다. */
+       분석에 필요한 값은 leave 요약의 shown_congruent/incongruent로 남습니다. */
     el.append(nm);
 
     if (c.kind !== 'me'){
@@ -1631,7 +1636,7 @@ function initChatScroll(){
 }
 
 /* ── 메시지별 화면 체류 ──────────────────────
-   comment_shown은 '피드에 붙었다'는 사실일 뿐 본 것이 아닙니다.
+   피드에 '붙었다'는 것은 사실일 뿐 본 것이 아닙니다.
    스크롤이 위에 가 있으면 새 메시지는 화면 밖에 쌓이고, 밀도가 높으면
    읽기 전에 밀려 올라가고, 탭을 가린 동안에도 계속 쌓입니다.
 
@@ -1812,13 +1817,18 @@ function initTextSelect(){
    anon key는 공개되어도 되는 값입니다. RLS로 insert만 허용하고
    select는 막아두면 참가자가 남의 로그를 읽을 수 없습니다(README 참고).
    ════════════════════════════════════════════════════════════════ */
-const SUPABASE_URL = '';       // 예: https://xxxxxxxx.supabase.co
-const SUPABASE_KEY = '';       // 예: eyJhbGciOi... (anon public key)
+const SUPABASE_URL = 'https://trsfvioqvvaekomshcfj.supabase.co'; // /rest/v1 은 붙이지 않습니다
+const SUPABASE_KEY = 'sb_publishable_UUX1-pcAvROjBnwMNdKJfQ_Ul4jMwCG'; // publishable key (secret key 금지)
 
 const Sink = (function(){
   const on = () => Boolean(SUPABASE_URL && SUPABASE_KEY);
   const QKEY = 'stim_retry_q';
   let sessionId = null, queue = [], sending = false;
+  /* 새 publishable key(sb_publishable_…)는 JWT가 아니라 Bearer로 보내면 거절됩니다.
+     예전 anon key(eyJ…)일 때만 Authorization을 붙입니다. */
+  const authHeaders = () => SUPABASE_KEY.startsWith('eyJ')
+    ? {apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`}
+    : {apikey: SUPABASE_KEY};
 
   /* 전송 실패분은 브라우저에 쌓아두고 다음 기회에 다시 보냅니다.
      저장소가 막힌 환경(시크릿 창 등)에서도 자극물은 그대로 돌아가야 하므로 전부 try/catch. */
@@ -1829,8 +1839,7 @@ const Sink = (function(){
     const url = `${SUPABASE_URL}/rest/v1/${path}`;
     const headers = {
       'Content-Type': 'application/json',
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
+      ...authHeaders(),
       Prefer: 'return=minimal'
     };
     if (beacon && navigator.sendBeacon){
@@ -1870,19 +1879,11 @@ const Sink = (function(){
        그 행을 채워 넣습니다 — 중간에 창을 닫아도 세션 자체는 남게 하려는 구조입니다. */
     async setPid(pid){
       if (!on() || !sessionId) return;
-      const url = `${SUPABASE_URL}/rest/v1/sessions?id=eq.${sessionId}`;
-      try {
-        await fetch(url, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: SUPABASE_KEY,
-            Authorization: `Bearer ${SUPABASE_KEY}`,
-            Prefer: 'return=minimal'
-          },
-          body: JSON.stringify({pid})
-        });
-      } catch {}
+      /* anon에는 update·select 권한이 없으므로 PATCH는 0건으로 끝납니다.
+         자기 세션의 pid만 채우는 set_pid 함수(supabase_setup.sql)로 보냅니다. */
+      if (!await post('rpc/set_pid', {sid: sessionId, p: pid})){
+        const q = readQ(); q.push({p:'rpc/set_pid', b:{sid: sessionId, p: pid}}); writeQ(q);
+      }
     },
     /* 이벤트는 모아서 보냅니다. 한 건씩 보내면 300명 × 수천 건이 전부 개별 요청이 됩니다. */
     push(ev){ queue.push({session_id: sessionId, t: ev.t, type: ev.type, data: ev}); },
@@ -1956,9 +1957,8 @@ function buildSources(){
 }
 
 let shownTotal = 0, shownAI = 0;            // 참가자가 실제로 본 메시지 기준 집계
-/* 화면에 올라간 모든 줄의 대본. 이벤트에는 줄 번호(i)만 남기고 본문은 여기 한 번만
-   들고 있다가, 종료할 때 chat_script 한 건으로 내보냅니다 — 줄마다 본문을 남기면
-   로그의 대부분이 채팅 대본이 되어 정작 행동 이벤트가 묻힙니다. */
+/* 화면에 올라간 모든 줄의 대본. 메모리에만 둡니다 — 로그에는 채팅 본문을 남기지 않고,
+   참가자가 드래그한 글만 text_select로 남깁니다. */
 const shownLines = [];
 let shownCong = 0, shownIncong = 0;         // study 2: 노출된 일치/불일치 발화
 let vote = null, chatOpen = true;           // study 2: 참가자 투표와 채팅 잠금 상태
@@ -2022,8 +2022,6 @@ function loop(){
     shownLines.push({i: shownLines.length, name: c.name, kind: c.kind,
                      stance: r.stance || null, ph: post ? 'main' : 'pre_poll',
                      t: +tick.toFixed(2), text: c.text});
-    Logger.add('comment_shown', {i: shownLines.length - 1, kind: c.kind,
-                                 ...(r.stance ? {stance: r.stance} : {})});
   }
 }
 
@@ -2032,7 +2030,6 @@ function pushScripted(m, ph){
   Renderer.push({kind: m.kind, name: m.name, text: m.text});
   shownLines.push({i: shownLines.length, name: m.name, kind: m.kind,
                    stance: null, ph, t: +tick.toFixed(2), text: m.text});
-  Logger.add('comment_shown', {i: shownLines.length - 1, kind: m.kind, ph});
 }
 
 /* ── 8. 화면 전환 ────────────────────────── */
@@ -2202,7 +2199,6 @@ function seedBacklog(){
     Renderer.push({kind: c.kind, name: c.name, text: c.text});
     shownLines.push({i: shownLines.length, name: c.name, kind: c.kind,
                      stance: null, ph: 'before_join', t: 0, text: c.text});
-    Logger.add('comment_shown', {i: shownLines.length - 1, kind: c.kind, ph: 'before_join'});
   }
   feed.scrollTop = feed.scrollHeight;
 }
@@ -2609,9 +2605,8 @@ function leave(){
        둘의 차이 자체가 보고할 값입니다 — 크면 측정 방식이 결과를 바꾼다는 뜻입니다. */
     ...seenSummary()
   });
-  /* 채팅 대본은 마지막에 한 건으로 내보냅니다. 줄 번호(i)가 comment_shown과
-     per_line 노출 기록의 열쇠입니다. */
-  Logger.add('chat_script', {lines: shownLines.length, script: shownLines});
+  /* 채팅 본문은 로그에 남기지 않습니다. 참가자가 드래그한 글만 text_select로 남습니다.
+     노출량은 위 leave 요약의 집계값으로 봅니다. */
   watch.classList.remove('on');
   done.classList.add('on');
   $('logbox').value = Logger.dump();
