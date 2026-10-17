@@ -753,7 +753,9 @@ body.resizing{cursor:col-resize;user-select:none}
       <div class="playwrap">
       <div class="player" id="player">
         <!-- 방송 영상. 컨트롤을 두지 않습니다 — 되감거나 건너뛰면 투표·채팅 시각이 어긋납니다. -->
-        <video class="scene" id="streamVideo" src="./stream.mp4" preload="metadata" playsinline aria-label="방송 영상"></video>
+        <video class="scene" id="streamVideo" src="./stream.mp4" preload="metadata" playsinline
+               disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback"
+               aria-label="방송 영상"></video>
         <button id="videoRetry" class="video-retry" hidden>영상 재생하기</button>
 
         <div class="plrow">
@@ -950,7 +952,7 @@ const SCRIPT = [
   '배고프다','야식 참는중','흰색은 찹쌀떡같음','찹쌀떡ㅋㅋ','ㅋㅋㅋㅋ',
   '아 나 내일 일찍 일어나야 하는데','저도요','같이 버텨요','ㅋㅋㅋㅋㅋ','ㅇㅈㅇㅈ',
   '방금 들어왔는데 무슨 얘기중','아 요약좀','ㅋㅋㅋ 설명 불가','그냥 보세요','ㅇㅇ',
-  '아까부터 계속 웃고있음','손 엄청 바쁘시네','말랑이 몇 개 만드신거예요','ㅎㅎ','오',
+  '말랑이 몇 개 만드신거예요','ㅎㅎ','오', '비누 말랑이 탐난다',
   '마지막으로 뭐 하나 더 해주세요','ㅇㅈ','저도 그거 궁금','ㄱㄱ','ㅋㅋㅋㅋ',
   '쉬엄쉬엄 하세요','ㅇㅇ','진짜요?','우와',
   '아 그거 아까 나왔는데','ㅋㅋ 또 나옴','ㅇㅋㅇㅋ','ㅎㅎ','ㅋㅋㅋ'
@@ -1036,13 +1038,14 @@ function density(v){
 }
 
 /* 입장 직전까지 쌓여 있는 대화 줄 수.
-   고정값으로 두면 채팅창이 큰 화면에서 위쪽이 텅 빕니다 — 참가자가 '방금 열린 방'에
-   들어온 것처럼 읽혀 중도 입장 설정과 어긋납니다. 채팅창 높이에 맞춰 채웁니다.
-   시청자가 적은 조건에서는 그만큼 덜 쌓입니다. */
-const BACKLOG_MIN = 8, BACKLOG_MAX = 70, LINE_PX = 30;
+   채팅창이 비어 보이면 '방금 열린 방'처럼 읽혀 중도 입장 설정과 어긋나므로 넉넉히 채웁니다.
+   예전에는 채팅창 높이에 맞춰 줄 수를 정했는데, 그러면 백로그가 쓰는 난수 개수가 화면마다
+   달라져 그 뒤 타임라인 전체(누가 무슨 말을 언제 하는지, 입장 슬롯 수 116/117)가 참가자
+   화면 크기에 따라 바뀌었습니다. 큰 화면(1080p 채팅창 ≈ 34줄)까지 채우는 고정값을 씁니다.
+   시청자가 적은 조건에서는 그만큼 덜 쌓입니다(시청자 수는 조건마다 고정). */
+const BACKLOG_MIN = 8, BACKLOG_MAX = 70, BACKLOG_FIT = 40;
 function backlogTarget(c){
-  const h = (typeof feed !== 'undefined' && feed && feed.clientHeight) || 560;
-  const fit = Math.ceil(h / LINE_PX) + 4;          // 한 줄 약 30px + 위로 조금 더
+  const fit = BACKLOG_FIT;
   const scale = Math.min(1, c.viewers / 600);
   return Math.max(BACKLOG_MIN, Math.min(BACKLOG_MAX, Math.round(fit * scale)));
 }
@@ -2145,6 +2148,51 @@ $('streamVideo').addEventListener('ended', () => {
   if (entered && !ended){ tick = $('streamVideo').currentTime; endStream(); }
 });
 
+/* ── 라이브처럼: 건너뛰기·되감기·배속·일시정지 차단 ──────────
+   컨트롤 바는 없지만 Chrome은 영상 오른쪽 클릭 → '모든 컨트롤 표시'로 탐색 바를
+   꺼낼 수 있습니다. 파일럿에서 11초 만에 194초로 넘어가 투표를 통째로 건너뛴
+   세션이 있었습니다. 시도는 막고 seek_attempt 등으로 남깁니다. */
+const LiveGuard = (() => {
+  const v = $('streamVideo');
+  let good = 0;                 // 정상 재생으로 도달한 마지막 시각
+  let internal = false;         // 코드가 직접 옮길 때(재시작·되돌리기)는 막지 않습니다
+  /* seeked가 안 오는 경우(메타데이터 전 등)에도 막힘이 풀리도록 시간 제한을 둡니다. */
+  let release = 0;
+  const set = t => {
+    internal = true; v.currentTime = t;
+    clearTimeout(release); release = setTimeout(() => { internal = false; }, 1000);
+  };
+  /* 정상 재생 중에는 앞으로 간 만큼 따라갑니다. 앞으로 건너뛰는 시도는 seeking에서
+     먼저 잡히므로 여기서는 크기를 따지지 않습니다. */
+  v.addEventListener('timeupdate', () => {
+    if (v.seeking || internal) return;
+    if (v.currentTime > good) good = v.currentTime;
+  });
+  v.addEventListener('seeking', () => {
+    if (internal) return;
+    if (Math.abs(v.currentTime - good) < 1) return;   // 버퍼링 보정 같은 미세 이동
+    Logger.add('seek_attempt', {from: +good.toFixed(2), to: +v.currentTime.toFixed(2)});
+    set(good);
+  });
+  v.addEventListener('seeked', () => { internal = false; });
+  v.addEventListener('ratechange', () => {
+    if (v.playbackRate === 1) return;
+    Logger.add('rate_attempt', {rate: v.playbackRate, at_sec: +tick.toFixed(2)});
+    v.playbackRate = 1;
+  });
+  /* 참가자가 멈추면 바로 다시 재생합니다. 코드가 멈추는 경우(종료·나가기·재시작)는
+     같은 순간에 ended/left/entered가 바뀌므로 한 틱 뒤에 보고 구분합니다. */
+  v.addEventListener('pause', () => {
+    setTimeout(() => {
+      if (!entered || ended || left || v.ended) return;
+      Logger.add('pause_attempt', {at_sec: +tick.toFixed(2)});
+      playVideo();
+    }, 0);
+  });
+  v.addEventListener('contextmenu', e => e.preventDefault());
+  return {reset(){ good = 0; if (v.currentTime !== 0) set(0); }};
+})();
+
 /* 숫자에 천 단위 구분 */
 const fmt = n => n.toLocaleString('ko-KR');
 
@@ -2452,6 +2500,7 @@ function unlockChat(){
 function closePoll(){
   if (pollClosed) return;
   if (!pollShown) showPoll();
+  endHover('A'); endHover('B');
   pollClosed = true;
   if (vote && cond.why === 'on' && !$('pollWhy').hidden) submitWhy(true);
   if (vote && !voteLocked) lockVote();
@@ -2535,20 +2584,13 @@ function showPoll(){
     b.textContent = DILEMMA[k].label;
     /* 선택지 위에 커서를 올린 시간. 두 선택지를 오가며 재는 행동이 그대로 남습니다.
        주의: 체류 시간을 '숙고'로 읽지 않습니다 — 갈등 지표로만 씁니다. */
-    let inAt = 0;
-    b.addEventListener('mouseenter', () => { inAt = performance.now(); });
-    b.addEventListener('mouseleave', () => {
-      if (!inAt) return;
-      const dur = Math.round(performance.now() - inAt);
-      inAt = 0;
-      if (dur < 60) return;                 // 지나가는 커서는 버립니다
-      optHover[k] = (optHover[k] || 0) + dur;
-      optHoverN[k] = (optHoverN[k] || 0) + 1;
-      Logger.add('option_hover', {
-        choice: k, dur_ms: dur, at_sec: +tick.toFixed(2),
-        voted: vote, locked: voteLocked
-      });
+    /* 확정·마감 뒤에는 재지 않습니다. 버튼이 꺼진 뒤 커서가 그냥 놓여 있던 시간이
+       '들여다본 시간'으로 합산되면 안 됩니다(파일럿: 확정 후 19.6초가 반대쪽에 쌓임). */
+    b.addEventListener('mouseenter', () => {
+      if (voteLocked || pollClosed) return;
+      hoverIn[k] = performance.now();
     });
+    b.addEventListener('mouseleave', () => endHover(k));
     b.addEventListener('click', () => castVote(k));
     box.appendChild(b);
   });
@@ -2562,6 +2604,23 @@ function showPoll(){
 let voteLocked = false;
 let voteClicks = 0, firstVote = null, firstVoteAt = null;
 const optHover = {}, optHoverN = {};
+const hoverIn = {};                         // 선택지별 커서가 들어온 시각(진행 중인 호버)
+
+/* 진행 중인 호버를 끝내고 기록합니다. 마우스가 나갈 때, 그리고 확정·마감 순간에
+   부릅니다 — 확정 순간까지만 셉니다. */
+function endHover(k){
+  const at = hoverIn[k];
+  if (!at) return;
+  hoverIn[k] = 0;
+  const dur = Math.round(performance.now() - at);
+  if (dur < 60) return;                     // 지나가는 커서는 버립니다
+  optHover[k] = (optHover[k] || 0) + dur;
+  optHoverN[k] = (optHoverN[k] || 0) + 1;
+  Logger.add('option_hover', {
+    choice: k, dur_ms: dur, at_sec: +tick.toFixed(2),
+    voted: vote, locked: voteLocked
+  });
+}
 
 function castVote(k){
   if (voteLocked || pollClosed) return;
@@ -2594,6 +2653,7 @@ function castVote(k){
 /* 확정. 이유를 보낸 시점(또는 이유를 안 받는 조건에서는 투표 시점)에 걸립니다. */
 function lockVote(){
   if (voteLocked) return;
+  endHover('A'); endHover('B');             // 확정 직전까지만 셉니다
   voteLocked = true;
   document.querySelectorAll('#pollOpts button').forEach(b => { b.disabled = true; });
 
@@ -2751,7 +2811,7 @@ function send(){
 function restart(){
   $('streamVideo').pause();
   $('videoRetry').hidden = true;
-  $('streamVideo').currentTime = 0;
+  LiveGuard.reset();
   clearInterval(timer);
   entered = false; tick = 0; chatT = 0;
   shownTotal = 0; shownAI = 0; shownCong = 0; shownIncong = 0;
@@ -2788,6 +2848,7 @@ function restart(){
   $('inputOff').textContent = '이 방송은 채팅 입력이 제한되어 있습니다.';
   voteLocked = false; voteClicks = 0; firstVote = null; firstVoteAt = null;
   for (const k of Object.keys(optHover)) delete optHover[k];
+  for (const k of Object.keys(hoverIn)) delete hoverIn[k];
   for (const k of Object.keys(optHoverN)) delete optHoverN[k];
   Object.assign(scrollStats, {up_events:0, max_depth_px:0, away_ms:0, reached_top:false});
   $('subBtn').setAttribute('aria-pressed', 'false');

@@ -219,7 +219,8 @@ https://skku-livestreaming.github.io/watch/?c=m2
 | `reaction` | 좋아요·싫어요 클릭과 취소 |
 | `subscribe` | 구독·취소, 시각, **누른 위치**(`header` / `endcard`) |
 | `text_select` | 드래그해 선택한 것 — `where`가 `chat`이면 채팅, `poll`이면 투표 카드(질문·조건을 다시 읽은 것). 채팅이면 누구 메시지인지·AI인지도 남습니다 |
-| `option_hover` | 투표 선택지 위 커서 체류. 선택지별 누적은 `leave.option_hover_ms` |
+| `option_hover` | 투표 선택지 위 커서 체류. 선택지별 누적은 `leave.option_hover_ms`. **확정·마감 순간까지만** 셈 |
+| `seek_attempt` / `rate_attempt` / `pause_attempt` | 영상 건너뛰기·배속·일시정지 시도(오른쪽 클릭 컨트롤 등). 시도는 막히고 기록만 남음 |
 | `outro_started` / `stream_ended` | 마무리 시작·방송 종료 시각 |
 | `next_video_click` | 종료 화면의 추천 영상 클릭 |
 | `visibility` / `page_hide` | 탭을 가리거나 떠난 시각 |
