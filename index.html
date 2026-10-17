@@ -331,8 +331,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 }
 .acts-r{display:flex;align-items:center;gap:8px;margin-left:auto}
 .leave{
-  background:transparent;border:1px solid var(--line);
-  color:var(--ink-faint);border-radius:18px;padding:0 15px;height:32px;font-size:13px;
+  background:transparent;border:1px solid var(--line-2);
+  color:var(--ink-dim);border-radius:18px;padding:0 15px;height:32px;font-size:13px;
 }
 @media (max-width:860px){.tags{display:none}}
 /* 구독 버튼. 누르라는 안내는 두지 않습니다 — 반응 버튼과 같은 원칙. */
@@ -345,38 +345,18 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .sub[aria-pressed="true"]{
   background:var(--panel-2);color:var(--ink-dim);border-color:var(--line);font-weight:600;
 }
-.leave:hover{color:var(--ink-dim);border-color:var(--line-2)}
-/* 방송이 끝나면 나가기가 참여를 마치는 버튼이 됩니다. 눌러야 종료 요약이 서버로
-   갑니다 — 이 버튼만큼은 놓치지 않게 강조합니다. 방송 중에는 그대로 둡니다
-   (이탈을 부추기지 않게). */
-.leave.must{
-  background:var(--live);border-color:var(--live);color:#fff;font-weight:700;
-  padding:0 20px;animation:mustPulse 1.6s ease-in-out infinite;
-}
-.leave.must:hover{color:#fff;filter:brightness(1.08)}
-@keyframes mustPulse{
-  0%,100%{box-shadow:0 0 0 0 rgba(229,57,53,.55)}
-  50%{box-shadow:0 0 0 9px rgba(229,57,53,0)}
-}
+.leave:hover{color:var(--ink);border-color:var(--ink-faint)}
+/* 방송 중에는 숨기고(중도 이탈은 측정하지 않음), 방송이 끝나면 '참여 종료하기'로 나타납니다.
+   색·깜빡임 같은 강조는 두지 않습니다 —
+   종료 화면에서 구독·추천 영상·채팅을 둘러보는 시간도 측정 대상이라, 버튼이 눈을 끌면
+   그 행동이 묻힙니다. */
 .ec-note{
   margin:0;padding:7px 14px;border-radius:8px;background:rgba(255,255,255,.14);
   font-size:13px;color:#fff;animation:noteIn .2s ease-out;
 }
 @keyframes noteIn{from{opacity:0;transform:translateY(4px)}
 }
-.ec-exit{
-  margin-top:10px;display:flex;flex-direction:column;align-items:center;gap:8px;
-  padding:12px 16px;border-radius:10px;background:rgba(255,255,255,.07);
-  border:1px solid rgba(255,255,255,.16);
-}
-.ec-exit p{margin:0;font-size:13.5px;line-height:1.5;color:#eef1f6}
-.ec-exit b{color:#ff8a80}
-.ec-exit button{
-  background:var(--live);color:#fff;border:0;border-radius:19px;
-  padding:9px 24px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;
-}
-
-/* 안내 페이지의 나가기 예시 — 실제 방송 화면 아래 줄을 축소해 그립니다. */
+/* 안내 페이지의 참여 종료 버튼 예시 — 실제 방송 화면 아래 줄을 축소해 그립니다. */
 .intro-exit{
   margin:26px 0 0;border:2px solid var(--live);border-radius:12px;
   padding:16px 18px;background:var(--panel);
@@ -397,8 +377,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .ix-row .sp{margin-left:auto}
 .ix-sub{background:var(--accent);color:var(--on-accent);border-radius:14px;padding:4px 11px;font-weight:700}
 .ix-leave{
-  position:relative;background:var(--live);color:#fff;border-radius:14px;padding:4px 12px;font-weight:700;
-  animation:mustPulse 1.6s ease-in-out infinite;
+  position:relative;border:1px solid var(--line-2);color:var(--ink-dim);border-radius:14px;padding:3px 12px;
 }
 .ix-ptr{position:absolute;right:-6px;bottom:-15px;width:20px;height:20px}
 .ix-steps{margin:12px 0 0;padding:0 0 0 18px;font-size:13px;line-height:1.75;color:var(--ink-dim)}
@@ -732,26 +711,26 @@ body.resizing{cursor:col-resize;user-select:none}
     <p class="intro-lead" id="introLead"></p>
     <div class="intro-card" id="introCard"></div>
     <p class="intro-note" id="introNote"></p>
-    <!-- 종료 안내. 나가기를 안 누르고 창을 닫으면 종료 요약(leave)이 빠집니다. -->
+    <!-- 종료 안내. 버튼을 안 누르고 창을 닫으면 정상 종료로 기록되지 않습니다(via: closed). -->
     <div class="intro-exit">
-      <h3>방송이 끝나면 꼭 [나가기]를 눌러주세요</h3>
-      <p>방송이 끝난 뒤 화면 <b>오른쪽 아래의 빨간 [나가기] 버튼</b>을 눌러야
+      <h3>방송이 끝나면 꼭 [참여 종료하기]를 눌러주세요</h3>
+      <p>방송이 끝나면 영상 <b>오른쪽 아래에 [참여 종료하기] 버튼</b>이 나타납니다. 이 버튼을 눌러야
          참여가 <b>정상적으로 완료</b>됩니다. 버튼을 누르지 않고 창을 닫으면
-         참여가 완료되지 않을 수 있습니다.</p>
+         참여가 완료되지 않습니다.</p>
       <div class="ix-mock" aria-hidden="true">
         <div class="ix-video">방송이 종료되었습니다</div>
         <div class="ix-row">
           <span class="av"></span><span>하루끝 harukkeut</span>
           <span class="sp"></span>
           <span class="ix-sub">구독</span>
-          <span class="ix-leave">나가기
+          <span class="ix-leave">참여 종료하기
             <svg class="ix-ptr" viewBox="0 0 24 24"><path d="M4 2l15 9.5-6.6 1.3 3.9 7.4-2.7 1.4-3.9-7.4L4 18.6z" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/></svg>
           </span>
         </div>
       </div>
       <ol class="ix-steps">
         <li>방송을 끝까지 시청합니다.</li>
-        <li>"방송이 종료되었습니다"가 뜨면 빨간 <b>[나가기]</b>를 누릅니다.</li>
+        <li>"방송이 종료되었습니다"가 뜬 뒤 <b>[참여 종료하기]</b>를 누릅니다.</li>
         <li>"참여가 완료되었습니다" 화면이 보이면 끝입니다.</li>
       </ol>
     </div>
@@ -793,10 +772,6 @@ body.resizing{cursor:col-resize;user-select:none}
           <p class="ec-lb">하루끝 harukkeut 의 다른 영상</p>
           <div class="ec-grid" id="ecGrid"></div>
           <p class="ec-note" id="ecNote" hidden role="status"></p>
-          <div class="ec-exit">
-            <p>참여를 마치려면 <b>[나가기]</b>를 눌러주세요. 눌러야 정상적으로 종료됩니다.</p>
-            <button id="endLeave">나가기 · 참여 완료</button>
-          </div>
         </div>
 
       </div>
@@ -835,7 +810,7 @@ body.resizing{cursor:col-resize;user-select:none}
               <span class="cnt" id="watchCnt"></span>
             </span>
           </span>
-          <span class="tags" aria-hidden="true"><span class="tag">저챗</span><span class="tag">한국어</span><span class="tag">3시간 31분째</span></span>
+          <span class="tags" aria-hidden="true"><span class="tag">Just Chatting</span><span class="tag">한국어</span><span class="tag">3시간 31분째</span></span>
           <span class="cnt ai" id="watchAi"></span>
           <span class="acts-r">
           <!-- 반응 버튼. 누르라고 유도하지 않고 자리만 둡니다 — 노트의
@@ -849,7 +824,7 @@ body.resizing{cursor:col-resize;user-select:none}
             </button>
           </span>
           <button class="sub" id="subBtn" aria-pressed="false">구독</button>
-          <button class="leave" id="leave">나가기</button>
+          <button class="leave" id="leave" hidden>참여 종료하기</button>
           </span>
         </div>
       </div>
@@ -1909,8 +1884,8 @@ function initTextSelect(){
    anon key는 공개되어도 되는 값입니다. RLS로 insert만 허용하고
    select는 막아두면 참가자가 남의 로그를 읽을 수 없습니다(README 참고).
    ════════════════════════════════════════════════════════════════ */
-const SUPABASE_URL = 'https://trsfvioqvvaekomshcfj.supabase.co'; // /rest/v1 은 붙이지 않습니다
-const SUPABASE_KEY = 'sb_publishable_UUX1-pcAvROjBnwMNdKJfQ_Ul4jMwCG'; // publishable key (secret key 금지)
+const SUPABASE_URL = 'https://kuoyhnoysgpsbefesrmk.supabase.co'; // /rest/v1 은 붙이지 않습니다
+const SUPABASE_KEY = 'sb_publishable_eFHG5m2Hx6nyTQWuAgLzbA_19IHKUAV'; // publishable key (secret key 금지)
 
 const Sink = (function(){
   const on = () => Boolean(SUPABASE_URL && SUPABASE_KEY);
@@ -1927,7 +1902,21 @@ const Sink = (function(){
   const readQ = () => { try { return JSON.parse(localStorage.getItem(QKEY) || '[]'); } catch { return []; } };
   const writeQ = q => { try { localStorage.setItem(QKEY, JSON.stringify(q.slice(-4000))); } catch {} };
 
+  /* 실제 전송 결과. 종료 화면(debug)에 그대로 보여 줍니다 — 전에는 성공 여부와
+     상관없이 '전송했습니다'가 떴습니다. */
+  const stats = {ok: 0, fail: 0, events_ok: 0, last_error: null};
   async function post(path, body, beacon){
+    const r = await postRaw(path, body, beacon);
+    if (r === true){
+      stats.ok++;
+      if (path === 'events') stats.events_ok += body.length;
+    } else {
+      stats.fail++;
+      stats.last_error = `${path}: ${r}`;
+    }
+    return r === true;
+  }
+  async function postRaw(path, body, beacon){
     const url = `${SUPABASE_URL}/rest/v1/${path}`;
     const headers = {
       'Content-Type': 'application/json',
@@ -1939,13 +1928,13 @@ const Sink = (function(){
          그래도 실패하면 재시도 큐에 남습니다. */
       try {
         const r = await fetch(url, {method:'POST', headers, body: JSON.stringify(body), keepalive: true});
-        return r.ok;
-      } catch { return false; }
+        return r.ok || `HTTP ${r.status} ${(await r.text().catch(() => '')).slice(0, 160)}`;
+      } catch (e) { return String(e && e.message || e); }
     }
     try {
       const r = await fetch(url, {method:'POST', headers, body: JSON.stringify(body)});
-      return r.ok;
-    } catch { return false; }
+      return r.ok || `HTTP ${r.status} ${(await r.text().catch(() => '')).slice(0, 160)}`;
+    } catch (e) { return String(e && e.message || e); }
   }
 
   return {
@@ -1967,6 +1956,7 @@ const Sink = (function(){
       return sessionId;
     },
     id: () => sessionId,
+    status: () => ({...stats, pending: readQ().length}),
     /* 세션 행은 입장 전에 이미 만들어집니다. 안내 페이지에서 이메일을 받으면
        그 행을 채워 넣습니다 — 중간에 창을 닫아도 세션 자체는 남게 하려는 구조입니다. */
     async setPid(pid){
@@ -1987,7 +1977,13 @@ const Sink = (function(){
       if (batch.length && !await post('events', batch, final)){
         const q = readQ(); q.push({p:'events', b:batch}); writeQ(q);
       }
-      if (!final){
+      if (final){
+        /* 끝낼 때는 밀린 것도 한 번씩 밀어 넣습니다. 참가자가 다시 오지 않으면
+           브라우저에 남은 실패분은 영영 안 올라갑니다. */
+        const q = readQ(), keep = [];
+        for (const item of q) if (!await post(item.p, item.b, true)) keep.push(item);
+        writeQ(keep);
+      } else {
         /* 지난번에 실패한 것들을 한 묶음씩 다시 시도 */
         const q = readQ();
         if (q.length){
@@ -2239,7 +2235,7 @@ function renderEndCard(){
       Logger.add('next_video_click', {index: i, title: v.t, at_sec: +tick.toFixed(2)});
       /* 눌러도 아무 반응이 없으면 고장으로 알고 연타합니다. 짧게 알려 줍니다. */
       const n = $('ecNote');
-      n.textContent = '지금은 볼 수 없는 영상입니다. 참여를 마치려면 [나가기]를 눌러주세요.';
+      n.textContent = '지금은 볼 수 없는 영상입니다.';
       n.hidden = false;
       clearTimeout(n._t);
       n._t = setTimeout(() => { n.hidden = true; }, 3000);
@@ -2292,8 +2288,7 @@ function endStream(){
   $('inputRow').hidden = true;
   $('inputOff').hidden = false;
   $('inputOff').textContent = '방송이 종료되어 채팅을 보낼 수 없습니다.';
-  $('leave').classList.add('must');
-  $('leave').textContent = '나가기 · 참여 완료';
+  $('leave').hidden = false;               // 방송 중에는 숨겨 둔 종료 버튼
 }
 
 /* 입장 직전까지 흘렀던 대화. 타임라인과 같은 화자·같은 정체성 배분을 쓰되
@@ -2667,7 +2662,7 @@ function toggleSub(where){
   Logger.add('subscribe', {on: subscribed, where, at_sec: +tick.toFixed(2)});
 }
 
-/* 나가기를 누르지 않고 창을 닫아도 종료 요약은 남깁니다(via: 'closed').
+/* 참여 종료하기를 누르지 않고 창을 닫아도 종료 요약은 남깁니다(via: 'closed').
    via로 정상 종료와 구분합니다. */
 let left = false;
 function leaveSummary(via){
@@ -2722,20 +2717,25 @@ function leave(via){
   $('streamVideo').pause();
   $('videoRetry').hidden = true;
   clearInterval(timer);
-  Logger.add('leave', leaveSummary(typeof via === 'string' ? via : (ended ? 'header_after_end' : 'header')));
+  Logger.add('leave', leaveSummary(typeof via === 'string' ? via : 'end_button'));
   /* 채팅 본문은 로그에 남기지 않습니다. 참가자가 드래그한 글만 text_select로 남습니다.
      노출량은 위 leave 요약의 집계값으로 봅니다. */
   watch.classList.remove('on');
   done.classList.add('on');
   $('logbox').value = Logger.dump();
-  /* 세션 종료 시점에 남은 이벤트를 전부 밀어 넣습니다. */
-  Sink.flush(true);
   const debug = new URLSearchParams(location.search).get('debug') === '1';
   $('doneDebug').hidden = Sink.enabled() && !debug;
   $('sinkNote').textContent = Sink.enabled()
-    ? (debug ? `서버로 전송했습니다. session_id: ${Sink.id()}`
-             : '응답이 저장되었습니다. 이제 창을 닫으셔도 됩니다.')
+    ? (debug ? '서버로 보내는 중…' : '응답이 저장되었습니다. 이제 창을 닫으셔도 됩니다.')
     : '서버 설정이 비어 있어 로컬에만 쌓였습니다. 아래에서 JSON으로 내려받으세요.';
+  /* 세션 종료 시점에 남은 이벤트를 전부 밀어 넣고, debug면 실제 결과를 보여 줍니다. */
+  Sink.flush(true).then(() => {
+    if (!Sink.enabled() || !debug) return;
+    const st = Sink.status();
+    $('sinkNote').textContent = (st.fail === 0 && st.pending === 0)
+      ? `서버 전송 성공 · 이벤트 ${st.events_ok}건 / 로그 ${Logger.ev.length}건 · session_id: ${Sink.id()}`
+      : `서버 전송 실패 ${st.fail}회, 브라우저에 남은 묶음 ${st.pending}개 · 마지막 오류: ${st.last_error} · session_id: ${Sink.id()}`;
+  });
 }
 
 function send(){
@@ -2781,8 +2781,7 @@ function restart(){
   resultShown = false; resultHidden = false; result = null;
   outroed = false; ended = false; outroQueue = [];
   left = false;
-  $('leave').classList.remove('must');
-  $('leave').textContent = '나가기';
+  $('leave').hidden = true;
   $('player').classList.remove('off');
   $('endCard').hidden = true;
   $('ecNote').hidden = true;
@@ -2829,7 +2828,6 @@ $('endSub').addEventListener('click', () => toggleSub('endcard'));
 $('reactUp').addEventListener('click', () => setReact('up'));
 $('reactDown').addEventListener('click', () => setReact('down'));
 $('leave').addEventListener('click', () => leave());
-$('endLeave').addEventListener('click', () => leave('endcard'));
 $('sendBtn').addEventListener('click', send);
 $('say').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
 $('again').addEventListener('click', restart);

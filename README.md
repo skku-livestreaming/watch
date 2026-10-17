@@ -78,7 +78,7 @@ create policy "anon insert events" on events
 
 ### 2-3. 확인
 
-주소 끝에 `&debug=1`을 붙여 자극물을 한 번 돌리고 `나가기`를 누른 뒤, 종료 화면에
+주소 끝에 `&debug=1`을 붙여 자극물을 한 번 돌리고 방송이 끝난 뒤 나타나는 `참여 종료하기`를 누른 뒤, 종료 화면에
 `서버로 전송했습니다. session_id: ...` 가 뜨면 연결된 것입니다.
 참가자 화면(`debug` 없음)에는 "응답이 저장되었습니다"만 뜨고 로그 상자·다시 시작 버튼은 숨겨집니다.
 Supabase → Table Editor → events 에서 행을 확인합니다.
@@ -223,7 +223,7 @@ https://skku-livestreaming.github.io/watch/?c=m2
 | `outro_started` / `stream_ended` | 마무리 시작·방송 종료 시각 |
 | `next_video_click` | 종료 화면의 추천 영상 클릭 |
 | `visibility` / `page_hide` | 탭을 가리거나 떠난 시각 |
-| `leave` | 체류시간, 노출·실제 본 메시지 수, 실제 AI 비율, 스크롤·카드·선택지 호버 요약 |
+| `leave` | 종료 요약. `via`(`end_button` = 종료 버튼, `closed` = 버튼 없이 창 닫음), 종료 화면 체류(`after_end_sec`), 노출·실제 본 메시지 수, 실제 AI 비율, 스크롤·카드·선택지 호버 요약. 방송 중 나가는 버튼은 없으므로 중도 이탈은 측정하지 않음 |
 
 ### 노출 기준 2종 — 섞어 쓰지 말 것
 
