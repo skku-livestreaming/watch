@@ -13,10 +13,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script>
-  /* 첫 페인트 전에 테마를 적용합니다. 기본은 화이트이므로 dark일 때만 속성을 붙입니다. */
+  /* 첫 페인트 전에 테마를 적용합니다. 기본은 치지직과 같은 다크이고, ?theme=light일 때만 화이트입니다. */
   try {
     var t = new URLSearchParams(location.search).get('theme');
-    if (t === 'dark') document.documentElement.dataset.theme = 'dark';
+    if (t !== 'light') document.documentElement.dataset.theme = 'dark';
   } catch (e) {}
 </script>
 <style>
@@ -76,19 +76,19 @@
   --svg-dark:#1b1f27;
   --font:'Pretendard Variable',Pretendard,'Noto Sans KR',system-ui,-apple-system,
          'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
-  --page:#f1f2f5;     /* 콘텐츠 바깥 바닥색 */
+  --page:#ffffff;     /* 콘텐츠 바깥 바닥색 — 치지직 화이트처럼 헤더와 같은 흰색 */
 }
 /* ── 다크 테마 (theme=dark) ─────────────── */
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --bg:#0e1013;
-  --panel:#171a20;
-  --panel-2:#1e222a;
+  --bg:#141517;
+  --panel:#1e1f22;
+  --panel-2:#26282c;
   --panel-3:#101318;
   --panel-4:#0c0f13;
-  --line:#2a2f39;
-  --line-2:#3b4250;
-  --ink:#e9ecf1;
+  --line:#2a2b2f;
+  --line-2:#3d3f45;
+  --ink:#ffffff;
   --ink-dim:#9aa3b2;
   --ink-faint:#838b9c;
   --note:#747c8d;
@@ -115,11 +115,11 @@
   --badge-bg:rgba(0,0,0,.72);
   --badge-ink:#ffffff;
   --msg-hover:rgba(255,255,255,.055);
-  --chip:#232833;
-  --chip-ink:#aab3c2;
-  --chip-line:#2e3441;
+  --chip:transparent;
+  --chip-ink:#c4c6cc;
+  --chip-line:#3d3f45;
   --shade:rgba(255,255,255,.08);
-  --page:#07080a;
+  --page:#141517;
 }
 *,*::before,*::after{box-sizing:inherit}
 /* display를 지정한 요소(.locked, .poll-why, .feed 등)에서 hidden 속성이
@@ -188,52 +188,57 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .hint{grid-column:1/-1;font-size:12.5px;color:var(--ink-faint);margin:0;line-height:1.7}
 
 /* ── 공통 헤더(플랫폼 흉내) ──────────────
-   검색창·알림·프로필은 전부 장식입니다. 포인터 이벤트와 탭 순서에서 빼
+   치지직 상단 바를 따릅니다. 로고와 로그인 버튼은 빼고, 메뉴를 그만큼 왼쪽으로 당겼습니다.
+   메뉴·검색창·테마 버튼은 전부 장식입니다. 포인터 이벤트와 탭 순서에서 빼
    둬서, 눌렀는데 아무 일도 없는 경험이 생기지 않게 합니다. */
 .site{
   position:sticky;top:env(safe-area-inset-top,0px);z-index:30;
-  border-bottom:1px solid var(--line);background:var(--bg);
+  background:var(--bg);
 }
 .site .inner{
-  margin:0;padding:0 22px;height:56px;
-  display:flex;align-items:center;gap:24px;
+  margin:0;padding:0 22px 0 18px;height:60px;
+  display:flex;align-items:center;gap:22px;
 }
-.logo{
-  display:flex;align-items:center;gap:8px;
-  font-weight:700;letter-spacing:-.025em;font-size:16.5px;
-}
-.logo .mk{
-  width:24px;height:24px;border-radius:7px;flex:none;
-  background:var(--ink);display:grid;place-items:center;
-}
-.logo .mk svg{width:10px;height:10px;fill:var(--bg);display:block}
-.nav{display:flex;align-items:center;gap:19px;font-size:14px}
-.nav span{color:var(--ink-faint)}
-.nav span.sel{color:var(--ink);font-weight:600}
+.site .ham svg{width:26px;height:26px;display:block;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
+.nav{display:flex;align-items:center;gap:24px;font-size:17px;font-weight:800;letter-spacing:-.02em}
+.nav span{color:var(--ink)}
 .search{
-  margin-left:auto;display:flex;align-items:center;gap:8px;
-  width:clamp(160px,26vw,290px);height:34px;padding:0 12px;
-  background:var(--panel);border:1px solid var(--line);border-radius:17px;
-  color:var(--ink-faint);font-size:13.5px;
+  margin-left:auto;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  width:clamp(200px,30vw,540px);height:44px;padding:0 18px 0 22px;
+  background:var(--panel);border:1px solid var(--line);border-radius:22px;
+  color:var(--ink-faint);font-size:15px;
 }
-.search svg{width:15px;height:15px;fill:currentColor;flex:none}
+.search svg{width:20px;height:20px;flex:none;display:block;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
 .site .ico{
-  width:34px;height:34px;border-radius:50%;flex:none;
-  display:grid;place-items:center;color:var(--ink-dim);
+  margin-left:auto;width:40px;height:40px;border-radius:50%;flex:none;
+  display:grid;place-items:center;color:var(--ink);background:transparent;border:0;padding:0;
 }
-.site .ico svg{width:19px;height:19px;fill:currentColor;display:block}
-.site .me{
-  width:30px;height:30px;border-radius:50%;flex:none;
-  display:grid;place-items:center;overflow:hidden;
-  background:var(--chip);color:var(--ink-faint);
-}
-.site .me svg{width:26px;height:26px;fill:currentColor;display:block;margin-bottom:-4px}
-.site .deco{pointer-events:none;user-select:none}
+.site .ico:hover{background:var(--shade)}
+.site .ico .moon{display:none}
+:root:not([data-theme="dark"]) .site .ico .sun{display:none}
+:root:not([data-theme="dark"]) .site .ico .moon{display:block}
+.site .ico svg{width:24px;height:24px;display:block;stroke:currentColor;stroke-width:1.9;fill:none;stroke-linecap:round}
+.site .deco,.side.deco{pointer-events:none;user-select:none}
 @media (max-width:860px){
-  .nav,.site .ico{display:none}
-  .search{margin-left:auto;width:auto;flex:1;max-width:none}
+  .nav{display:none}
+  .search{width:auto;flex:1;max-width:none}
+  .site .ico{margin-left:0}
 }
 @media (max-width:460px){.search{display:none}.site .inner{gap:14px}}
+
+/* 왼쪽 세로 메뉴 — 치지직의 사이드바. 장식입니다. 채널 썸네일 자리는 실존 채널을
+   흉내 내지 않도록 색 블록으로만 둡니다. */
+.side{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:8px 0 16px;overflow:hidden;background:var(--bg);
+}
+.side .it{
+  width:64px;padding:9px 0 7px;display:flex;flex-direction:column;align-items:center;gap:5px;
+  color:var(--ink-dim);font-size:12px;letter-spacing:-.02em;
+}
+.side .it svg{width:25px;height:25px;display:block;stroke:var(--ink);stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.side hr{width:46px;border:0;border-top:1px solid var(--line);margin:10px 0}
+.side .ch{width:44px;height:44px;border-radius:10px;margin:5px 0;flex:none}
 
 /* ── 탐색 화면 ─────────────────────────── */
 /* 채팅 사용자 카드 — 플랫폼의 프로필 팝오버와 같은 역할. */
@@ -253,28 +258,30 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .msg .nm{cursor:pointer}
 /* 플랫폼 공지 줄. 채팅이 열릴 때 투표 결과 한 줄에만 씁니다. */
 .msg.sys{
-  background:var(--accent-tint);border-left:3px solid var(--accent);
+  background:var(--accent-tint);border-left:3px solid #6f8fe8;
   border-radius:0 6px 6px 0;padding:7px 10px;margin:3px 0;
-  font-size:13px;color:var(--ink-dim);font-weight:600;line-height:1.5;
+  font-size:14px;color:var(--ink-dim);font-weight:600;line-height:1.5;
 }
 .msg.sys .nm{cursor:default}
 /* ── 시청 화면 ─────────────────────────── */
-.watch{display:none;grid-template-columns:minmax(0,1fr) var(--chatw,352px);gap:0}
-.watch.on{display:grid;height:calc(100vh - 57px);height:calc(100dvh - 57px);min-height:520px}
+.watch{display:none;grid-template-columns:84px minmax(0,1fr);gap:0}
+.watch.on{display:grid;height:calc(100vh - 60px);height:calc(100dvh - 60px);min-height:520px}
 .stage{min-width:0;overflow-y:auto;overscroll-behavior:contain;padding:12px 14px 16px}
 .stage::-webkit-scrollbar{width:10px}
 .stage::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px;border:3px solid var(--page)}
 /* 영상이 16:9를 꽉 채우면 화면이 낮을 때 제목·채널 줄이 접힘선 아래로 밀립니다.
    영상 아래 블록이 들어갈 높이를 빼고 남은 만큼으로 가로폭 상한을 둬서,
-   영상이 먼저 줄어들게 합니다. 빼는 높이는 사이트 바(57) + 위아래 여백(28) +
-   제목·채널 줄(약 100)입니다 — 그 이상 빼면 영상 양옆이 비어 보입니다. */
-.stagein{margin:0 auto}
-.playwrap{
-  max-width:calc((100vh - 186px) * 16 / 9);
-  max-width:calc((100dvh - 186px) * 16 / 9);
+   영상이 먼저 줄어들게 합니다. 빼는 높이는 사이트 바(60) + 위아래 여백(28) +
+   제목·태그·채널 줄(약 130)입니다 — 그 이상 빼면 영상 양옆이 비어 보입니다. */
+/* 제목·채널 줄이 영상 왼쪽 끝과 맞도록 폭 상한은 영상이 아니라 바깥 단에 둡니다. */
+.stagein{
   margin:0 auto;
+  max-width:calc((100vh - 218px) * 16 / 9);
+  max-width:calc((100dvh - 218px) * 16 / 9);
 }
-.playwrap{position:relative}
+/* 영상 폭을 기준 단위(cqw)로 씁니다 — 영상 위 플로팅 채팅이 창 크기와 상관없이
+   영상 안에서 같은 위치·같은 비율로 보이게 합니다. */
+.playwrap{position:relative;container-type:inline-size}
 .player{
   position:relative;aspect-ratio:16/9;border-radius:10px;overflow:hidden;
   background:#0a0c11;box-shadow:0 2px 14px rgba(16,20,28,.1);
@@ -302,18 +309,31 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 }
 .live-stat .eye{width:13px;height:13px;fill:currentColor;display:block;opacity:.8}
 
-/* 경과 시간만 남깁니다. 볼륨·재생·위치조절바는 눌러도 아무 일이 없어
-   참가자가 한 번 눌러보는 순간 자극물이 깨집니다 — 전부 뺐습니다. */
-.player .clock{
-  position:absolute;right:12px;bottom:12px;z-index:4;
-  font-size:11.5px;color:rgba(255,255,255,.75);font-variant-numeric:tabular-nums;
-  background:rgba(0,0,0,.5);backdrop-filter:blur(4px);padding:3px 8px;border-radius:4px;
+/* 영상 위에는 재생 시간을 두지 않습니다. 0:00부터 세는 시계는 '방금 시작한 영상'으로
+   읽혀 중도 입장 설정과 어긋납니다. 방송 경과 시간은 영상 아래 줄에 씁니다.
+   볼륨·재생·위치조절바도 눌러도 아무 일이 없어 전부 뺐습니다. */
+
+/* 버퍼링. 입장 직후 잠깐, 그리고 실제로 영상이 끊길 때(waiting) 뜹니다. */
+.buffer{
+  position:absolute;inset:0;z-index:4;display:grid;place-items:center;
+  background:rgba(0,0,0,.35);pointer-events:none;
 }
+.buffer.first{background:#000}
+.buffer i{
+  width:46px;height:46px;border-radius:50%;
+  border:4px solid rgba(255,255,255,.22);border-top-color:#fff;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
 
 /* ── 스트리머 행 ─────────────────────────── */
-.info{padding:12px 2px 12px;border-bottom:1px solid var(--line)}
-.info h2{margin:0;font-size:18.5px;font-weight:700;letter-spacing:-.015em;line-height:1.35}
-.info .row{display:flex;align-items:center;gap:11px;margin-top:13px;flex-wrap:wrap}
+.info{padding:16px 6px 12px}
+.info h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.35}
+/* 카테고리·태그·방송 경과 시간 — 치지직 제목 아래 줄 */
+.meta{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap;font-size:14px}
+.meta .cat{color:#00d68f;font-weight:800;margin-right:4px}
+.meta .up{font-weight:700;font-variant-numeric:tabular-nums;margin-left:6px}
+.info .row{display:flex;align-items:center;gap:11px;margin-top:14px;flex-wrap:wrap}
 .chan{display:flex;align-items:center;gap:10px;min-width:0}
 .chan .av{
   width:42px;height:42px;border-radius:50%;flex:none;
@@ -327,13 +347,18 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .tags{display:flex;gap:6px;flex-wrap:wrap}
 .tag{
   background:var(--chip);border:1px solid var(--chip-line);color:var(--chip-ink);
-  border-radius:12px;padding:3px 10px;font-size:12px;font-weight:500;
+  border-radius:4px;padding:1px 7px;font-size:13px;font-weight:600;
 }
 .acts-r{display:flex;align-items:center;gap:8px;margin-left:auto}
+/* 참여 종료하기. 방송이 끝나면 종료 화면 가운데에 빨간 버튼으로 뜹니다. 놓치면 참여가
+   완료로 기록되지 않으므로 눈에 띄게 둡니다. */
 .leave{
-  background:transparent;border:1px solid var(--line-2);
-  color:var(--ink-dim);border-radius:18px;padding:0 15px;height:32px;font-size:13px;
+  background:#e8352b;border:0;color:#fff;border-radius:12px;
+  padding:16px 44px;font-size:19px;font-weight:800;letter-spacing:-.01em;
+  box-shadow:0 0 0 4px rgba(232,53,43,.28),0 10px 28px rgba(0,0,0,.4);
+  animation:leaveIn .3s ease-out;
 }
+@keyframes leaveIn{from{opacity:0;transform:scale(.92)}}
 @media (max-width:860px){.tags{display:none}}
 /* 구독 버튼. 누르라는 안내는 두지 않습니다 — 반응 버튼과 같은 원칙. */
 .sub{
@@ -345,11 +370,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .sub[aria-pressed="true"]{
   background:var(--panel-2);color:var(--ink-dim);border-color:var(--line);font-weight:600;
 }
-.leave:hover{color:var(--ink);border-color:var(--ink-faint)}
-/* 방송 중에는 숨기고(중도 이탈은 측정하지 않음), 방송이 끝나면 '참여 종료하기'로 나타납니다.
-   색·깜빡임 같은 강조는 두지 않습니다 —
-   종료 화면에서 구독·추천 영상·채팅을 둘러보는 시간도 측정 대상이라, 버튼이 눈을 끌면
-   그 행동이 묻힙니다. */
+.leave:hover{background:#f04238}
+/* 방송 중에는 숨기고(중도 이탈은 측정하지 않음), 방송이 끝나면 나타납니다. */
 .ec-note{
   margin:0;padding:7px 14px;border-radius:8px;background:rgba(255,255,255,.14);
   font-size:13px;color:#fff;animation:noteIn .2s ease-out;
@@ -369,17 +391,14 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
   overflow:hidden;
 }
 .ix-video{
-  height:74px;background:#07080b;color:rgba(255,255,255,.75);font-size:12.5px;font-weight:600;
-  display:flex;align-items:center;justify-content:center;
+  height:112px;background:#07080b;color:rgba(255,255,255,.75);font-size:12.5px;font-weight:600;
+  display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;
 }
-.ix-row{display:flex;align-items:center;gap:8px;padding:9px 11px;font-size:12px;color:var(--ink-faint)}
-.ix-row .av{width:22px;height:22px;border-radius:50%;background:var(--chip);flex:none}
-.ix-row .sp{margin-left:auto}
-.ix-sub{background:var(--accent);color:var(--on-accent);border-radius:14px;padding:4px 11px;font-weight:700}
 .ix-leave{
-  position:relative;border:1px solid var(--line-2);color:var(--ink-dim);border-radius:14px;padding:3px 12px;
+  position:relative;background:#e8352b;color:#fff;border-radius:8px;padding:6px 16px;
+  font-size:13px;font-weight:800;
 }
-.ix-ptr{position:absolute;right:-6px;bottom:-15px;width:20px;height:20px}
+.ix-ptr{position:absolute;right:-8px;bottom:-14px;width:20px;height:20px}
 .ix-steps{margin:12px 0 0;padding:0 0 0 18px;font-size:13px;line-height:1.75;color:var(--ink-dim)}
 
 /* ── 안내 페이지 ───────────────────────── */
@@ -400,7 +419,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .intro-row .v{font-weight:700;font-variant-numeric:tabular-nums}
 .intro-row .v.ai{color:var(--ai)}
 .intro-note{margin:14px 2px 0;font-size:13px;color:var(--ink-faint);line-height:1.7}
-.intro-id{display:flex;flex-direction:column;gap:8px;margin:30px 0 4px}
+.intro-id{display:flex;flex-direction:column;gap:8px;margin:0 0 4px}
 .intro-id label{font-size:14px;font-weight:600;line-height:1.5}
 .intro-id input{
   font:inherit;font-size:15px;padding:13px 14px;border-radius:9px;
@@ -419,11 +438,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 /* ── 반응 버튼 ─────────────────────────── */
 
 /* 방송 종료 화면 */
-.player.off .scene,.player.off .plrow,.player.off .clock{opacity:0}
+.player.off .scene,.player.off .plrow{opacity:0}
 .player.off{background:#07080b}
+/* 채팅이 영상 오른쪽 1/3에 겹쳐 있으므로, 열려 있는 동안은 나머지 2/3 가운데에 둡니다. */
 .endcard{
   position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:11px;padding:18px;
+  align-items:center;justify-content:center;gap:11px;padding:18px calc(33.333% + 8px) 18px 18px;
   background:radial-gradient(70% 70% at 50% 40%,rgba(22,27,37,.95),rgba(6,7,10,.97));
   color:#eef1f6;text-align:center;
 }
@@ -487,38 +507,42 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .react .rc{margin-left:3px}
 
 /* ── Study 2: 영상 위 투표 오버레이 ──────────
-   영상 오른쪽에 세로로 붙습니다. 스트리머 얼굴·손이 가운데에 있어서
-   아래쪽 가로 카드는 화면을 가립니다.
+   영상을 세로 셋으로 나눴을 때 왼쪽 2/3를 차지합니다(오른쪽 1/3은 채팅).
    흰 카드입니다. 영상 위라 테마와 무관하게 고정 색을 씁니다 — 다크 테마에서도
    흰 카드로 남아야 조건 간 자극물이 같습니다. */
 .poll{
-  position:absolute;right:12px;top:50%;transform:translateY(-50%);z-index:5;
-  width:min(300px,38%);max-height:calc(100% - 24px);overflow-y:auto;
+  position:absolute;left:10px;top:50%;transform:translateY(-50%);z-index:5;
+  width:calc(66.667% - 20px);max-height:calc(100% - 20px);overflow-y:auto;
   background:#ffffff;border:1px solid #e3e6ec;
-  border-radius:12px;padding:14px 16px;color:#16181c;
+  border-radius:14px;padding:18px 22px;color:#16181c;
   box-shadow:0 14px 40px rgba(0,0,0,.28);
   animation:pollIn .22s ease-out;
 }
-@keyframes pollIn{from{opacity:0;transform:translate(14px,-50%)}}
-.poll-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+@keyframes pollIn{from{opacity:0;transform:translate(-14px,-50%)}}
+.poll-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .poll-tag{
-  font-size:11px;font-weight:700;letter-spacing:.03em;
-  background:var(--live);color:#fff;padding:2px 7px;border-radius:3px;
+  font-size:12px;font-weight:700;letter-spacing:.03em;
+  background:var(--live);color:#fff;padding:2px 8px;border-radius:3px;
 }
-.poll-timer{font-size:12px;color:#5f6676;font-variant-numeric:tabular-nums;margin-left:auto}
-.poll-q{margin:0;font-size:16px;font-weight:700;line-height:1.4;letter-spacing:-.015em}
-.poll-opts{display:flex;flex-direction:column;gap:9px;margin-top:12px}
+.poll-timer{font-size:13px;color:#5f6676;font-variant-numeric:tabular-nums;margin-left:auto}
+.poll-q{margin:0;font-size:19px;font-weight:800;line-height:1.4;letter-spacing:-.02em}
+.poll-opts{display:flex;gap:12px;margin-top:14px}
 .poll-opts button{
-  flex:none;background:#f4f5f8;border:1px solid #dfe2e8;
-  color:#16181c;border-radius:10px;padding:15px;font-size:15px;font-weight:600;
+  flex:1 1 0;background:#f4f5f8;border:2px solid #dfe2e8;
+  color:#16181c;border-radius:12px;padding:18px 12px;font-size:17px;font-weight:700;
   text-align:center;line-height:1.35;cursor:pointer;font-family:inherit;
-  transition:background .12s,border-color .12s;
+  transition:background .12s,border-color .12s,opacity .12s;
 }
 .poll-opts button:hover:not(:disabled){border-color:#2f5bc5;background:#eef2fb}
-.poll-opts button:disabled{opacity:.5;cursor:default}
+.poll-opts button:disabled{opacity:.45;cursor:default}
+/* 내 선택은 파란 바탕 + 흰 글자 + 체크로 확 드러나게 둡니다. 고른 뒤에는 다른 쪽을 흐리게. */
+.poll-opts.picked button:not([aria-pressed="true"]){opacity:.5}
 .poll-opts button[aria-pressed="true"]{
-  border-color:#2f5bc5;background:rgba(47,91,197,.12);color:#2a52b4;opacity:1;font-weight:700;
+  border-color:#2f5bc5;background:#2f5bc5;color:#fff;opacity:1;font-weight:800;
+  box-shadow:0 0 0 4px rgba(47,91,197,.25);
 }
+.poll-opts button[aria-pressed="true"]::before{content:'✓ ';font-weight:900}
+.poll-mine{margin:12px 0 0;font-size:14.5px;font-weight:700;color:#2a52b4}
 
 /* 결과 — 비율(%)은 띄우지 않고 표를 받은 사람 수만 씁니다. 막대 길이는 같은 수를
    그림으로 옮긴 것이라 따로 숫자를 달지 않습니다. */
@@ -530,21 +554,22 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
    주황 위 글자(#16181c) 대비는 4.5:1 이상입니다. */
 .poll-res .row{position:relative;border:1.5px solid #c9ced8;border-radius:10px;overflow:hidden;background:#ffffff}
 .poll-res .bar{position:absolute;inset:0 auto 0 0;background:#f6b94f}
-.poll-res .row.mine{border:2.5px solid #2f5bc5}
+.poll-res .row.mine{border:3px solid #2f5bc5;box-shadow:0 0 0 4px rgba(47,91,197,.22)}
+.poll-res .row.mine .lb{font-weight:800}
 .poll-res .ln{
-  position:relative;display:flex;align-items:center;gap:8px;
-  padding:12px 14px;font-size:14.5px;font-weight:600;
+  position:relative;display:flex;align-items:center;gap:10px;
+  padding:14px 16px;font-size:16.5px;font-weight:600;
 }
-.poll-res .mine-tag{font-size:11px;font-weight:700;background:#2f5bc5;color:#fff;padding:1px 6px;border-radius:4px}
-.poll-res .n{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:800;font-size:16.5px}
+.poll-res .mine-tag{font-size:13px;font-weight:800;background:#2f5bc5;color:#fff;padding:2px 9px;border-radius:5px}
+.poll-res .n{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:800;font-size:18px}
 .poll-res .n small{font-weight:600;color:#3a3f4a;font-size:12.5px}
 
 /* 이유 작성 — 투표 카드 안 */
 .poll-why{margin-top:14px;display:flex;flex-direction:column;gap:9px;width:100%;text-align:left}
-.poll-why label{font-size:13px;color:#5a6070}
+.poll-why label{font-size:14px;color:#5a6070}
 .poll-why textarea{
   background:#ffffff;border:1px solid #dfe2e8;border-radius:8px;
-  color:#16181c;padding:10px 12px;font-family:inherit;font-size:14px;resize:vertical;
+  color:#16181c;padding:10px 12px;font-family:inherit;font-size:15px;resize:vertical;
 }
 .poll-send{
   align-self:flex-start;background:#2f5bc5;border:0;border-radius:7px;
@@ -567,7 +592,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 /* 채팅 */
 .locked{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:10px;color:var(--ink-faint);font-size:13.5px;text-align:center;padding:20px;
+  gap:10px;color:var(--ink-faint);font-size:15px;text-align:center;padding:20px;
 }
 .lock-ic svg{width:26px;height:26px;fill:currentColor;opacity:.42;display:block}
 .msg .stance{
@@ -578,44 +603,94 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .msg .stance.b{background:var(--stance-b-bg);color:var(--stance-b-ink)}
 .msg .why{color:var(--ink-dim)}
 
+/* 영상 위 플로팅 채팅 — 읽기 전용입니다. 영상 오른쪽 1/3, 위쪽부터 약 60% 높이.
+   배경 없이 글자만 띄우고, 위로 갈수록(오래된 메시지일수록) 투명해집니다.
+   입력·클릭·드래그는 받지 않습니다. 채팅창(오른쪽 패널)을 열어도 그대로 둡니다.
+   영상 위라 테마와 무관하게 흰 글자 + 그림자로 고정합니다. */
+/* 크기는 전부 영상 폭에 비례합니다(1cqw = 영상 폭의 1%). 영상 폭 1,100px일 때 글자 약 18px.
+   창을 줄이거나 늘려도, 채팅창을 열고 닫아도 영상 안 같은 자리에 같은 줄 수로 보입니다. */
+.ov{
+  position:absolute;top:.9cqw;right:.9cqw;z-index:7;
+  /* 높이: 영상 높이의 60%에서 5.25cqw(글자 16px 시절 채팅 두 줄)를 뺀 값. 상자 크기는 그대로 두고 글자만 키웠습니다. */
+  width:calc(33.333% - .9cqw);height:calc(60% - 5.25cqw);
+  font-size:1.65cqw;
+  pointer-events:none;user-select:none;-webkit-user-select:none;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.18) 15%,rgba(0,0,0,.6) 45%,#000 80%);
+  mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.18) 15%,rgba(0,0,0,.6) 45%,#000 80%);
+}
+/* 넘친 줄은 위로 밀려 잘립니다(스크롤 없음). */
+.ovfeed{height:100%;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;gap:.12em;padding:.25em .4em}
+.ov .msg{
+  flex:none;color:#fff;font-size:1em;font-weight:600;line-height:1.45;padding:.12em .25em;border-radius:.4em;
+  text-shadow:0 .06em .12em rgba(0,0,0,.95),0 0 .5em rgba(0,0,0,.6);
+}
+.ov .msg .nm{color:#c9d8f5;cursor:default;margin-right:.25em}
+.ov .msg .nm:after{color:rgba(255,255,255,.7)}
+.ov .msg .nm.me{color:#f0c05a}
+.ov .aib{background:rgba(0,0,0,.35);color:#7fe0c4;border-color:rgba(127,224,196,.7);text-shadow:none;
+  font-size:.62em;padding:0 .4em;margin-right:.5em;border-radius:.3em}
+.ov .msg.sys{background:rgba(0,0,0,.5);border-left:.19em solid #6f8fe8;color:#fff;text-shadow:none;
+  font-size:.9em;padding:.45em .65em;margin:.2em 0}
+.ov .msg.divider{color:rgba(255,255,255,.85);font-size:.78em;padding:.3em;gap:.6em;margin:.3em 0}
+.ov .msg.divider:before,.ov .msg.divider:after{background:rgba(255,255,255,.4)}
+.ovlock{
+  position:absolute;right:.4em;bottom:.4em;display:flex;align-items:center;gap:.45em;
+  color:#fff;font-size:.95em;font-weight:700;text-shadow:0 .06em .12em rgba(0,0,0,.95),0 0 .5em rgba(0,0,0,.6);
+}
+.ovlock svg{width:1.15em;height:1.15em;fill:currentColor;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.9))}
+
+/* 채팅창 — 입력창이 있는 진짜 채팅입니다. 화면 오른쪽 끝에서 밀려 들어오고(열기),
+   머리의 |→ 로 다시 오른쪽으로 빠집니다(닫기). 닫혀 있으면 화면 오른쪽 가장자리의
+   [채팅] 탭으로 엽니다. 치지직처럼 헤더 아래부터 화면 맨 아래까지 오른쪽 가장자리에
+   붙은 칸으로 보이게 둡니다(그림자·모서리 없이 왼쪽 경계선만).
+   열리면 영상 칸이 그만큼 왼쪽으로 줄어 영상 위 플로팅 채팅이 가려지지 않습니다. */
+.chat,.chat-tab{color:var(--ink)}       /* 테마를 따라 바뀝니다 */
 .chat{
-  display:flex;flex-direction:column;background:var(--bg);overflow:hidden;
-  border-left:1px solid var(--line);
+  --panel-w:min(380px,92vw);
+  position:fixed;top:calc(60px + env(safe-area-inset-top,0px));right:0;bottom:0;z-index:25;
+  width:var(--panel-w);
+  display:flex;flex-direction:column;overflow:hidden;
+  background:var(--bg);border-left:1px solid var(--line);
+  transform:translateX(100%);transition:transform .25s ease;
 }
-/* 채팅은 화면 오른쪽 끝에 붙어 세로로 꽉 찹니다 — 실제 플랫폼의 자리입니다.
-   높이를 내용에 맡기면 채팅이 쌓일수록 늘어나므로 바깥 칸을 기준으로 깝니다. */
-.chatcol{position:relative;min-width:0}
-.chatcol>.chat{position:absolute;inset:0}
-/* 채팅창 폭 조절. 실제 플랫폼에도 있는 손잡이이고, 참가자가 채팅을 넓혔는지
-   좁혔는지 자체가 기록할 만한 행동입니다(chat_resize). */
-.chatgrip{
-  position:absolute;left:-3px;top:0;bottom:0;width:7px;z-index:7;
-  cursor:col-resize;background:transparent;border:0;padding:0;
-}
-.chatgrip:hover,.chatgrip.on{background:var(--accent-tint)}
-.chatgrip:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-body.resizing{cursor:col-resize;user-select:none}
+.watch.chat-on .chat{transform:none}
+.stage{transition:padding-right .25s ease}
+.watch.chat-on .stage{padding-right:calc(min(380px,92vw) + 14px)}
 .chat header{
-  padding:0 8px 0 15px;height:52px;flex:none;
-  border-bottom:1px solid var(--line);background:var(--bg);
-  font-size:14px;font-weight:700;letter-spacing:-.015em;color:var(--ink);
-  display:flex;align-items:center;gap:8px;
+  padding:0 6px;height:52px;flex:none;position:relative;
+  border-bottom:1px solid var(--line);
+  font-size:16px;font-weight:800;letter-spacing:-.015em;color:var(--ink);
+  display:flex;align-items:center;justify-content:center;gap:8px;
 }
+.chat header .fold{
+  position:absolute;left:8px;top:11px;width:30px;height:30px;border-radius:6px;
+  background:transparent;border:0;color:var(--ink);display:grid;place-items:center;padding:0;
+}
+.chat header .fold:hover{background:var(--shade)}
+.chat header .fold svg,.chat-tab svg{width:20px;height:20px;display:block;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .chat header .hic{
-  margin-left:auto;width:30px;height:30px;border-radius:50%;flex:none;
+  position:absolute;right:8px;top:11px;width:30px;height:30px;
   display:grid;place-items:center;color:var(--ink-faint);pointer-events:none;
 }
-.chat header .hic svg{width:17px;height:17px;fill:currentColor;display:block}
+.chat header .hic svg{width:18px;height:18px;fill:currentColor;display:block}
 .chat header .aiq{color:var(--ai);font-size:12.5px;font-weight:500}
+.chat-tab{
+  position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:24;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:14px 9px;background:var(--panel);color:var(--ink);
+  border:1px solid var(--line-2);border-right:0;border-radius:10px 0 0 10px;
+  font-size:14px;font-weight:700;box-shadow:-6px 0 18px rgba(0,0,0,.25);
+}
+.chat-tab:hover{background:var(--panel-2)}
 /* 채팅은 아래에서부터 쌓입니다. flex-end 대신 첫 줄에 margin-top:auto를 줘야
    줄이 넘칠 때 위로 스크롤이 막히지 않습니다. */
 .feed{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:1px;min-height:0}
 .feed>.msg:first-child{margin-top:auto}
 .feed::-webkit-scrollbar{width:9px}
-.feed::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:5px;border:3px solid var(--bg)}
+.feed::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:5px;border:3px solid transparent;background-clip:padding-box}
 .msg{
-  font-size:14px;line-height:1.55;word-break:break-word;animation:in .18s ease-out;
-  padding:6px 8px;border-radius:7px;
+  font-size:16px;line-height:1.5;word-break:break-word;animation:in .18s ease-out;
+  padding:4px 8px;border-radius:7px;
 }
 .msg:hover{background:var(--msg-hover)}
 @keyframes in{from{opacity:0;transform:translateY(5px)}}
@@ -630,18 +705,19 @@ body.resizing{cursor:col-resize;user-select:none}
   background:var(--ai-tint);color:var(--ai);border:1px solid var(--ai-border);
   border-radius:3px;padding:0 4px;font-size:10px;font-weight:800;letter-spacing:.03em;
 }
-.chat footer{padding:12px;border-top:1px solid var(--line);display:flex;gap:8px;flex:none}
+.chat footer{padding:8px 10px 10px;border-top:1px solid var(--line);display:flex;gap:8px;flex:none}
 .chat input{
   flex:1;min-width:0;background:var(--panel);border:1px solid var(--line);
-  border-radius:8px;color:var(--ink);padding:10px 12px;font-family:inherit;font-size:14px;
+  border-radius:8px;color:var(--ink);padding:9px 12px;font-family:inherit;font-size:15px;
 }
-.chat input:focus{outline:none;border-color:var(--line-2);background:var(--bg)}
+.chat input:focus{outline:none;border-color:var(--line-2);background:rgba(255,255,255,.12)}
 .chat input::placeholder{color:var(--ink-faint)}
 .chat button.send{
-  background:var(--accent);border:0;border-radius:8px;color:var(--on-accent);
-  font-weight:700;padding:0 16px;font-size:13.5px;
+  background:var(--panel-2);border:0;border-radius:8px;color:var(--ink);
+  font-weight:700;padding:0 16px;font-size:14px;
 }
-.chat .off{padding:11px 13px;font-size:13px;color:var(--ink-faint);border-top:1px solid var(--line)}
+.chat button.send:hover{background:var(--line)}
+.chat .off{padding:11px 13px;font-size:14px;color:var(--ink-faint);border-top:1px solid var(--line)}
 
 /* ── 종료/로그 ─────────────────────────── */
 .done{display:none;margin:48px auto;max-width:640px;padding:0 18px 64px;text-align:center}
@@ -662,20 +738,20 @@ body.resizing{cursor:col-resize;user-select:none}
 
 @media (max-width:860px){
   .watch.on{grid-template-columns:minmax(0,1fr);height:auto;min-height:0}
+  .side{display:none}
   .stage{overflow:visible;padding:12px 12px 16px}
-  .chatgrip{display:none}
-  .chatcol{position:static}
-  .chatcol>.chat{
-    position:static;height:min(62vh,470px);
-    border-left:0;border-top:1px solid var(--line);
-  }
-  /* 좁은 화면에서는 영상 위에 겹치지 않습니다. 이유 입력란까지 열리면
-     16:9 영역 안에 들어가지 않고, 겹치면 질문 첫 줄부터 잘립니다. */
+  /* 좁은 화면에서는 영상 위에 겹치지 않습니다. 16:9 영역이 작아 채팅·투표가
+     영상을 다 가리고, 겹치면 질문 첫 줄부터 잘립니다. */
+  .chat-tab,.chat header .fold{display:none!important}
+  .watch.chat-on .stage{padding-right:12px}
+  .chat{position:static;width:auto;height:min(62vh,470px);margin:10px 12px 0;
+        transform:none;transition:none;box-shadow:none;border:1px solid var(--line)}
+  .endcard{padding:12px}
   .poll{
     position:static;margin-top:10px;width:auto;max-height:none;padding:12px 13px;
     transform:none;animation:none;
   }
-  .poll-opts{gap:7px}
+  .poll-opts{gap:7px;flex-wrap:wrap}
   .poll-opts button{flex:1 1 100%}
 }
 @media (prefers-reduced-motion:reduce){
@@ -689,40 +765,39 @@ body.resizing{cursor:col-resize;user-select:none}
 
 <!-- ══ 플랫폼 헤더 ══ -->
 <div class="site" id="siteBar"><div class="inner">
-  <span class="logo deco">
-    <span class="mk"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.6 0.6 8.9 5 1.6 9.4z"/></svg></span>
-    오늘라이브
+  <span class="ham deco" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span>
+  <nav class="nav deco" aria-hidden="true"><span>게임</span><span>e스포츠</span><span>스포츠</span><span>엔터+</span></nav>
+  <span class="search deco" aria-hidden="true">
+    채널, 라이브, 동영상 검색
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
   </span>
-  <nav class="nav deco"><span class="sel">라이브</span><span>팔로잉</span><span>카테고리</span></nav>
-  <span class="search deco">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 1.4-1.4-5.4-5.4A8 8 0 0 0 10 2zm0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12z"/></svg>
-    채널, 카테고리 검색
-  </span>
-  <span class="ico deco"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a6 6 0 0 0-6 6v3.6l-1.7 3.1A1 1 0 0 0 5.2 16h13.6a1 1 0 0 0 .9-1.3L18 11.6V8a6 6 0 0 0-6-6zm0 19a3 3 0 0 0 2.8-2H9.2a3 3 0 0 0 2.8 2z"/></svg></span>
-  <span class="me deco" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 12a4.6 4.6 0 1 0 0-9.2 4.6 4.6 0 0 0 0 9.2zm0 1.9c-3.6 0-8 1.8-8 4.3V21h16v-2.8c0-2.5-4.4-4.3-8-4.3z"/></svg></span>
+  <!-- 테마 전환. 다크에서는 해(→ 화이트로), 화이트에서는 달(→ 다크로)을 보여 줍니다. -->
+  <button class="ico" id="themeBtn" type="button" aria-label="화이트 테마로 바꾸기" title="테마 바꾸기">
+    <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+    <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
+  </button>
 </div></div>
 
 <div class="wrap">
 
   <!-- ══ 탐색 화면 ══ -->
-  <!-- ══ 안내 페이지 — 자극물 전에 조건 정보를 한 번 더 노출 ══ -->
+  <!-- ══ 안내 페이지 — 참가자 코드 입력 + 종료 방법 ══ -->
   <section class="intro" id="intro"><!-- .intro는 기본이 display:none — hidden 속성을 쓰면 .on이 덮이지 않는다 -->
-    <h1 id="introTitle"></h1>
-    <p class="intro-lead" id="introLead"></p>
-    <div class="intro-card" id="introCard"></div>
-    <p class="intro-note" id="introNote"></p>
+    <!-- 참가자 식별. 설문 응답과 로그를 묶는 열쇠입니다. -->
+    <div class="intro-id">
+      <label for="pidEmail">참가자 고유 코드(없을 경우 이메일주소)를 입력해주세요.</label>
+      <input id="pidEmail" type="text" autocomplete="off"
+             placeholder="예: P017 또는 example@gmail.com" spellcheck="false">
+      <span class="id-note" id="idNote">설문 응답과 연결하는 데만 씁니다.</span>
+    </div>
     <!-- 종료 안내. 버튼을 안 누르고 창을 닫으면 정상 종료로 기록되지 않습니다(via: closed). -->
     <div class="intro-exit">
       <h3>방송이 끝나면 꼭 [참여 종료하기]를 눌러주세요</h3>
-      <p>방송이 끝나면 영상 <b>오른쪽 아래에 [참여 종료하기] 버튼</b>이 나타납니다. 이 버튼을 눌러야
+      <p>방송이 끝나면 영상 <b>가운데에 빨간 [참여 종료하기] 버튼</b>이 나타납니다. 이 버튼을 눌러야
          참여가 <b>정상적으로 완료</b>됩니다. 버튼을 누르지 않고 창을 닫으면
          참여가 완료되지 않습니다.</p>
       <div class="ix-mock" aria-hidden="true">
-        <div class="ix-video">방송이 종료되었습니다</div>
-        <div class="ix-row">
-          <span class="av"></span><span>하루끝 harukkeut</span>
-          <span class="sp"></span>
-          <span class="ix-sub">구독</span>
+        <div class="ix-video">방송이 종료되었습니다
           <span class="ix-leave">참여 종료하기
             <svg class="ix-ptr" viewBox="0 0 24 24"><path d="M4 2l15 9.5-6.6 1.3 3.9 7.4-2.7 1.4-3.9-7.4L4 18.6z" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/></svg>
           </span>
@@ -734,28 +809,35 @@ body.resizing{cursor:col-resize;user-select:none}
         <li>"참여가 완료되었습니다" 화면이 보이면 끝입니다.</li>
       </ol>
     </div>
-    <!-- 참가자 식별. 설문 응답과 로그를 묶는 열쇠입니다. -->
-    <div class="intro-id">
-      <label for="pidEmail">참가자 고유 코드(없을 경우 이메일주소)를 입력해주세요.</label>
-      <input id="pidEmail" type="text" autocomplete="off"
-             placeholder="예: P017 또는 example@gmail.com" spellcheck="false">
-      <span class="id-note" id="idNote">설문 응답과 연결하는 데만 씁니다.</span>
-    </div>
     <button class="intro-go" id="introGo">시작하기</button>
   </section>
 
 
   <!-- ══ 시청 화면 ══ -->
   <section class="watch" id="watch">
+    <!-- 왼쪽 세로 메뉴(장식) -->
+    <aside class="side deco" aria-hidden="true">
+      <span class="it"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10.2 9.4v5.2l4.3-2.6z"/></svg>방송</span>
+      <span class="it"><svg viewBox="0 0 24 24"><circle cx="6.5" cy="6.5" r="2.6"/><circle cx="6.5" cy="17.5" r="2.6"/><path d="M8.6 8 20 17M8.6 16 20 7"/></svg>클립</span>
+      <span class="it"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>카테고리</span>
+      <span class="it"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>편성표</span>
+      <span class="it"><svg viewBox="0 0 24 24"><path d="M12 20s-7.5-4.5-7.5-10.2A4.2 4.2 0 0 1 12 7.3a4.2 4.2 0 0 1 7.5 2.5C19.5 15.5 12 20 12 20z"/></svg>팔로잉</span>
+      <span class="it"><svg viewBox="0 0 24 24"><path d="M5 19.5l1-4.5L16.5 4.5l3.5 3.5L9.5 18.5z"/><path d="M14 7l3.5 3.5"/></svg>치즈팜</span>
+      <hr>
+      <span class="ch" style="background:linear-gradient(145deg,#3d6fb6,#1d3557)"></span>
+      <span class="ch" style="background:linear-gradient(145deg,#2fa36b,#14532d)"></span>
+      <span class="ch" style="background:linear-gradient(145deg,#b5543c,#5b2316)"></span>
+    </aside>
     <div class="stage"><div class="stagein">
-      <!-- 영상과 투표 카드를 한 상자에 둡니다. 투표 카드는 넓은 화면에서
-           이 상자 기준으로 영상 오른쪽에 겹치고, 좁은 화면에서는 아래로 흐릅니다. -->
-      <div class="playwrap">
+      <!-- 영상·투표 카드·채팅을 한 상자에 둡니다. 넓은 화면에서는 이 상자 기준으로
+           투표는 왼쪽 2/3, 채팅은 오른쪽 1/3에 겹치고, 좁은 화면에서는 아래로 흐릅니다. -->
+      <div class="playwrap" id="playwrap">
       <div class="player" id="player">
         <!-- 방송 영상. 컨트롤을 두지 않습니다 — 되감거나 건너뛰면 투표·채팅 시각이 어긋납니다. -->
         <video class="scene" id="streamVideo" src="./stream.mp4" preload="metadata" playsinline
                disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback"
                aria-label="방송 영상"></video>
+        <div class="buffer" id="buffer" hidden><i></i></div>
         <button id="videoRetry" class="video-retry" hidden>영상 재생하기</button>
 
         <div class="plrow">
@@ -764,12 +846,11 @@ body.resizing{cursor:col-resize;user-select:none}
         </div>
 
 
-        <span class="clock" id="clock">0:00</span>
-
         <!-- 방송 종료 후 추천. 실제 플랫폼이 영상이 끝나면 띄우는 화면입니다.
              여기서의 구독·다음 영상 클릭이 마지막 행동 지표입니다. -->
         <div class="endcard" id="endCard" hidden>
           <p class="ec-hd">방송이 종료되었습니다</p>
+          <button class="leave" id="leave" hidden>참여 종료하기</button>
           <button class="ec-sub" id="endSub" aria-pressed="false">구독하기</button>
           <p class="ec-lb">하루끝 harukkeut 의 다른 영상</p>
           <div class="ec-grid" id="ecGrid"></div>
@@ -788,6 +869,7 @@ body.resizing{cursor:col-resize;user-select:none}
           <p class="poll-q" id="pollQ"></p>
           <!-- 질문과 선택지만 둡니다. 조건 설명은 스트리머가 영상에서 말로 합니다. -->
           <div class="poll-opts" id="pollOpts"></div>
+          <p class="poll-mine" id="pollMine" hidden></p>
           <div class="poll-res" id="pollRes" hidden></div>
           <!-- 이유 작성은 보드대로 방송 화면 쪽에 둡니다. 투표와 한 흐름으로 묶여야
                "투표 + 그렇게 생각한 이유"가 하나의 과제로 읽힙니다. -->
@@ -800,20 +882,31 @@ body.resizing{cursor:col-resize;user-select:none}
             <span class="why-note" id="whyNote"></span>
           </div>
       </section>
+
+      <!-- 영상 위 플로팅 채팅(읽기 전용). 채팅창과 같은 줄을 그대로 비춥니다. -->
+      <div class="ov" id="ov" aria-hidden="true">
+        <div class="ovfeed" id="ovFeed"></div>
+        <div class="ovlock" id="ovLock" hidden>
+          <svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 0 0-5 5v3H6a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1h-1V7a5 5 0 0 0-5-5zm0 2a3 3 0 0 1 3 3v3H9V7a3 3 0 0 1 3-3z"/></svg>
+          <span id="ovLockMsg">투표가 끝나면 채팅이 열립니다</span>
+        </div>
+      </div>
       </div>
 
       <div class="info">
-        <h2 id="streamTitle">오늘 있었던 일 좀 들어주라</h2>
+        <h2 id="streamTitle">나랑 수다 떨자</h2>
+        <div class="meta">
+          <span class="cat">talk</span>
+          <span class="tag">Just Chatting</span><span class="tag">한국어</span><span class="tag">소통</span>
+          <span class="up" id="uptime"></span>
+        </div>
         <div class="row">
           <span class="chan">
             <span class="av" aria-hidden="true">하</span>
             <span class="txt">
               <span class="who">하루끝 harukkeut</span>
-              <span class="cnt" id="watchCnt"></span>
             </span>
           </span>
-          <span class="tags" aria-hidden="true"><span class="tag">Just Chatting</span><span class="tag">한국어</span><span class="tag">3시간 31분째</span></span>
-          <span class="cnt ai" id="watchAi"></span>
           <span class="acts-r">
           <!-- 반응 버튼. 누르라고 유도하지 않고 자리만 둡니다 — 노트의
                "명시적으로 행동을 강요하지말고" 반영. -->
@@ -826,18 +919,18 @@ body.resizing{cursor:col-resize;user-select:none}
             </button>
           </span>
           <button class="sub" id="subBtn" aria-pressed="false">구독</button>
-          <button class="leave" id="leave" hidden>참여 종료하기</button>
           </span>
         </div>
       </div>
 
     </div></div>
 
-    <div class="chatcol" id="chatcol">
-      <button class="chatgrip" id="chatGrip" aria-label="채팅창 폭 조절"></button>
-      <aside class="chat">
-      <header>실시간 채팅 <span class="aiq" id="chatAi"></span>
-        <span class="hic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zm9-1.1-1.4-2.4-2.3.7a7.6 7.6 0 0 0-1.6-.9L15.3 2H8.7l-.4 2.4c-.6.2-1.1.5-1.6.9l-2.3-.7L3 7.4l1.8 1.6a7.4 7.4 0 0 0 0 1.9L3 12.6 4.4 15l2.3-.7c.5.4 1 .7 1.6.9l.4 2.4h6.6l.4-2.4c.6-.2 1.1-.5 1.6-.9l2.3.7L21 12.6l-1.8-1.6a7.4 7.4 0 0 0 0-1.9z"/></svg></span>
+    <!-- 채팅창. 화면 오른쪽에서 열고 닫습니다. 입력은 여기서만 합니다. -->
+      <aside class="chat" id="chat" hidden>
+      <header>
+        <button class="fold" id="chatFold" aria-label="채팅창 닫기" title="채팅창 닫기"><svg viewBox="0 0 24 24"><path d="M4 5v14M9 12h11M15.5 7.5 20 12l-4.5 4.5"/></svg></button>
+        채팅 <span class="aiq" id="chatAi"></span>
+        <span class="hic" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></span>
       </header>
       <div class="feed" id="feed"></div>
       <div class="locked" id="chatLocked" hidden>
@@ -846,10 +939,11 @@ body.resizing{cursor:col-resize;user-select:none}
       </div>
       <footer id="inputRow">
         <input id="say" placeholder="채팅을 입력하세요" maxlength="60" autocomplete="off">
-        <button class="send" id="sendBtn">전송</button>
+        <button class="send" id="sendBtn">채팅</button>
       </footer>
       <div class="off" id="inputOff" hidden>이 방송은 채팅 입력이 제한되어 있습니다.</div>
-    </aside></div>
+      </aside>
+      <button class="chat-tab" id="chatTab" aria-label="채팅창 열기"><svg viewBox="0 0 24 24"><path d="M20 5v14M15 12H4M8.5 7.5 4 12l4.5 4.5"/></svg>채팅</button>
   </section>
 
   <!-- ══ 종료 ══ -->
@@ -889,7 +983,7 @@ const ConditionRouter = (() => {
     label:'mixed', ratio:100, viewers:1243, input:'on', seed:7, pid:'TEST',
     cong:'all',           // study 2 일치도: all | half | none (참가자 투표 기준)
     why:'on',             // 참가자에게 선택 이유를 쓰게 할지 (다른 시청자 채팅에는 이유가 없음)
-    theme:'light',        // light | dark — 전 조건 동일하게 고정해 쓸 것
+    theme:'dark',         // dark(치지직과 같음) | light — 전 조건 동일하게 고정해 쓸 것
     intro:'on'            // 자극물 전 안내 페이지 표시 여부
   };
   /* 조건 코드. 주소에 cong=half처럼 그대로 쓰면 참가자가 보고 조작을 알아챕니다.
@@ -1007,17 +1101,19 @@ const DILEMMA = {
     '고릴라 골랐음', '고릴라 1마리 ㅇㅇ', '고릴라팀', '고릴라 쪽임',
     '저도 고릴라 1마리요', '고릴라 1표', '당연히 고릴라 아님?', '고릴라 1마리 쪽',
   ],
-  neutral: ['이거 인터넷에서 맨날 싸우는 주제ㅋㅋ', '진지하게 고민됐음',
+  /* 결과 공개 뒤의 잡담. 일치도 조건과 무관하게 같은 풀을 씁니다 — 조건마다 문구가 다르면
+     그 자체가 변수가 됩니다. 그래서 결과가 한쪽으로 몰린 경우(all: 내 쪽 전원, none: 내 쪽 1명)와
+     반반인 경우(half·미투표) **모두에서 말이 되는 줄만** 둡니다.
+     빼낸 줄: '생각보다 갈렸네'(몰린 결과와 모순), '이거 인터넷에서 맨날 싸우는 주제ㅋㅋ'
+     (의견이 갈리는 주제라는 암시가 만장일치 결과와 어긋남). */
+  neutral: ['이거 인터넷에서 유명한 주제ㅋㅋ', '진지하게 고민됐음',
             '해보면 알텐데', '이런거 왜 이렇게 재밌지', '결과 신기하다',
-            '생각보다 갈렸네', '나 진짜 고민했다', '밸런스게임 또 해주세요'],
+            '결과 보니까 재밌네', '나 진짜 고민했다', '밸런스게임 또 해주세요'],
 };
 
-/* 월일만 씁니다. 어떤 낱말이든 제목에 들어가면 그 자체가 교란이 됩니다 —
-   '판단', '사연', '고민' 모두 참가자의 해석 틀을 미리 정합니다.
-   장기 저챗 채널은 실제로 날짜만 달아 둡니다. */
-const mmdd = d => `${d.getMonth() + 1}월 ${d.getDate()}일`;
-const daysAgo = n => new Date(Date.now() - n * 86400000);
-const STREAM_TITLE = `${mmdd(new Date())} 방송`;
+/* 방송 제목. 날짜는 넣지 않습니다. 저챗 방송에 흔한 가벼운 제목이고,
+   주제를 암시하는 낱말('판단', '사연', '고민')은 참가자의 해석 틀을 미리 정하므로 피합니다. */
+const STREAM_TITLE = '나랑 수다 떨자';
 
 /* ── 2-1. 밀도 모델 ──────────────────────────
    Flores-Saviaga et al. (2019) HT'19 규모별 실측치를 구간별 로그-로그 보간.
@@ -1458,6 +1554,32 @@ function IdentityAssigner(c, nChatters, counts){
 
 /* ── 5. 렌더러 ───────────────────────────── */
 const feed = document.getElementById('feed');
+const ovFeed = document.getElementById('ovFeed');
+const OV_MAX = 40;                         // 플로팅에 남겨 둘 줄 수(넘친 줄은 어차피 잘려 안 보임)
+/* 채팅창 줄을 복제해 플로팅에 붙입니다. 복제본에는 이벤트가 없어 읽기 전용입니다.
+   실제 플랫폼처럼 영상 위 채팅은 채팅창보다 OV_DELAY_MS 늦게 뜹니다.
+   재시작으로 피드가 비워지면(ovGen 증가) 대기 중이던 줄은 버립니다. */
+const OV_DELAY_MS = 500;
+let ovGen = 0;
+let ovInstant = false;                     // 입장 전 쌓인 채팅(백로그)은 지연 없이 바로 띄웁니다
+function mirror(el, rec){
+  const ov = el.cloneNode(true);
+  if (ovInstant){ mirrorNow(ov, rec); return; }
+  const gen = ovGen;
+  setTimeout(() => { if (gen === ovGen) mirrorNow(ov, rec); }, OV_DELAY_MS);
+}
+function mirrorNow(ov, rec){
+  ovFeed.appendChild(ov);
+  if (rec && ovObserver){
+    ov.__seen = rec; ov.__sk = 'sinceO'; rec.ov = ov;
+    ovObserver.observe(ov);
+  }
+  while (ovFeed.children.length > OV_MAX){
+    const gone = ovFeed.firstChild;
+    if (gone.__seen){ flushSeen(gone.__seen, 'sinceO'); ovObserver.unobserve(gone); }
+    ovFeed.removeChild(gone);
+  }
+}
 /* ── 채팅 사용자 카드 ────────────────────
    실제 플랫폼처럼 프로필을 올리거나 닉네임을 누르면 그 사용자 정보가 뜹니다.
    조작(사람/AI)을 한 번 더 노출하는 자리이면서, 어떤 사용자를 들여다봤는지가
@@ -1471,8 +1593,7 @@ function userRows(name, isAI){
   const st = userStats[name] || (userStats[name] = {msgs: 0, first_at: null, opens: 0});
   return [
     ['유형', isAI ? 'AI 시청자' : '실제 이용자', isAI],
-    ['이 방송 채팅', `${st.msgs}개`, false],
-    ['첫 채팅', st.first_at === null ? '-' : `${Math.round(st.first_at)}초`, false]
+    ['이 방송 채팅', `${st.msgs}개`, false]
   ];
 }
 
@@ -1510,49 +1631,36 @@ document.addEventListener('click', e => {
   }
 });
 
-/* 채팅창 폭 조절. 끌어 놓은 결과만 한 건 남깁니다 — 끄는 내내 남기면
-   로그가 좌표로 뒤덮입니다. */
-const CHAT_MIN = 288, CHAT_MAX = 560, CHAT_DEF = 352;
-function initChatResize(){
-  const grip = $('chatGrip'), col = $('chatcol');
-  if (!grip || !col) return;
-  let dragging = false, startX = 0, startW = 0;
-  const widthNow = () => col.getBoundingClientRect().width;
-  const apply = w => watch.style.setProperty('--chatw', Math.round(w) + 'px');
-
-  grip.addEventListener('pointerdown', e => {
-    dragging = true; startX = e.clientX; startW = widthNow();
-    grip.setPointerCapture(e.pointerId);
-    grip.classList.add('on'); document.body.classList.add('resizing');
-    e.preventDefault();
-  });
-  grip.addEventListener('pointermove', e => {
-    if (!dragging) return;
-    apply(Math.min(CHAT_MAX, Math.max(CHAT_MIN, startW - (e.clientX - startX))));
-  });
-  const stop = e => {
-    if (!dragging) return;
-    dragging = false;
-    grip.classList.remove('on'); document.body.classList.remove('resizing');
-    const to = Math.round(widthNow());
-    if (Math.abs(to - startW) >= 4){
-      Logger.add('chat_resize', {from: Math.round(startW), to,
-                                 delta: to - Math.round(startW), at_sec: +tick.toFixed(2)});
-    }
-  };
-  grip.addEventListener('pointerup', stop);
-  grip.addEventListener('pointercancel', stop);
-  // 키보드로도 조절 가능하게 둡니다 — 포인터만 지원하면 접근성 기준에 걸립니다
-  grip.addEventListener('keydown', e => {
-    const step = e.shiftKey ? 48 : 16;
-    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-    const from = Math.round(widthNow());
-    apply(Math.min(CHAT_MAX, Math.max(CHAT_MIN, from + (e.key === 'ArrowLeft' ? step : -step))));
-    const to = Math.round(widthNow());
-    if (to !== from) Logger.add('chat_resize', {from, to, delta: to - from,
-                                                how: 'key', at_sec: +tick.toFixed(2)});
-    e.preventDefault();
-  });
+/* 채팅창 열기·닫기. 채팅창은 화면 오른쪽에서 밀려 들어오고 |→ 로 닫힙니다.
+   열려 있어도 영상 위 플로팅 채팅은 그대로 보입니다(영상 칸이 줄어 가려지지 않음).
+   닫힌 채팅창은 애니메이션이 끝나면 hidden으로 내립니다 — 화면 밖으로 밀려나 있어도
+   IntersectionObserver는 '보인다'로 세므로, 노출 집계가 부풀지 않게 합니다.
+   연 횟수와 열려 있던 시간을 남깁니다. 입력은 채팅창에서만 할 수 있습니다. */
+const CHAT_PANEL_DEFAULT = true;           // 입장 시 채팅창 상태(열림). 닫으면 플로팅만 보임
+const narrow = () => matchMedia('(max-width:860px)').matches;
+const chatPanel = {n: 0, open_ms: 0, since: 0, open: false, t: 0};
+function setChatPanel(open, how){
+  if (narrow()) open = true;                // 좁은 화면은 채팅창을 영상 아래에 늘 펼쳐 둡니다
+  const panel = $('chat');
+  chatPanel.open = open;
+  clearTimeout(chatPanel.t);
+  $('chatTab').hidden = open;
+  if (open){
+    panel.hidden = false;
+    requestAnimationFrame(() => requestAnimationFrame(() => watch.classList.add('chat-on')));
+    requestAnimationFrame(() => { feed.scrollTop = feed.scrollHeight; });
+  } else {
+    watch.classList.remove('chat-on');
+    chatPanel.t = setTimeout(() => { if (!chatPanel.open) panel.hidden = true; }, how ? 260 : 0);
+  }
+  const now = performance.now();
+  if (open && !chatPanel.since){ chatPanel.since = now; if (how) chatPanel.n++; }
+  if (!open && chatPanel.since){ chatPanel.open_ms += now - chatPanel.since; chatPanel.since = 0; }
+  if (how) Logger.add('chat_panel', {open, at_sec: +tick.toFixed(2)});
+}
+function initChatToggle(){
+  $('chatFold').addEventListener('click', () => setChatPanel(false, 'click'));
+  $('chatTab').addEventListener('click', () => setChatPanel(true, 'click'));
 }
 
 /* 아바타 색. 닉네임만으로 정해지므로 조건·세션을 넘어 같은 닉네임은 같은 색입니다.
@@ -1591,12 +1699,14 @@ const Renderer = {
     if (c.kind === 'divider'){
       el.append(document.createTextNode(c.text));
       feed.appendChild(el);
+      mirror(el);
       if (wasNear && !feedPinned()) feed.scrollTop = feed.scrollHeight;
       return;
     }
     if (c.kind === 'sys'){
       el.append(document.createTextNode(c.text));
       feed.appendChild(el);
+      mirror(el);
       feed.scrollTop = feed.scrollHeight;
       return;
     }
@@ -1641,19 +1751,24 @@ const Renderer = {
     }
     el.append(document.createTextNode(c.text));
     feed.appendChild(el);
+    let rec = null;
     if (msgObserver){
-      el.__seen = {ms: 0, since: 0, wasVisible: false, stance: c.stance || null,
-                   kind: c.kind, el};
-      seen.msgs.push(el.__seen);
+      /* 한 줄의 노출 기록 하나를 채팅창(since)과 플로팅(sinceO)이 나눠 씁니다.
+         둘 중 어디서든 보이는 시간을 한 번만 셉니다 — 두 곳에 동시에 떠 있어도 두 배가 되지 않습니다. */
+      rec = {ms: 0, since: false, sinceO: false, start: 0, was: {}, stance: c.stance || null,
+             kind: c.kind, el, ov: null};
+      el.__seen = rec; el.__sk = 'since';
+      seen.msgs.push(rec);
       msgObserver.observe(el);
     }
+    mirror(el, rec);
     if (wasNear && !feedPinned()) feed.scrollTop = feed.scrollHeight;
     /* 스크롤백을 열어둡니다 — 지나간 채팅을 거슬러 읽는 행동 자체가 측정 대상입니다.
        상한은 메모리 보호용이고, 3,180명·180초에서도 600줄을 넘지 않습니다. */
     while (feed.children.length > 600){
       const gone = feed.firstChild;
       if (msgObserver && gone.__seen){
-        if (gone.__seen.since){ gone.__seen.ms += performance.now() - gone.__seen.since; gone.__seen.since = 0; }
+        flushSeen(gone.__seen, 'since');
         msgObserver.unobserve(gone);
       }
       feed.removeChild(gone);
@@ -1661,8 +1776,11 @@ const Renderer = {
   },
   clear(){
     if (msgObserver) msgObserver.disconnect();
+    if (ovObserver) ovObserver.disconnect();
     seen.msgs.length = 0; seen.offscreen = 0;
     feed.innerHTML = '';
+    ovFeed.innerHTML = '';
+    ovGen++;
     hideUserCard();
     for (const k of Object.keys(userStats)) delete userStats[k];
     initSeen();
@@ -1717,36 +1835,54 @@ function initChatScroll(){
          논문에는 '읽은 메시지'가 아니라 '화면 노출 시간'으로 기술. */
 const SEEN_MIN_MS = 1000;        // 이 시간 이상 떠 있어야 '봤다'로 셉니다
 const seen = {msgs: [], offscreen: 0};
-let msgObserver = null;
+let msgObserver = null, ovObserver = null;
+const SEEN_KEYS = ['since', 'sinceO'];     // 채팅창, 플로팅
 
 function nowVisible(){ return document.visibilityState === 'visible'; }
 
+/* 자리별 보임 표시. 둘 중 하나라도 보이기 시작하면 시계를 켜고,
+   둘 다 안 보이게 되면 그때까지를 적립합니다. */
+function seenOn(rec, k){
+  if (rec[k]) return;
+  rec[k] = true;
+  if (!rec.start) rec.start = performance.now();
+}
+function flushSeen(rec, k){
+  if (!rec[k]) return;
+  rec[k] = false;
+  if (rec.since || rec.sinceO || !rec.start) return;
+  if (nowVisible()) rec.ms += performance.now() - rec.start;
+  rec.start = 0;
+}
+
 function initSeen(){
   if (!('IntersectionObserver' in window)) return;   // 미지원 브라우저는 집계 생략
-  msgObserver = new IntersectionObserver((entries) => {
-    const now = performance.now();
+  const make = root => new IntersectionObserver((entries) => {
     for (const e of entries){
-      const rec = e.target.__seen;
-      if (!rec) continue;
-      if (e.isIntersecting){
-        if (!rec.since) rec.since = now;
-      } else if (rec.since){
-        if (nowVisible()) rec.ms += now - rec.since;
-        rec.since = 0;
-      }
+      const rec = e.target.__seen, k = e.target.__sk;
+      if (!rec || !k) continue;
+      if (e.isIntersecting) seenOn(rec, k);
+      else flushSeen(rec, k);
     }
-  }, {root: feed, threshold: 0.6});                  // 줄의 60% 이상 보여야 인정
+  }, {root, threshold: 0.6});                       // 줄의 60% 이상 보여야 인정
+  msgObserver = make(feed);
+  ovObserver = make(ovFeed);
 }
 
 /* 탭을 가리면 그 순간까지만 적립하고 멈춥니다. 돌아오면 다시 시작합니다. */
 function pauseSeen(stop){
   const now = performance.now();
   for (const r of seen.msgs){
-    if (!r.since) continue;
-    if (stop){ r.ms += now - r.since; r.since = 0; r.wasVisible = true; }
-  }
-  if (!stop){
-    for (const r of seen.msgs) if (r.wasVisible && r.el.isConnected){ r.since = now; r.wasVisible = false; }
+    if (stop){
+      if (r.start){ r.ms += now - r.start; r.start = 0; }
+      for (const k of SEEN_KEYS){ r.was[k] = r[k]; r[k] = false; }
+    } else {
+      for (const k of SEEN_KEYS){
+        const node = k === 'since' ? r.el : r.ov;
+        if (r.was[k] && node && node.isConnected) seenOn(r, k);
+        r.was[k] = false;
+      }
+    }
   }
 }
 
@@ -1757,7 +1893,7 @@ function seenSummary(){
   let n = 0, cong = 0, incong = 0, msCong = 0, msIncong = 0, off = 0, msAll = 0;
   for (const r of seen.msgs){
     let ms = r.ms;
-    if (r.since && vis) ms += now - r.since;          // 아직 화면에 있는 것도 반영
+    if (r.start && vis) ms += now - r.start;          // 아직 화면에 있는 것도 반영
     msAll += ms;
     if (ms < SEEN_MIN_MS){ if (ms === 0) off++; continue; }
     n++;
@@ -2041,6 +2177,46 @@ const SPAN = 250;          // 영상 길이(초). stream.mp4 = 250.6초
 const OUTRO_AT = 236;      // 영상: "진짜 간단한 거라고 했으니까 저는 여기까지 하고"
 const END_AT   = 248;      // 영상: "다음 방송에서 봬요"(~246초) 직후 화면이 꺼짐
 const STEP = 0.25;         // 틱 간격(초). 고밀도 조건에서 초당 2회 이상 렌더되도록.
+/* 영상 앞부분 자르기. 0~3초는 카메라를 켜고 자리에 앉는 장면이라 '방송을 막 켰다'로
+   읽힙니다. 3초부터 틀어 이미 진행 중인 방송에 들어온 것처럼 둡니다.
+   모든 시각 상수(CUES·투표·잠금 등)는 영상 원본 시각 그대로이며, 이 값만큼 늦게 시작할 뿐입니다. */
+const VIDEO_TRIM = 3;
+/* 방송 경과 시간. 입장 순간(영상 VIDEO_TRIM초)에 3:31:26이고 영상과 함께 흐릅니다. */
+const UPTIME_AT_ENTRY = 3 * 3600 + 31 * 60 + 26;
+/* 입장 직후 버퍼링(ms). 실제 라이브에 들어갈 때처럼 잠깐 검은 화면에 로딩이 돕니다. */
+const ENTRY_BUFFER_MS = 1800;
+/* 시청자 수는 40초마다 3~4명씩 오르내립니다. 조건값에서 ±8명 밖으로는 벗어나지 않습니다.
+   순서는 시드로 정해 참가자 모두 같은 값을 봅니다. */
+const VIEWER_STEP_SEC = 40;
+let viewerSeq = [], viewersShown = null;
+function buildViewerSeq(){
+  const rnd = mulberry32(cond.seed * 6007 + cond.viewers);
+  viewerSeq = [cond.viewers];
+  for (let i = 0; i < 12; i++){
+    const prev = viewerSeq[viewerSeq.length - 1];
+    const d = (rnd() < 0.5 ? 3 : 4) * (rnd() < 0.5 ? -1 : 1);
+    const next = Math.abs(prev + d - cond.viewers) > 8 ? prev - d : prev + d;
+    viewerSeq.push(Math.max(1, next));
+  }
+}
+function viewersAt(t){
+  const k = Math.max(0, Math.floor((t - VIDEO_TRIM) / VIEWER_STEP_SEC));
+  return viewerSeq[Math.min(k, viewerSeq.length - 1)];
+}
+function renderViewers(n){
+  viewersShown = n;
+  $('liveStat').innerHTML =
+    `<svg class="eye" viewBox="0 0 24 24" aria-hidden="true">` +
+    `<path d="M12 5C6.8 5 2.7 9.2 1.5 12c1.2 2.8 5.3 7 10.5 7s9.3-4.2 10.5-7C21.3 9.2 17.2 5 12 5z` +
+    `m0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-2.3a2.2 2.2 0 1 0 0-4.4 2.2 2.2 0 0 0 0 4.4z"/>` +
+    `</svg>${fmt(n)}`;
+}
+function renderUptime(t){
+  const u = UPTIME_AT_ENTRY + Math.max(0, Math.floor(t - VIDEO_TRIM));
+  const p2 = n => String(n).padStart(2, '0');
+  $('uptime').textContent =
+    `${p2(Math.floor(u / 3600))}:${p2(Math.floor(u / 60) % 60)}:${p2(u % 60)} 스트리밍 중`;
+}
 const ctx = {lastUserMessage: null};
 let source = null, ident = null, timer = null, tick = 0, entered = false;
 
@@ -2065,9 +2241,12 @@ function loop(){
   if (video.paused || video.readyState < 2) return;
   const elapsed = Math.max(0, video.currentTime - tick);
   tick = video.currentTime;
-  const s = Math.floor(tick);
-  document.getElementById('clock').textContent =
-    Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  renderUptime(tick);
+  const vn = viewersAt(tick);
+  if (vn !== viewersShown){
+    renderViewers(vn);
+    Logger.add('viewers_shown', {n: vn, at_sec: +tick.toFixed(2)});
+  }
 
   // 영상 대사 순서: 예고 → 투표 → 채팅 잠금 → 마감 → 결과와 함께 채팅 해제 → 마무리
   if (!announced && tick >= ANNOUNCE_AT){
@@ -2091,7 +2270,7 @@ function loop(){
   if (!ended && tick >= END_AT){ endStream(); return; }
   if (!chatOpen && pollClosed){
     const left = Math.max(0, Math.ceil(RESULT_AT - tick));
-    $('lockMsg').textContent = left > 0 ? `채팅이 열리기까지 ${left}초` : '채팅이 열립니다';
+    setLockMsg(left > 0 ? `채팅이 열리기까지 ${left}초` : '채팅이 열립니다');
   }
   if (!chatOpen) return;                    // 잠긴 동안 채팅 시계를 세우지 않음
   // 채팅 시계는 잠금이 풀린 뒤부터 흐릅니다. 영상 시각(tick)을 그대로 쓰면
@@ -2144,6 +2323,16 @@ $('videoRetry').addEventListener('click', () => {
   if ($('streamVideo').error) $('streamVideo').load();
   playVideo();
 });
+/* 입장 버퍼링이 끝나거나 실제로 끊겼다 다시 나오면 로딩을 걷습니다. */
+let bufferTimer = 0;
+$('streamVideo').addEventListener('playing', () => {
+  $('ov').hidden = false;                  // 영상 위 채팅은 영상이 실제로 나온 뒤부터 보입니다
+  $('buffer').hidden = true;
+  $('buffer').classList.remove('first');
+});
+$('streamVideo').addEventListener('waiting', () => {
+  if (entered && !ended && !left) $('buffer').hidden = false;
+});
 $('streamVideo').addEventListener('ended', () => {
   if (entered && !ended){ tick = $('streamVideo').currentTime; endStream(); }
 });
@@ -2154,7 +2343,7 @@ $('streamVideo').addEventListener('ended', () => {
    세션이 있었습니다. 시도는 막고 seek_attempt 등으로 남깁니다. */
 const LiveGuard = (() => {
   const v = $('streamVideo');
-  let good = 0;                 // 정상 재생으로 도달한 마지막 시각
+  let good = VIDEO_TRIM;        // 정상 재생으로 도달한 마지막 시각
   let internal = false;         // 코드가 직접 옮길 때(재시작·되돌리기)는 막지 않습니다
   /* seeked가 안 오는 경우(메타데이터 전 등)에도 막힘이 풀리도록 시간 제한을 둡니다. */
   let release = 0;
@@ -2190,17 +2379,11 @@ const LiveGuard = (() => {
     }, 0);
   });
   v.addEventListener('contextmenu', e => e.preventDefault());
-  return {reset(){ good = 0; if (v.currentTime !== 0) set(0); }};
+  return {reset(){ good = VIDEO_TRIM; if (v.currentTime !== VIDEO_TRIM) set(VIDEO_TRIM); }};
 })();
 
 /* 숫자에 천 단위 구분 */
 const fmt = n => n.toLocaleString('ko-KR');
-
-/* 정체성 표기. 비율을 빼고 "AI 시청자"라고만 쓰면 일부 조건에서도 전원 AI로 읽힙니다. */
-function identText(isAI, ratio){
-  if (!isAI) return '실제 이용자';
-  return ratio >= 100 ? '모두 AI' : `AI ${ratio}% · 실제 이용자 ${100 - ratio}%`;
-}
 
 function enter(){
   if (entered) return;
@@ -2208,24 +2391,20 @@ function enter(){
   Logger.add('watch_start');
   watch.classList.add('on');
   const isAI = cond.label === 'mixed';
-  $('watchCnt').textContent = `팔로워 4.2만`;
   /* 시청 화면에서는 AI 비율을 띄우지 않습니다. 정체성은 채팅 각 줄의
-     AI 아이콘·닉네임이 그대로 들고 있고, 비율 수치는 탐색 화면과 안내 페이지의
+     AI 아이콘·닉네임이 그대로 들고 있고, 비율 수치는 안내 페이지의
      조작입니다. 시청 중에 숫자를 계속 띄우면 참가자가 비율 자체를 과제로 삼습니다. */
-  $('watchAi').textContent = '';
-  $('watchAi').className = 'cnt';
   $('chatAi').textContent = '';
-  $('liveStat').innerHTML =
-    `<svg class="eye" viewBox="0 0 24 24" aria-hidden="true">` +
-    `<path d="M12 5C6.8 5 2.7 9.2 1.5 12c1.2 2.8 5.3 7 10.5 7s9.3-4.2 10.5-7C21.3 9.2 17.2 5 12 5z` +
-    `m0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-2.3a2.2 2.2 0 1 0 0-4.4 2.2 2.2 0 0 0 0 4.4z"/>` +
-    `</svg>${fmt(cond.viewers)}`;
+  buildViewerSeq();
+  renderViewers(viewersAt(VIDEO_TRIM));
+  renderUptime(VIDEO_TRIM);
   const off = cond.input === 'off';
   $('inputRow').hidden = off;
   $('inputOff').hidden = !off;
   buildSources();
   Logger.add('density', {
     viewers: cond.viewers,
+    video_trim: VIDEO_TRIM,
     msg_per_sec: +source.info.rate.toFixed(3),
     chatters: source.info.chatters,
     planned_messages: source.total
@@ -2234,7 +2413,7 @@ function enter(){
   Logger.add('ai_allocation', ident.actual);
   Logger.add('stance_slots', {congruence: cond.cong, ...source.slots});
   Renderer.clear();
-  tick = 0; chatT = 0;
+  tick = VIDEO_TRIM; chatT = 0;           // 첫 틱에 잘라낸 3초가 채팅 시계로 몰리지 않게
   /* 참가자는 방송 도중에 들어온 것으로 둡니다. 들어온 순간 채팅창에는
      이미 지나간 대화가 쌓여 있고, 바닥으로 스크롤된 상태입니다.
      빈 채팅창으로 시작하면 "내가 1번 시청자"처럼 읽혀 규모 조작과 어긋납니다. */
@@ -2242,11 +2421,19 @@ function enter(){
   buildCues();
   openChat();
   timer = setInterval(loop, STEP * 1000);
-  playVideo();
+  $('buffer').classList.add('first');
+  $('buffer').hidden = false;
+  $('ov').hidden = true;                   // 버퍼링이 끝나 영상이 나오면(playing) 함께 뜹니다
+  clearTimeout(bufferTimer);
+  bufferTimer = setTimeout(() => { if (entered && !ended && !left) playVideo(); }, ENTRY_BUFFER_MS);
 }
 
 /* 영상 반응 줄(CUES)에 화자를 붙입니다. 화자는 대본과 같은 명단에서 뽑으므로
-   AI/사람 배분 규칙도 같습니다. 시청자가 적으면 core가 아닌 줄을 일부 덜어냅니다. */
+   AI/사람 배분 규칙도 같습니다. 시청자가 적으면 core가 아닌 줄을 일부 덜어냅니다.
+   CUES의 시각은 대사 받아쓰기 시각이라 그대로 쓰면 말이 끝나기도 전에 반응이 올라옵니다.
+   보고 치는 시간만큼 CUE_DELAY초 늦춥니다. 단 잠금 전 줄은 잠기기 직전까지만 미룹니다 —
+   넘기면 잠금에 걸려 버려집니다. */
+const CUE_DELAY = 2.5;
 let announced = false;
 let cueQueue = [];
 function buildCues(){
@@ -2254,16 +2441,17 @@ function buildCues(){
   const keep = Math.min(1, Math.max(0.35, source.info.rate / 0.57));
   cueQueue = CUES.filter(m => m.core || rnd() < keep).map(m => {
     const who = ident.roster[Math.floor(rnd() * ident.roster.length)];
-    return {t: m.t, text: m.text, kind: who.kind, name: who.name};
-  });
+    const t = m.t < LOCK_AT ? Math.min(m.t + CUE_DELAY, LOCK_AT - 0.3) : m.t + CUE_DELAY;
+    return {t, text: m.text, kind: who.kind, name: who.name};
+  }).sort((a, b) => a.t - b.t);
 }
 
 /* 종료 후 추천 영상. 클릭해도 이동하지 않고 클릭 사실만 남깁니다 —
    자극물 밖으로 나가면 이후 행동을 못 봅니다. */
 const END_VIDEOS = [
-  {t: `${mmdd(daysAgo(2))} 방송`,  v: '12만 회',  d: '2:41:05'},
-  {t: `${mmdd(daysAgo(5))} 방송`,  v: '8.7만 회', d: '1:58:22'},
-  {t: `${mmdd(daysAgo(9))} 방송`,  v: '31만 회',  d: '3:07:14'}
+  {t: '나랑 수다 떨자',      v: '12만 회',  ago: '2일 전', d: '2:41:05'},
+  {t: '오늘은 조용히 저챗',   v: '8.7만 회', ago: '5일 전', d: '1:58:22'},
+  {t: '말랑이 만들기 2탄',    v: '31만 회',  ago: '9일 전', d: '3:07:14'}
 ];
 function renderEndCard(){
   const g = $('ecGrid'); g.innerHTML = '';
@@ -2277,7 +2465,7 @@ function renderEndCard(){
     const aiTag = cond.label === 'mixed' ? '<span class="ec-ai">AI 시청자</span>' : '';
     el.innerHTML = `<span class="ec-thumb" data-d="${v.d || '1:12:40'}"></span>
       <span class="ec-t">${v.t}</span>
-      <span class="ec-v">조회수 ${v.v}</span>${aiTag}`;
+      <span class="ec-v">조회수 ${v.v} · ${v.ago}</span>${aiTag}`;
     el.addEventListener('click', () => {
       el.style.outline = '2px solid var(--accent)';
       Logger.add('next_video_click', {index: i, title: v.t, at_sec: +tick.toFixed(2)});
@@ -2307,7 +2495,7 @@ function startOutro(){
   for (let i = 0; i < n; i++){
     const who = ident.roster[Math.floor(rnd() * ident.roster.length)];
     outroQueue.push({
-      t: OUTRO_AT + 0.8 + rnd() * (span - 1.5),
+      t: OUTRO_AT + CUE_DELAY + rnd() * (span - CUE_DELAY - 0.7),
       kind: who.kind, name: who.name,
       text: pool.length ? pool.splice(Math.floor(rnd() * pool.length), 1)[0]
                         : REACT_OUTRO[i % REACT_OUTRO.length]
@@ -2343,12 +2531,15 @@ function endStream(){
    시각만 과거로 돌려 즉시 그려 넣습니다. 입장 전 발화이므로 입장(stance)은 없고
    로그에도 before_join으로 따로 표시해 분석에서 제외할 수 있게 둡니다. */
 function seedBacklog(){
+  /* 영상이 나오는 순간 영상 위 채팅에도 이미 쌓여 있도록 지연 없이 붙입니다. */
+  ovInstant = true;
   for (const raw of source.pre){
     const c = ident.assign(raw);          // 화자 배분도 타임라인과 같은 규칙을 따릅니다
     Renderer.push({kind: c.kind, name: c.name, text: c.text});
     shownLines.push({i: shownLines.length, name: c.name, kind: c.kind,
                      stance: null, ph: 'before_join', t: 0, text: c.text});
   }
+  ovInstant = false;
   feed.scrollTop = feed.scrollHeight;
 }
 
@@ -2364,28 +2555,8 @@ function showIntro(){
      안내문이 사이트의 일부처럼 읽혀서 감춥니다. */
   $('siteBar').style.display = 'none';
 
-  $('introTitle').textContent = '잠시 후 방송을 보게 됩니다';
-  $('introLead').textContent =
-    '이미 진행 중인 방송에 들어가게 됩니다. ' +
-    '보시는 중에 스트리머가 질문을 하나 던지고 투표가 열립니다. ' +
-    '생각하신 대로 고르시고, 왜 그렇게 생각했는지도 한 줄 적어주세요. ' +
-    '그 동안만 채팅이 잠깁니다. 평소에 방송 보듯이 보시면 됩니다.';
-
-  $('introCard').innerHTML = `
-    <div class="intro-row"><span class="k">방송</span>
-      <span class="v">${STREAM_TITLE}</span></div>
-    <div class="intro-row"><span class="k">시청자 수</span>
-      <span class="v">${fmt(cond.viewers)}명</span></div>
-    <div class="intro-row"><span class="k">시청자 구성</span>
-      <span class="v ${isAI ? 'ai' : ''}">${identText(isAI, cond.ratio)}</span></div>`;
-
-  /* 비율이 100%가 아닌 조건에서 "시청자는 AI입니다"라고 쓰면 사실과 다릅니다. */
-  $('introNote').textContent = !isAI
-    ? '이 방송의 채팅에 참여하는 시청자는 실제 이용자입니다.'
-    : cond.ratio >= 100
-      ? '이 방송의 채팅에 참여하는 시청자는 모두 AI입니다.'
-      : `이 방송의 채팅에 참여하는 시청자 중 ${cond.ratio}%가 AI입니다.`;
-
+  /* 입장 안내문과 조건 정보(방송·시청자 수·시청자 구성)는 설문 화면에서 이미 안내하므로
+     여기서는 참가자 코드와 종료 방법만 받습니다. */
   Logger.add('intro_shown', {viewers: cond.viewers, identity: isAI ? 'ai' : 'human'});
 }
 
@@ -2436,13 +2607,14 @@ const LOCK_AT        = 120;   // "투표할 동안은 댓글창 막아두도록 
 const COUNTDOWN      = 10;    // "이제부터 한 10초 뒤에 마감" — 마감 전 이만큼만 남은 시간 표시
 const CLOSE_AT       = 166.5; // "4 3 2 1, 투표 종료"
 const RESULT_AT      = 170;   // "자 결과 한번 볼게요" — 결과 공개 + 채팅 해제
-const RESULT_HIDE_AT = 200;   // 결과 카드를 내립니다(스트리머가 다음 얘기로 넘어간 뒤)
+const RESULT_HIDE_AT = 230;   // 결과 카드를 내립니다(60초 노출, 마무리 인사 전)
 
 /* 투표 결과의 표 수. 비율(%)은 띄우지 않고 사람 수만 보여 줍니다.
-   참가자 쪽 몫은 채팅 일치도 조건(cong)과 같게 둡니다 — all이면 99%가 내 편,
-   none이면 99%가 반대편. 채팅(100% / 0%)과 결과가 서로 어긋나지 않게 합니다.
-   투표를 안 했으면 반반 근처입니다. 참여율은 시청자 수의 55~65%(시드 고정). */
-const RESULT_SHARE = {all: 0.99, half: 0.5, none: 0.01};
+   채팅 일치도 조건(cong)과 같게 둡니다.
+     all   내가 고른 쪽이 전체, 다른 쪽 0명
+     none  내가 고른 쪽은 나 1명, 다른 쪽이 전체 - 1
+     half  반반 근처(정확히 같지 않게 시드로 살짝 기울임)
+   투표를 안 했으면 기준이 없으므로 반반 근처입니다. 참여율은 시청자 수의 55~65%(시드 고정). */
 
 let pollShown = false, pollClosed = false, locked = false;
 let resultShown = false, resultHidden = false, result = null;
@@ -2453,12 +2625,20 @@ function pushDivider(text){
   Renderer.push({kind: 'divider', text});
 }
 
+function setLockMsg(t){ $('lockMsg').textContent = t; $('ovLockMsg').textContent = t; }
+/* 채팅창 피드와 플로팅을 함께 잠그고 엽니다. */
+function showFeed(on){
+  $('feed').hidden = !on;
+  $('chatLocked').hidden = on;
+  ovFeed.hidden = !on;
+  $('ovLock').hidden = on;
+}
+
 function lockChat(){
   locked = true;
   pushDivider('채팅이 잠겼습니다');
   chatOpen = false;
-  $('feed').hidden = true;
-  $('chatLocked').hidden = false;
+  showFeed(false);
   $('inputRow').hidden = true;
   $('inputOff').hidden = true;
   Logger.add('chat_locked', {at_sec: +tick.toFixed(2)});
@@ -2467,8 +2647,7 @@ function lockChat(){
 /* 입장 시점의 열린 상태. unlockChat()은 투표 뒤의 해제이고 로그가 다릅니다. */
 function openChat(){
   chatOpen = true;
-  $('feed').hidden = false;
-  $('chatLocked').hidden = true;
+  showFeed(true);
   const off = cond.input === 'off';
   $('inputRow').hidden = off;
   $('inputOff').hidden = !off;
@@ -2480,8 +2659,7 @@ function unlockChat(){
   showResult();
   chatOpen = true;
   unlockAt = +tick.toFixed(2);
-  $('feed').hidden = false;
-  $('chatLocked').hidden = true;
+  showFeed(true);
   pushDivider('채팅이 열렸습니다');
   Renderer.push({kind: 'sys', text:
     `투표 결과 · ${DILEMMA.A.label} ${fmt(result.A)}명 / ${DILEMMA.B.label} ${fmt(result.B)}명`});
@@ -2517,11 +2695,15 @@ function showResult(){
   resultShown = true;
   const rnd = mulberry32(cond.seed * 4241 + cond.viewers);
   const total = Math.max(2, Math.round(cond.viewers * (0.55 + rnd() * 0.10)));
-  // 반반은 정확히 같은 수가 나오지 않게 한쪽으로 살짝 기울입니다(방향은 시드로)
-  let share = vote ? RESULT_SHARE[cond.cong] : 0.5;
-  if (share === 0.5) share += (rnd() < 0.5 ? -1 : 1) * (0.01 + rnd() * 0.02);
   const mineSide = vote || 'A';
-  const nMine = Math.round(total * share);
+  let nMine;
+  if (vote && cond.cong === 'all') nMine = total;
+  else if (vote && cond.cong === 'none') nMine = 1;
+  else {
+    // 반반은 정확히 같은 수가 나오지 않게 한쪽으로 살짝 기울입니다(방향은 시드로)
+    const share = 0.5 + (rnd() < 0.5 ? -1 : 1) * (0.01 + rnd() * 0.02);
+    nMine = Math.round(total * share);
+  }
   result = mineSide === 'A' ? {A: nMine, B: total - nMine} : {A: total - nMine, B: nMine};
   result.total = total;
 
@@ -2594,7 +2776,7 @@ function showPoll(){
     b.addEventListener('click', () => castVote(k));
     box.appendChild(b);
   });
-  $('lockMsg').textContent = '투표가 끝나면 채팅이 열립니다';
+  setLockMsg('투표가 끝나면 채팅이 열립니다');
   Logger.add('poll_shown', {at_sec: +tick.toFixed(2), close_at: CLOSE_AT});
 }
 
@@ -2634,6 +2816,9 @@ function castVote(k){
 
   document.querySelectorAll('#pollOpts button').forEach(b =>
     b.setAttribute('aria-pressed', String(b.dataset.v === k)));
+  $('pollOpts').classList.add('picked');
+  $('pollMine').textContent = `내 선택: ${DILEMMA[k].label}`;
+  $('pollMine').hidden = false;
 
   if (tick < CLOSE_AT - COUNTDOWN) $('pollTimer').textContent = '선택함';
 
@@ -2728,7 +2913,7 @@ let left = false;
 function leaveSummary(via){
   return {
     via,
-    dwell_sec: +tick.toFixed(2),
+    dwell_sec: +Math.max(0, tick - VIDEO_TRIM).toFixed(2),   // 영상 시각에서 잘라낸 앞부분을 뺀 시청 시간
     // 방송 종료 화면에서 머문 시간. dwell_sec는 영상 시계라 종료 뒤로는 늘지 않습니다.
     after_end_sec: ended ? +((performance.now() - endedAt) / 1000).toFixed(2) : null,
     comments_typed: Logger.ev.filter(e => e.type === 'user_comment').length,
@@ -2743,6 +2928,10 @@ function leaveSummary(via){
     saw_end: ended,
     // 채팅 스크롤백 — 위로 올린 횟수, 최대 깊이, 바닥에서 떨어져 있던 시간
     scroll: {...scrollStats, away_ms: Math.round(scrollStats.away_ms)},
+    // 채팅창(입력 가능)을 연 횟수와 열려 있던 시간. 나머지 시간은 플로팅(읽기 전용)만 보였습니다.
+    chat_panel_opens: chatPanel.n,
+    chat_panel_open_ms: Math.round(chatPanel.open_ms +
+      (chatPanel.since ? performance.now() - chatPanel.since : 0)),
     // 어떤 사용자 카드를 몇 번 열어봤는지 — 호버/클릭을 구분해 남깁니다
     user_cards: Object.fromEntries(
       Object.entries(userStats).filter(([, v]) => v.opens > 0)
@@ -2813,6 +3002,8 @@ function restart(){
   $('videoRetry').hidden = true;
   LiveGuard.reset();
   clearInterval(timer);
+  clearTimeout(bufferTimer);
+  $('buffer').hidden = true;
   entered = false; tick = 0; chatT = 0;
   shownTotal = 0; shownAI = 0; shownCong = 0; shownIncong = 0;
   shownLines.length = 0;
@@ -2825,12 +3016,13 @@ function restart(){
   $('pollRes').hidden = true;
   $('pollRes').innerHTML = '';
   $('pollOpts').hidden = false;
+  $('pollOpts').classList.remove('picked');
+  $('pollMine').hidden = true;
   $('whyText').value = '';
   $('whyNote').textContent = '';
   $('pollTimer').textContent = '';
-  $('lockMsg').textContent = '투표가 끝나면 채팅이 열립니다';
-  $('feed').hidden = false;
-  $('chatLocked').hidden = true;
+  setLockMsg('투표가 끝나면 채팅이 열립니다');
+  showFeed(true);
   $('intro').classList.remove('on');
   $('siteBar').style.display = '';
   $('reactUp').setAttribute('aria-pressed', 'false');
@@ -2851,6 +3043,9 @@ function restart(){
   for (const k of Object.keys(hoverIn)) delete hoverIn[k];
   for (const k of Object.keys(optHoverN)) delete optHoverN[k];
   Object.assign(scrollStats, {up_events:0, max_depth_px:0, away_ms:0, reached_top:false});
+  setChatPanel(CHAT_PANEL_DEFAULT);
+  Object.assign(chatPanel, {n: 0, open_ms: 0, since: chatPanel.open ? performance.now() : 0});
+  viewersShown = null;
   $('subBtn').setAttribute('aria-pressed', 'false');
   $('subBtn').textContent = '구독';
   done.classList.remove('on');
@@ -2910,7 +3105,20 @@ initChatScroll();
 initFeedHold();
 initSeen();
 initTextSelect();
-initChatResize();
+initChatToggle();
+/* 테마 전환. 참가자가 바꾼 사실과 시각을 남깁니다. 입장할 때의 테마는 조건값(theme)입니다. */
+function syncThemeBtn(){
+  const dark = document.documentElement.dataset.theme === 'dark';
+  $('themeBtn').setAttribute('aria-label', dark ? '화이트 테마로 바꾸기' : '다크 테마로 바꾸기');
+}
+$('themeBtn').addEventListener('click', () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme !== 'dark';
+  if (dark) root.dataset.theme = 'dark'; else delete root.dataset.theme;
+  syncThemeBtn();
+  Logger.add('theme_toggle', {theme: dark ? 'dark' : 'light', at_sec: +tick.toFixed(2)});
+});
+syncThemeBtn();
 restart();
 </script>
 </body>
