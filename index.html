@@ -2147,7 +2147,9 @@ const SUPABASE_URL = 'https://kuoyhnoysgpsbefesrmk.supabase.co'; // /rest/v1 은
 const SUPABASE_KEY = 'sb_publishable_eFHG5m2Hx6nyTQWuAgLzbA_19IHKUAV'; // publishable key (secret key 금지)
 
 const Sink = (function(){
-  const on = () => Boolean(SUPABASE_URL && SUPABASE_KEY);
+  /* 자동화 브라우저(헤드리스 테스트 등, navigator.webdriver = true)는 서버로 보내지 않습니다.
+     화면 점검용 자동 테스트가 실제 참가자 데이터에 섞이는 것을 막습니다. */
+  const on = () => Boolean(SUPABASE_URL && SUPABASE_KEY) && !navigator.webdriver;
   const QKEY = 'stim_retry_q';
   let sessionId = null, queue = [], sending = false;
   /* 새 publishable key(sb_publishable_…)는 JWT가 아니라 Bearer로 보내면 거절됩니다.
@@ -2260,12 +2262,17 @@ const Logger = {
   t0: null,
   start(){
     this.ev = [];
+    this.seq = 0;
     this.t0 = Date.now();
     Sink.open(cond.pid, cond);
     this.add('session_start', {cond});
   },
+  /* seq: 세션 안의 이벤트 순번. 창을 닫는 순간 서버는 받았는데 브라우저가 실패로 알고
+     다시 보내는 경우가 있어(같은 묶음이 두 번 저장됨), 분석 뷰에서 이 번호로 중복을 걷어냅니다. */
+  seq: 0,
   add(type, data = {}){
-    const ev = {t: this.t0 ? +((Date.now() - this.t0) / 1000).toFixed(2) : 0, type, ...data};
+    const ev = {t: this.t0 ? +((Date.now() - this.t0) / 1000).toFixed(2) : 0, type, ...data,
+                seq: ++this.seq};
     this.ev.push(ev);
     Sink.push(ev);
   },
@@ -2497,12 +2504,26 @@ const LiveGuard = (() => {
   });
   /* 참가자가 멈추면 바로 다시 재생합니다. 코드가 멈추는 경우(종료·나가기·재시작)는
      같은 순간에 ended/left/entered가 바뀌므로 한 틱 뒤에 보고 구분합니다. */
+  /* 화면이 가려져(탭 전환·앱 내림) 브라우저나 OS가 멈춘 것은 참가자의 일시정지가 아닙니다.
+     모바일 인앱 브라우저에서는 이때 다시 재생시키면 OS가 또 멈춰 무한 반복되므로(파일럿:
+     0.5초에 140건) 무시하고, 화면이 다시 보이면 이어서 재생합니다.
+     기록은 1.5초에 한 번만 남기고, 그 사이 반복은 suppressed로 셉니다. */
+  let lastPauseLog = 0, suppressed = 0;
   v.addEventListener('pause', () => {
     setTimeout(() => {
       if (!entered || ended || left || v.ended) return;
-      Logger.add('pause_attempt', {at_sec: +tick.toFixed(2)});
+      if (document.visibilityState === 'hidden') return;
+      const now = performance.now();
+      if (now - lastPauseLog >= 1500){
+        Logger.add('pause_attempt', {at_sec: +tick.toFixed(2), suppressed});
+        lastPauseLog = now; suppressed = 0;
+      } else suppressed++;
       playVideo();
     }, 0);
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    if (entered && !ended && !left && v.paused && $('buffer').hidden) playVideo();
   });
   v.addEventListener('contextmenu', e => e.preventDefault());
   return {reset(){ good = VIDEO_TRIM; if (v.currentTime !== VIDEO_TRIM) set(VIDEO_TRIM); }};

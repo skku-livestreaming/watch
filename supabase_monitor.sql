@@ -2,6 +2,19 @@
 -- Supabase SQL Editor에서 한 번 실행하면, 이후에는 Table Editor → participant_status 를 열기만 하면 됩니다.
 -- 참가자 1명(세션 1건)당 1줄입니다. 최근 참가자가 맨 위에 옵니다.
 
+-- ⓪ 중복을 걷어낸 이벤트. 창을 닫는 순간 같은 묶음이 두 번 저장되는 경우가 있어,
+--    세션 안 이벤트 순번(data->>'seq')이 같은 행은 한 건만 남깁니다.
+--    seq가 없는 예전 기록은 (t, type, data)가 완전히 같은 행을 한 건으로 봅니다.
+--    아래 뷰들은 모두 events 대신 이 뷰를 읽습니다.
+create or replace view events_dedup
+with (security_invoker = true)
+as
+select distinct on (session_id, coalesce(data->>'seq', md5(t::text || type || data::text))) *
+from events
+order by session_id, coalesce(data->>'seq', md5(t::text || type || data::text)), id;
+
+revoke all on events_dedup from anon, authenticated;
+
 create or replace view participant_status
 with (security_invoker = true)   -- 뷰가 RLS를 우회하지 않게 합니다
 as
@@ -28,7 +41,7 @@ select
   end                                                     as status,
   s.id                                                    as session_id
 from sessions s
-left join events e on e.session_id = s.id
+left join events_dedup e on e.session_id = s.id
 group by s.id
 order by s.started_at desc;
 
@@ -85,7 +98,7 @@ select
   max(e.data->>'via')         filter (where e.type = 'leave')                 as leave_via,
   s.id                                                                        as session_id
 from sessions s
-left join events e on e.session_id = s.id
+left join events_dedup e on e.session_id = s.id
 group by s.id
 order by s.started_at desc;
 
@@ -107,7 +120,7 @@ select
     '[]'::jsonb)        as events,
   s.id                  as session_id
 from sessions s
-left join events e on e.session_id = s.id
+left join events_dedup e on e.session_id = s.id
 group by s.id
 order by s.started_at desc;
 
@@ -125,7 +138,7 @@ select
   e.data - 't' - 'type' as detail,
   s.started_at,
   s.id                  as session_id
-from events e
+from events_dedup e
 join sessions s on s.id = e.session_id
 order by s.started_at desc, e.t, e.id;
 
