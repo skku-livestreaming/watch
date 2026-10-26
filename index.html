@@ -802,7 +802,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
       <label for="pidEmail">참가자 고유 코드(없을 경우 이메일주소)를 입력해주세요.</label>
       <input id="pidEmail" type="text" autocomplete="off"
              placeholder="예: P017 또는 example@gmail.com" spellcheck="false">
-      <span class="id-note" id="idNote">설문 응답과 연결하는 데만 씁니다.</span>
+      <span class="id-note" id="idNote"></span><!-- 입력 오류가 있을 때만 안내가 뜹니다 -->
     </div>
     <!-- 종료 안내. 버튼을 안 누르고 창을 닫으면 정상 종료로 기록되지 않습니다(via: closed). -->
     <div class="intro-exit">
@@ -3344,7 +3344,7 @@ $('pidEmail').addEventListener('keydown', e => { if (e.key === 'Enter') introGo(
 $('pidEmail').addEventListener('input', () => {
   $('pidEmail').classList.remove('bad');
   $('idNote').classList.remove('bad');
-  $('idNote').textContent = '설문 응답과 연결하는 데만 씁니다.';
+  $('idNote').textContent = '';
 });
 $('whySend').addEventListener('click', sendWhy);
 $('subBtn').addEventListener('click', () => toggleSub('header'));
