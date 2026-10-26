@@ -1058,8 +1058,8 @@ const SCRIPT = [
   '아 나 내일 일찍 일어나야 하는데','저도요','같이 버텨요','ㅋㅋㅋㅋㅋ','ㅇㅈㅇㅈ',
   '방금 들어왔는데 무슨 얘기중','아 요약좀','ㅋㅋㅋ 설명 불가','그냥 보세요','ㅇㅇ',
   '말랑이 몇 개 만드신거예요','ㅎㅎ','오', '비누 말랑이 탐난다',
-  '마지막으로 뭐 하나 더 해주세요','ㅇㅈ','저도 그거 궁금','ㄱㄱ','ㅋㅋㅋㅋ',
-  '쉬엄쉬엄 하세요','ㅇㅇ','진짜요?','우와',
+  'ㅇㅈ','저도 그거 궁금','ㄱㄱ','ㅋㅋㅋㅋ',
+  'ㅇㅇ','진짜요?','우와',
   '아 그거 아까 나왔는데','ㅋㅋ 또 나옴','ㅇㅋㅇㅋ','ㅎㅎ','ㅋㅋㅋ'
 ];
 
@@ -1107,7 +1107,7 @@ function pickReact(rnd){
    neutral은 결과 공개 뒤의 잡담입니다. 일치도 조건과 무관하게 같은 풀을 쓰므로,
    결과가 한쪽으로 몰린 경우(all: 내 쪽 전원, none: 내 쪽 1명)와 반반인 경우(half·미투표)
    **모두에서 말이 되는 줄만** 둡니다('생각보다 갈렸네' 같은 줄은 몰린 결과와 모순).
-   두 투표의 neutral 풀은 같은 개수여야 합니다(슬롯 번호를 공유). */
+   neutral 슬롯 번호는 두 투표가 공유하며 풀 길이로 나눈 나머지를 씁니다(길이가 달라도 됨). */
 const POLLS = [
   {
     id: 1,
@@ -1130,6 +1130,8 @@ const POLLS = [
       '나도 맨몸 남자 2명', '2명에 한 표', '맨몸 남자 2명 찍었어요', '당연히 사람 2명',
       '2명 골랐음', '맨몸 2명 ㅇㅇ', '사람팀', '2명 쪽임',
       '저도 맨몸 남자 2명이요', '2명 1표', '당연히 2명 아님?', '맨몸 남자 2명 쪽',
+      '맨몸 2명 찍었다', '2명 쪽으로 감', '사람 2명 ㄱㄱㄱ', '난 2명 쪽', '2명에 걸었음',
+      '맨몸 남자 쪽', '2명 손', '2명 픽', '맨몸 2명 간다', '저는 2명이요',
     ],
     saysB: [
       '당연히 고릴라지', '고릴라 한 마리', '고릴라 찍음', '당연히 고릴라 한 마리지',
@@ -1137,6 +1139,8 @@ const POLLS = [
       '나도 고릴라 한 마리', '고릴라에 한 표', '고릴라 한 마리 찍었어요', '당연히 고릴라',
       '고릴라 골랐음', '고릴라 ㅇㅇ', '고릴라팀', '고릴라 쪽임',
       '저도 고릴라요', '고릴라 1표', '당연히 고릴라 아님?', '고릴라 한 마리 쪽',
+      '고릴라 찍었다', '고릴라 쪽으로 감', '고릴라 ㄱㄱㄱ', '난 고릴라 쪽', '고릴라에 걸었음',
+      '고릴라 한 마리 쪽으로', '고릴라 손', '고릴라 픽', '고릴라 간다', '저는 고릴라요',
     ],
     neutral: ['이런 주제 웃기다ㅋㅋ', '진지하게 고민됐음',
               '해보면 알텐데', '이런거 왜 이렇게 재밌지', '결과 신기하다',
@@ -1161,6 +1165,8 @@ const POLLS = [
       '나도 계속 사귄다', '계속 사귄다에 한 표', '계속 사귄다 찍었어요', '당연히 계속 만나지',
       '사귄다 골랐음', '계속 사귄다 ㅇㅇ', '사귄다팀', '사귄다 쪽임',
       '저도 계속 사귄다요', '사귄다 1표', '당연히 계속 사귀는거 아님?', '계속 사귄다 쪽',
+      '계속 사귄다 찍었다', '사귄다 쪽으로 감', '사귄다 ㄱㄱㄱ', '난 사귄다 쪽', '계속 사귄다에 걸었음',
+      '계속 만나는 쪽', '사귄다 손', '사귄다 픽', '계속 사귄다 간다', '저는 사귄다요',
     ],
     saysB: [
       '당연히 헤어지지', '헤어진다', '헤어진다 찍음', '당연히 헤어진다지',
@@ -1168,9 +1174,11 @@ const POLLS = [
       '나도 헤어진다', '헤어진다에 한 표', '헤어진다 찍었어요', '당연히 헤어져야지',
       '헤어진다 골랐음', '헤어진다 ㅇㅇ', '헤어진다팀', '헤어진다 쪽임',
       '저도 헤어진다요', '헤어진다 1표', '당연히 헤어지는거 아님?', '헤어진다 쪽',
+      '헤어진다 찍었다', '헤어진다 쪽으로 감', '헤어진다 ㄱㄱㄱ', '난 헤어진다 쪽', '헤어진다에 걸었음',
+      '헤어지는 쪽', '헤어진다 손', '헤어진다 픽', '헤어진다 간다', '저는 헤어진다요',
     ],
     neutral: ['이건 현실적이라 더 어렵다', '진지하게 고민됐음',
-              '10년이면 진짜 고민된다', '이런거 왜 이렇게 재밌지', '결과 신기하다',
+              '이런거 왜 이렇게 재밌지', '결과 신기하다',
               '결과 보니까 재밌네', '나 진짜 고민했다', '밸런스게임 또 해주세요'],
   },
 ];
@@ -2409,7 +2417,20 @@ function loop(){
   const a = activePoll();
   const post = a >= 0;
   for (const raw of source.next(chatT)){
-    const r = post ? resolveStance(raw, POLLS[a], PS[a].vote) : {text: raw.text, stance: null};
+    /* 절반 일치 조건은 투표마다 일치·불일치를 번갈아 내보냅니다. 미리 섞어 둔 슬롯을
+       그대로 쓰면 투표 1·2로 나뉘면서 한쪽으로 몇 개씩 기울어(예: 17 대 22), 화면에 오른
+       입장 발화가 항상 반반(많아야 1개 차이)이 되도록 표시 순서대로 정합니다.
+       첫 줄이 일치인지 불일치인지는 시드와 투표 번호로 정합니다. */
+    let src = raw;
+    if (post && raw.slot && cond.cong === 'half'){
+      const p = PS[a];
+      const first = (cond.seed + a) % 2 === 0 ? 'cong' : 'incong';
+      const other = first === 'cong' ? 'incong' : 'cong';
+      src = {...raw, slot: p.halfN++ % 2 === 0 ? first : other};
+    }
+    let r = post ? resolveStance(src, POLLS[a], PS[a].vote) : {text: raw.text, stance: null};
+    if (post) r = dedupResolve(raw, r, POLLS[a]);
+    noteText(r.text);
     const c = ident.assign(raw);
     c.text = r.text;
     c.stance = r.stance;
@@ -2426,8 +2447,56 @@ function loop(){
   }
 }
 
-/* 대본에 없는 고정 줄(영상 반응·마무리 인사)을 올립니다. */
+/* ── 같은 문장 반복 방지 ─────────────────────
+   'ㅋㅋㅋ' 같은 짧은 반응은 반복돼도 자연스럽지만, 같은 문장이 짧은 간격으로 다시 나오면
+   봇처럼 보입니다. 최근 화면에 오른 문장 DEDUP_WINDOW개 안에 같은 문장이 있으면
+     입장 발화  → 같은 쪽 풀의 다른 문장(전부 최근에 나왔으면 가장 오래전에 나온 것)
+     잡담       → 다른 잡담, 없으면 짧은 반응
+     대사 반응·마무리 인사 → 건너뜀
+   으로 바꿉니다. 입장(찬/반)은 그대로라 일치도 조작에는 영향이 없습니다. */
+const DEDUP_WINDOW = 30;
+const recentTexts = [];
+const lastUse = new Map();
+let useN = 0, dedupRnd = mulberry32(1601);
+const isShortReact = t => REACTIONS.includes(t) || /^[ㄱ-ㅎㅏ-ㅣ\s!?.~]+$/.test(t);
+function isRecentDup(t){ return !isShortReact(t) && recentTexts.includes(t); }
+function noteText(t){
+  if (!t || isShortReact(t)) return;
+  recentTexts.push(t);
+  if (recentTexts.length > DEDUP_WINDOW) recentTexts.shift();
+  lastUse.set(t, ++useN);
+}
+function resetDedup(){
+  recentTexts.length = 0; lastUse.clear(); useN = 0;
+  dedupRnd = mulberry32(cond.seed * 1601 + cond.viewers);
+}
+function dedupResolve(raw, r, poll){
+  if (!isRecentDup(r.text)) return r;
+  if (r.stance){
+    const pool = r.stance === 'A' ? poll.saysA : poll.saysB, n = pool.length;
+    for (let k = 1; k < n; k++){
+      const t = pool[(r.ri + k) % n];
+      if (!isRecentDup(t)) return {...r, text: t};
+    }
+    let best = pool[0], bu = Infinity;
+    for (const t of pool){ const u = lastUse.get(t) || 0; if (u < bu){ bu = u; best = t; } }
+    return {...r, text: best};
+  }
+  if (raw.nslot != null){
+    const pool = poll.neutral, n = pool.length;
+    for (let k = 1; k < n; k++){
+      const t = pool[(raw.nslot + k) % n];
+      if (!isRecentDup(t)) return {...r, text: t};
+    }
+    return {...r, text: pickReact(dedupRnd)};
+  }
+  return r;   // 대본 줄은 순서대로 한 번씩만 나와 겹치지 않습니다
+}
+
+/* 대본에 없는 고정 줄(영상 반응·마무리 인사)을 올립니다. 최근에 나온 문장이면 건너뜁니다. */
 function pushScripted(m, ph){
+  if (isRecentDup(m.text)) return;
+  noteText(m.text);
   Renderer.push({kind: m.kind, name: m.name, text: m.text});
   shownLines.push({i: shownLines.length, name: m.name, kind: m.kind,
                    stance: null, ph, t: +tick.toFixed(2), text: m.text});
@@ -2558,6 +2627,7 @@ function enter(){
   /* 참가자는 방송 도중에 들어온 것으로 둡니다. 들어온 순간 채팅창에는
      이미 지나간 대화가 쌓여 있고, 바닥으로 스크롤된 상태입니다.
      빈 채팅창으로 시작하면 "내가 1번 시청자"처럼 읽혀 규모 조작과 어긋납니다. */
+  resetDedup();
   seedBacklog();
   buildCues();
   openChat();
@@ -2676,6 +2746,7 @@ function seedBacklog(){
   ovInstant = true;
   for (const raw of source.pre){
     const c = ident.assign(raw);          // 화자 배분도 타임라인과 같은 규칙을 따릅니다
+    noteText(c.text);
     Renderer.push({kind: c.kind, name: c.name, text: c.text});
     shownLines.push({i: shownLines.length, name: c.name, kind: c.kind,
                      stance: null, ph: 'before_join', t: 0, text: c.text});
@@ -2758,7 +2829,8 @@ const newPollState = () => ({
   clicks: 0, firstVote: null, firstVoteAt: null,
   hover: {}, hoverN: {}, hoverIn: {},          // 선택지별 커서 체류 합계·횟수·진행 중인 호버
   lockedAt: null, unlockAt: null,
-  shownCong: 0, shownIncong: 0                 // 피드에 붙은 입장 발화(일치/불일치)
+  shownCong: 0, shownIncong: 0,                // 피드에 붙은 입장 발화(일치/불일치)
+  halfN: 0                                     // 절반 조건: 이 투표에서 내보낸 입장 발화 수
 });
 let PS = POLLS.map(newPollState);
 let cur = 0;
