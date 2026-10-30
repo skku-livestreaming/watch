@@ -290,6 +290,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
    잘리는 부분은 반올림 1px 수준입니다. */
 .scene{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#0a0c10}
 .video-retry{position:absolute;z-index:2;left:50%;top:50%;transform:translate(-50%,-50%);padding:12px 18px;border:0;border-radius:8px;cursor:pointer;background:#fff;color:#141820;font:inherit;font-weight:700}
+.video-retry.out{top:calc(50% + 52px);background:rgba(0,0,0,.6);color:#fff;font-weight:600;font-size:13px}
 
 /* 영상 위 배지. LIVE와 시청자 수는 실제 플랫폼이 왼쪽 위에 함께 둡니다. */
 .plrow{position:absolute;left:12px;top:12px;z-index:3;display:flex;align-items:center;gap:7px}
@@ -738,6 +739,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .done.on{display:block}
 .done h2{font-size:20px;margin:0 0 10px}
 .done p{color:var(--ink-dim);margin:0 0 20px}
+.done a{color:var(--accent);font-weight:600;cursor:pointer}
 .logbox{
   width:100%;height:260px;background:var(--code-bg);border:1px solid var(--line);
   border-radius:9px;color:var(--code-ink);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
@@ -798,7 +800,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
   <!-- ══ 안내 페이지 — 참가자 코드 입력 + 종료 방법 ══ -->
   <section class="intro" id="intro"><!-- .intro는 기본이 display:none — hidden 속성을 쓰면 .on이 덮이지 않는다 -->
     <!-- 참가자 식별. 설문 응답과 로그를 묶는 열쇠입니다. -->
-    <div class="intro-id">
+    <div class="intro-id" id="introId">
       <label for="pidEmail">참가자 고유 코드(없을 경우 이메일주소)를 입력해주세요.</label>
       <input id="pidEmail" type="text" autocomplete="off"
              placeholder="예: P017 또는 example@gmail.com" spellcheck="false">
@@ -850,6 +852,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
         <div class="ctl" aria-hidden="true"><div class="track"><i></i></div></div>
         <div class="buffer" id="buffer" hidden><i></i></div>
         <button id="videoRetry" class="video-retry" hidden>영상 재생하기</button>
+        <button id="videoOut" class="video-retry out" hidden>영상을 재생할 수 없어 참여를 종료합니다</button>
 
         <div class="plrow">
           <div class="live"><span class="dot"></span>LIVE</div>
@@ -959,8 +962,10 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 
   <!-- ══ 종료 ══ -->
   <section class="done" id="done">
-    <h2>참여가 완료되었습니다</h2>
+    <h2 id="doneTitle">참여가 완료되었습니다</h2>
     <p id="sinkNote"></p>
+    <!-- 자동 이동이 막힌 경우(팝업 차단·느린 회선)에 누르는 링크 -->
+    <p><a id="returnLink" hidden>자동으로 이동하지 않으면 여기를 눌러주세요</a></p>
     <!-- 로그 상자는 실험자 점검용입니다. 서버로 보내는 동안에는 참가자에게 숨기고,
          ?debug=1 이거나 서버 설정이 비어 있을 때만 보입니다. -->
     <div id="doneDebug" hidden>
@@ -1006,7 +1011,11 @@ const ConditionRouter = (() => {
     z5: {cong:'none', label:'mixed'},
     b9: {cong:'all',  label:'human'},
     k3: {cong:'half', label:'human'},
-    r6: {cong:'none', label:'human'}
+    r6: {cong:'none', label:'human'},
+    // AI+사람 혼합(반반). 표시는 AI 조건과 같고(AI 줄마다 아이콘), 비율은 화면에 띄우지 않습니다.
+    v3: {cong:'all',  label:'mixed', ratio:50},
+    t8: {cong:'half', label:'mixed', ratio:50},
+    f1: {cong:'none', label:'mixed', ratio:50}
   };
 
   function read(){
@@ -1031,6 +1040,11 @@ const ConditionRouter = (() => {
     if (!Number.isFinite(c.seed) || c.seed<1) c.seed = DEF.seed;
     // 전원 사람 조건에서는 AI 비율이 의미가 없습니다
     if (c.label === 'human') c.ratio = 0;
+    /* 엠브레인 패널 ID. 끝날 때 받은 값 그대로 돌려줘야 매칭되므로 소문자로 바꾸지 않습니다.
+       형식이 어긋나면 없는 것으로 보고 안내 페이지에서 코드를 받습니다(리다이렉트 없음). */
+    const panel = (q.get('panel_id') || '').trim();
+    c.panel_id = /^[A-Za-z0-9_-]{1,64}$/.test(panel) ? panel : null;
+    if (c.panel_id) c.pid = c.panel_id;
     return c;
   }
   return {read, id:c => `${c.cong}-${c.label}-${c.ratio}-${c.viewers}-${c.seed}`};
@@ -1318,12 +1332,24 @@ function ScriptSource(c, rnd, span){
   const built = buildTimeline(c, rnd, span);
   // study 2는 본문 자리에 입장 슬롯을 깔아둡니다 (텍스트는 투표 후 결정)
   const slots = applyStanceSlots(built.list, c, rnd);
+  /* 투표별 입장 슬롯을 화자별로 셉니다 — 혼합 조건에서 IdentityAssigner가 함께 맞출 축입니다.
+     채팅 시계는 잠금 동안 멈추므로 투표 1 결과 뒤 구간은 첫 잠금 시각에서,
+     투표 2 결과 뒤 구간은 거기에 (투표 1 결과 → 투표 2 잠금) 길이를 더한 시각에서 시작해
+     방송 종료(END_AT)에서 끝납니다. 타임라인은 SPAN까지 만들어지지만 그 뒤 줄은 화면에 나오지 않으므로 셈에서 뺍니다. */
+  const p1 = POLLS[0].lock - VIDEO_TRIM, p2 = p1 + (POLLS[1].lock - POLLS[0].result);
+  const p3 = p2 + (END_AT - POLLS[1].result);
+  const stanceCounts = POLLS.map(() => new Array(built.d.chatters).fill(0));
+  for (const m of built.list) if (m.slot && m.t >= p1 && m.t < p3) stanceCounts[m.t >= p2 ? 1 : 0][m.ci]++;
+  // AI 비율도 화면에 나오는 줄(백로그 포함, 방송 종료 전)만으로 맞춥니다
+  const shownCounts = new Array(built.d.chatters).fill(0);
+  for (const m of built.list) if (m.pre || m.t < p3) shownCounts[m.ci]++;
   const pre = built.list.filter(m => m.pre);
   let i = pre.length;                    // 재생은 백로그 다음부터
   return {
     kind:'script',
     info: built.d,
-    counts: built.counts,
+    counts: shownCounts,
+    stanceCounts,
     slots,
     pre,
     total: built.list.length,
@@ -1346,6 +1372,7 @@ function LiveSource(c, rnd, span, ctx){
     kind:'live',
     info: base.info,
     counts: base.counts,
+    stanceCounts: base.stanceCounts,
     slots: base.slots,
     total: base.total,
     next(t){
@@ -1568,11 +1595,17 @@ function mulberry32(a){
    그래서 섞은 순서대로 훑으며 목표 발화 비율에 가까워질 때만 AI로 지정합니다. */
 const BRUTE_MAX = 18;   // 이 수 이하의 화자면 전수 탐색 (2^18 = 262,144)
 
-function IdentityAssigner(c, nChatters, counts){
+/* 혼합 조건(ratio 50)은 전체 발화만 맞추면 입장 발화가 한쪽 정체성에 몰릴 수 있습니다
+   (예: 같은 의견은 사람이, 반대 의견은 AI가). 그러면 일치도 효과와 정체성 효과가 섞이므로
+   투표별 입장 발화(balance)도 같은 비율이 되도록 함께 맞춥니다. 거리는 각 축 오차의 합입니다. */
+function IdentityAssigner(c, nChatters, counts, balance = []){
   const rnd = mulberry32(c.seed * 9301 + 49297);
   const cnt = counts && counts.length === nChatters
     ? counts : new Array(nChatters).fill(1);
   const totalMsg = cnt.reduce((a, b) => a + b, 0) || 1;
+  const dims = [cnt, ...balance.filter(b => b.length === nChatters)];
+  const targets = dims.map(d => d.reduce((a, b) => a + b, 0) * c.ratio / 100);
+  const dist = sums => sums.reduce((a, s, k) => a + Math.abs(s - targets[k]), 0);
 
   const idx = [...Array(nChatters).keys()];
   for (let i = idx.length - 1; i > 0; i--){
@@ -1583,7 +1616,6 @@ function IdentityAssigner(c, nChatters, counts){
   const aiSet = new Set();
   let acc = 0, method = 'none';
   if (c.label === 'mixed' && c.ratio > 0){
-    const targetMsg = totalMsg * c.ratio / 100;
     const targetSize = nChatters * c.ratio / 100;
     const rnd2 = mulberry32(c.seed * 2654435761 + nChatters);  // 동점 처리 전용
 
@@ -1592,15 +1624,15 @@ function IdentityAssigner(c, nChatters, counts){
          되돌리지 못해 소규모에서 오차가 크게 벌어집니다.
          조합이 2^18 이하면 전부 따져보고 목표에 가장 가까운 집합을 씁니다. */
       const M = 1 << nChatters;
-      const sums = new Float64Array(M), sizes = new Uint8Array(M);
+      const sums = dims.map(() => new Float64Array(M)), sizes = new Uint8Array(M);
       for (let m = 1; m < M; m++){
         const lb = m & -m, i = 31 - Math.clz32(lb);
-        sums[m] = sums[m ^ lb] + cnt[i];
+        dims.forEach((d, k) => { sums[k][m] = sums[k][m ^ lb] + d[i]; });
         sizes[m] = sizes[m ^ lb] + 1;
       }
-      let best = 0, bd = Math.abs(0 - targetMsg), bs = Math.abs(0 - targetSize), ties = 1;
+      let best = 0, bd = dist(dims.map(() => 0)), bs = Math.abs(0 - targetSize), ties = 1;
       for (let m = 1; m < M; m++){
-        const d = Math.abs(sums[m] - targetMsg);
+        const d = dist(sums.map(s => s[m]));
         const s = Math.abs(sizes[m] - targetSize);
         if (d < bd - 1e-9 || (Math.abs(d - bd) < 1e-9 && s < bs - 1e-9)){
           best = m; bd = d; bs = s; ties = 1;
@@ -1614,24 +1646,44 @@ function IdentityAssigner(c, nChatters, counts){
     } else {
       /* 화자가 많으면 조합이 폭발하므로 greedy로 폴백하되, 한 번만 돌리면
          섞인 순서에 따라 오차가 벌어집니다. 순서를 바꿔가며 여러 번 돌리고
-         목표에 가장 가까운 결과를 씁니다. */
-      let bestSet = null, bestAcc = 0, bd = Infinity;
+         목표에 가장 가까운 결과를 씁니다. 축이 여럿이면 greedy만으로는 덜 맞으므로
+         각 결과에서 한 명 넣기·빼기·맞바꾸기로 더 줄어들지 않을 때까지 다듬습니다. */
+      const sumOf = set => dims.map(d => { let s = 0; for (const i of set) s += d[i]; return s; });
+      let bestSet = null, bd = Infinity;
       const order = [...Array(nChatters).keys()];
       for (let r = 0; r < 64; r++){
         for (let i = order.length - 1; i > 0; i--){
           const j = Math.floor(rnd2() * (i + 1));
           [order[i], order[j]] = [order[j], order[i]];
         }
-        const set = new Set(); let a = 0;
+        const set = new Set(); let a = dims.map(() => 0);
         for (const i of order){
-          if (Math.abs(a + cnt[i] - targetMsg) < Math.abs(a - targetMsg)){ set.add(i); a += cnt[i]; }
+          const b = a.map((s, k) => s + dims[k][i]);
+          if (dist(b) < dist(a)){ set.add(i); a = b; }
         }
-        const d = Math.abs(a - targetMsg);
-        if (d < bd){ bd = d; bestSet = set; bestAcc = a; }
+        let d = dist(a), moved = true;
+        while (moved){
+          moved = false;
+          for (const i of order){
+            const cand = [];
+            if (set.has(i)){
+              cand.push([i, null]);
+              for (const j of order) if (!set.has(j)) cand.push([i, j]);
+            } else cand.push([null, i]);
+            for (const [out, inn] of cand){
+              if (out !== null) set.delete(out);
+              if (inn !== null) set.add(inn);
+              const nd = dist(sumOf(set));
+              if (nd < d - 1e-9){ d = nd; moved = true; break; }
+              if (inn !== null) set.delete(inn);
+              if (out !== null) set.add(out);
+            }
+          }
+        }
+        if (d < bd){ bd = d; bestSet = new Set(set); }
         if (bd === 0) break;
       }
-      for (const i of bestSet) aiSet.add(i);
-      acc = bestAcc;
+      for (const i of bestSet){ aiSet.add(i); acc += cnt[i]; }
       method = 'greedy-restart';
     }
   }
@@ -1660,7 +1712,13 @@ function IdentityAssigner(c, nChatters, counts){
       ai_chatters: aiSet.size,
       chatters: nChatters,
       ai_messages: acc,
-      total_messages: totalMsg
+      total_messages: totalMsg,
+      // 투표별 입장 발화 중 AI 화자 몫 — 혼합 조건에서 정체성과 입장이 엇갈려 쏠리지 않았는지 확인용
+      stance_ai: dims.slice(1).map(d => {
+        let s = 0, n = 0;
+        d.forEach((v, i) => { n += v; if (aiSet.has(i)) s += v; });
+        return {ai: s, total: n};
+      })
     },
     assign(m){
       const p = roster[m.ci % roster.length];
@@ -2148,6 +2206,13 @@ function initTextSelect(){
 const SUPABASE_URL = 'https://kuoyhnoysgpsbefesrmk.supabase.co'; // /rest/v1 은 붙이지 않습니다
 const SUPABASE_KEY = 'sb_publishable_eFHG5m2Hx6nyTQWuAgLzbA_19IHKUAV'; // publishable key (secret key 금지)
 
+/* 엠브레인 리다이렉트. panel_id로 들어온 참가자만 끝날 때 이 주소로 보냅니다.
+   {ID}·{STATUS}를 채워 이동하며, 실제 조사 링크를 받으면 이 주소만 바꿉니다.
+   완료는 [참여 종료하기]를 누른 경우 하나뿐입니다 — 투표·채팅 같은 행동으로는 가르지 않습니다.
+   아웃은 영상을 끝내 재생하지 못한 경우에만 보냅니다. out이 null이면 아웃을 보내지 않습니다. */
+const RETURN_URL = 'http://survey.panel.co.kr/2019/XXXX/m5.asp?panel_id={ID}&status={STATUS}';
+const RETURN_STATUS = {complete: '001', out: null};   // out: 엠브레인 코드 확인 후 채움
+
 const Sink = (function(){
   /* 자동화 브라우저(헤드리스 테스트 등, navigator.webdriver = true)는 서버로 보내지 않습니다.
      화면 점검용 자동 테스트가 실제 참가자 데이터에 섞이는 것을 막습니다. */
@@ -2353,7 +2418,7 @@ function buildSources(){
   // 타임라인 RNG는 seed와 시청자 수에만 의존 — label/ratio를 바꿔도 내용 불변
   const rnd = mulberry32(cond.seed * 7919 + cond.viewers);
   source = ScriptSource(cond, rnd, SPAN);
-  ident = IdentityAssigner(cond, source.info.chatters, source.counts);
+  ident = IdentityAssigner(cond, source.info.chatters, source.counts, source.stanceCounts);
 }
 
 let shownTotal = 0, shownAI = 0;            // 참가자가 실제로 본 메시지 기준 집계
@@ -2420,13 +2485,19 @@ function loop(){
     /* 절반 일치 조건은 투표마다 일치·불일치를 번갈아 내보냅니다. 미리 섞어 둔 슬롯을
        그대로 쓰면 투표 1·2로 나뉘면서 한쪽으로 몇 개씩 기울어(예: 17 대 22), 화면에 오른
        입장 발화가 항상 반반(많아야 1개 차이)이 되도록 표시 순서대로 정합니다.
-       첫 줄이 일치인지 불일치인지는 시드와 투표 번호로 정합니다. */
+       첫 줄이 일치인지 불일치인지는 시드와 투표 번호로 정합니다.
+       혼합 조건은 AI 줄과 사람 줄을 따로 번갈아서, 정체성마다 일치·불일치가 반반이 되게 합니다.
+       사람 줄은 첫 줄을 AI와 반대로 두어 합계도 많아야 1개 차이로 둡니다.
+       한 종류뿐인 조건(전부 AI·전부 사람)은 예전과 똑같이 돕니다. */
     let src = raw;
+    const kind = ident.assign(raw).kind;
     if (post && raw.slot && cond.cong === 'half'){
       const p = PS[a];
-      const first = (cond.seed + a) % 2 === 0 ? 'cong' : 'incong';
+      const both = ident.aiChatters > 0 && ident.aiChatters < source.info.chatters;
+      const shift = both && kind === 'human' ? 1 : 0;
+      const first = (cond.seed + a + shift) % 2 === 0 ? 'cong' : 'incong';
       const other = first === 'cong' ? 'incong' : 'cong';
-      src = {...raw, slot: p.halfN++ % 2 === 0 ? first : other};
+      src = {...raw, slot: p.halfN[kind]++ % 2 === 0 ? first : other};
     }
     let r = post ? resolveStance(src, POLLS[a], PS[a].vote) : {text: raw.text, stance: null};
     if (post) r = dedupResolve(raw, r, POLLS[a]);
@@ -2438,7 +2509,11 @@ function loop(){
 
     shownTotal++;
     if (c.kind === 'ai') shownAI++;
-    if (r.stance && PS[a].vote) (r.stance === PS[a].vote ? PS[a].shownCong++ : PS[a].shownIncong++);
+    if (r.stance && PS[a].vote){
+      const cg = r.stance === PS[a].vote;
+      cg ? PS[a].shownCong++ : PS[a].shownIncong++;
+      PS[a].byKind[c.kind][cg ? 'cong' : 'incong']++;
+    }
 
     Renderer.push(c);
     shownLines.push({i: shownLines.length, name: c.name, kind: c.kind,
@@ -2505,10 +2580,19 @@ function pushScripted(m, ph){
 /* ── 8. 화면 전환 ────────────────────────── */
 const $ = id => document.getElementById(id);
 const watch = $('watch'), done = $('done');
+/* 영상 파일 자체를 못 불러온 횟수. 자동재생 차단(error 없음)은 세지 않습니다.
+   3번 실패하면 패널 참가자에게 아웃으로 나가는 버튼을 보여 줍니다. */
+const VIDEO_FAIL_MAX = 3;
+let videoFails = 0;
 function playVideo(){
   $('videoRetry').hidden = true;
   $('streamVideo').play().catch(() => {
     if (!entered || ended) return;
+    if ($('streamVideo').error){
+      videoFails++;
+      Logger.add('video_error', {n: videoFails, code: $('streamVideo').error.code, at_sec: +tick.toFixed(2)});
+      if (videoFails >= VIDEO_FAIL_MAX && cond.panel_id && RETURN_STATUS.out) $('videoOut').hidden = false;
+    }
     $('videoRetry').textContent = $('streamVideo').error
       ? '\uC601\uC0C1\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. stream.mp4 \uD655\uC778 \uD6C4 \uB2E4\uC2DC \uC7AC\uC0DD'
       : '\uC601\uC0C1 \uC7AC\uC0DD\uD558\uAE30';
@@ -2720,6 +2804,7 @@ function startOutro(){
 function endStream(){
   $('streamVideo').pause();
   $('videoRetry').hidden = true;
+  $('videoOut').hidden = true;
   ended = true;
   endedAt = performance.now();
   clearInterval(timer);
@@ -2766,10 +2851,14 @@ function showIntro(){
   /* 안내 페이지는 플랫폼 화면이 아니라 지시문입니다. 헤더가 같이 보이면
      안내문이 사이트의 일부처럼 읽혀서 감춥니다. */
   $('siteBar').style.display = 'none';
+  /* 엠브레인 링크로 들어오면 ID가 이미 있으므로 입력란을 감춥니다.
+     다른 값을 치면 돌려줄 ID와 로그의 ID가 어긋납니다. */
+  $('introId').style.display = cond.panel_id ? 'none' : '';   // .intro-id가 display:flex라 hidden이 안 먹습니다
 
   /* 입장 안내문과 조건 정보(방송·시청자 수·시청자 구성)는 설문 화면에서 이미 안내하므로
      여기서는 참가자 코드와 종료 방법만 받습니다. */
-  Logger.add('intro_shown', {viewers: cond.viewers, identity: isAI ? 'ai' : 'human'});
+  Logger.add('intro_shown', {viewers: cond.viewers,
+    identity: !isAI ? 'human' : cond.ratio >= 100 ? 'ai' : 'mixed'});
 }
 
 /* 고유 코드 또는 이메일 둘 다 받습니다. @가 들어 있으면 이메일로 보고 형식을 보고,
@@ -2777,6 +2866,15 @@ function showIntro(){
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 function introGo(){
+  if (cond.panel_id){
+    // 세션 행은 Logger.start()에서 이미 이 ID로 만들어졌습니다
+    Logger.add('participant_id', {value: cond.panel_id, kind: 'panel'});
+    Logger.add('intro_done', {at: +((Date.now() - Logger.t0) / 1000).toFixed(2)});
+    $('intro').classList.remove('on');
+    $('siteBar').style.display = '';
+    enter();
+    return;
+  }
   const el = $('pidEmail');
   const v = el.value.trim().toLowerCase();
   const bad = v.includes('@') ? !EMAIL_RE.test(v) : v.length < 2;
@@ -2830,7 +2928,8 @@ const newPollState = () => ({
   hover: {}, hoverN: {}, hoverIn: {},          // 선택지별 커서 체류 합계·횟수·진행 중인 호버
   lockedAt: null, unlockAt: null,
   shownCong: 0, shownIncong: 0,                // 피드에 붙은 입장 발화(일치/불일치)
-  halfN: 0                                     // 절반 조건: 이 투표에서 내보낸 입장 발화 수
+  byKind: {ai: {cong: 0, incong: 0}, human: {cong: 0, incong: 0}},   // 위를 화자 정체성별로
+  halfN: {ai: 0, human: 0}                     // 절반 조건: 이 투표에서 내보낸 입장 발화 수(정체성별)
 });
 let PS = POLLS.map(newPollState);
 let cur = 0;
@@ -3211,6 +3310,7 @@ function leaveSummary(via){
       unlock_at_sec: p.unlockAt,
       shown_congruent: p.shownCong,
       shown_incongruent: p.shownIncong,
+      shown_by_identity: JSON.parse(JSON.stringify(p.byKind)),   // {ai:{cong,incong}, human:{cong,incong}}
       shown_congruence_ratio: (p.shownCong + p.shownIncong)
         ? +(p.shownCong / (p.shownCong + p.shownIncong) * 100).toFixed(1) : null
     })),
@@ -3233,30 +3333,60 @@ function leaveSummary(via){
   };
 }
 
+/* 엠브레인으로 돌려보낼 주소. panel_id로 들어오지 않았거나 상태 코드가 비어 있으면 null. */
+function returnUrl(status){
+  const code = RETURN_STATUS[status];
+  if (!cond.panel_id || !code) return null;
+  return RETURN_URL.replace('{ID}', encodeURIComponent(cond.panel_id)).replace('{STATUS}', code);
+}
+
+/* 리다이렉트 전에 로그를 기다리는 최대 시간. 전송이 늦어도 참가자가 완료를 못 받으면 안 되므로
+   이 시간이 지나면 그대로 이동합니다 — 못 보낸 묶음은 재시도 큐에 남습니다. */
+const RETURN_WAIT_MS = 4000;
+
 function leave(via){
   if (left) return;
   left = true;
+  via = typeof via === 'string' ? via : 'end_button';
   $('streamVideo').pause();
   $('videoRetry').hidden = true;
+  $('videoOut').hidden = true;
   clearInterval(timer);
-  Logger.add('leave', leaveSummary(typeof via === 'string' ? via : 'end_button'));
+  Logger.add('leave', leaveSummary(via));
+  /* 상태값은 여기서만 정합니다. 종료 버튼 = 완료, 영상 재생 실패 = 아웃. */
+  const status = via === 'video_failed' ? 'out' : 'complete';
+  const back = returnUrl(status);
+  if (back) Logger.add('redirect', {status, code: RETURN_STATUS[status], to: back});
   /* 채팅 본문은 로그에 남기지 않습니다. 참가자가 드래그한 글만 text_select로 남습니다.
      노출량은 위 leave 요약의 집계값으로 봅니다. */
   watch.classList.remove('on');
   done.classList.add('on');
+  $('doneTitle').textContent = status === 'out'
+    ? '영상을 재생할 수 없어 참여를 종료합니다' : '참여가 완료되었습니다';
   $('logbox').value = Logger.dump();
   const debug = new URLSearchParams(location.search).get('debug') === '1';
   $('doneDebug').hidden = Sink.enabled() && !debug;
-  $('sinkNote').textContent = Sink.enabled()
-    ? (debug ? '서버로 보내는 중…' : '응답이 저장되었습니다. 이제 창을 닫으셔도 됩니다.')
-    : '서버 설정이 비어 있어 로컬에만 쌓였습니다. 아래에서 JSON으로 내려받으세요.';
+  $('sinkNote').textContent = back && !debug
+    ? '응답을 저장하고 있습니다. 잠시 후 자동으로 이동합니다.'
+    : Sink.enabled()
+      ? (debug ? '서버로 보내는 중…' : '응답이 저장되었습니다. 이제 창을 닫으셔도 됩니다.')
+      : '서버 설정이 비어 있어 로컬에만 쌓였습니다. 아래에서 JSON으로 내려받으세요.';
   /* 세션 종료 시점에 남은 이벤트를 전부 밀어 넣고, debug면 실제 결과를 보여 줍니다. */
-  Sink.flush(true).then(() => {
+  const flushed = Sink.flush(true).then(() => {
     if (!Sink.enabled() || !debug) return;
     const st = Sink.status();
     $('sinkNote').textContent = (st.fail === 0 && st.pending === 0)
       ? `서버 전송 성공 · 이벤트 ${st.events_ok}건 / 로그 ${Logger.ev.length}건 · session_id: ${Sink.id()}`
       : `서버 전송 실패 ${st.fail}회, 브라우저에 남은 묶음 ${st.pending}개 · 마지막 오류: ${st.last_error} · session_id: ${Sink.id()}`;
+  });
+  if (!back) return;
+  /* 로그를 다 보낸 뒤 이동합니다. 먼저 이동하면 leave 요약이 유실될 수 있습니다.
+     replace를 써서 뒤로가기로 자극물에 돌아오지 못하게 합니다. debug면 이동하지 않고 주소만 보여 줍니다. */
+  $('returnLink').href = back;
+  $('returnLink').textContent = debug ? back : '자동으로 이동하지 않으면 여기를 눌러주세요';
+  Promise.race([flushed, new Promise(r => setTimeout(r, RETURN_WAIT_MS))]).then(() => {
+    $('returnLink').hidden = false;
+    if (!debug) location.replace(back);
   });
 }
 
@@ -3273,6 +3403,9 @@ function send(){
 function restart(){
   $('streamVideo').pause();
   $('videoRetry').hidden = true;
+  $('videoOut').hidden = true;
+  videoFails = 0;
+  $('returnLink').hidden = true;
   LiveGuard.reset();
   clearInterval(timer);
   clearTimeout(bufferTimer);
@@ -3346,6 +3479,7 @@ $('pidEmail').addEventListener('input', () => {
   $('idNote').classList.remove('bad');
   $('idNote').textContent = '';
 });
+$('videoOut').addEventListener('click', () => leave('video_failed'));
 $('whySend').addEventListener('click', sendWhy);
 $('subBtn').addEventListener('click', () => toggleSub('header'));
 $('endSub').addEventListener('click', () => toggleSub('endcard'));
