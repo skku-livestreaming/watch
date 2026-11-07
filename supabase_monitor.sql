@@ -78,7 +78,8 @@ select
   s.condition->>'code'                                                        as code,
   s.condition->>'label'                                                       as label,
   s.condition->>'cong'                                                        as cong,
-  -- 투표가 두 개입니다(1: 고릴라, 2: 10년 애인). poll 필드가 없는 예전 기록은 투표 1로 봅니다.
+  -- 현재 자극물은 투표 1개(맨손의 성인 남성 100명 vs. 고릴라 1마리)입니다.
+  -- reason1 및 투표 2 열은 이전 세션과 기존 뷰의 호환을 위해 유지합니다.
   max(e.data->>'label')       filter (where e.type = 'vote'        and coalesce(e.data->>'poll','1') = '1') as vote1,
   max(e.data->>'text')        filter (where e.type = 'vote_reason' and coalesce(e.data->>'poll','1') = '1') as reason1,
   bool_or(e.type = 'poll_missed' and coalesce(e.data->>'poll','1') = '1')                                  as missed_vote1,
@@ -96,7 +97,9 @@ select
   max((e.data->>'seen_congruence_ratio')::numeric) filter (where e.type = 'leave') as seen_congruence_ratio,
   max((e.data->>'after_end_sec')::numeric)         filter (where e.type = 'leave') as after_end_sec,
   max(e.data->>'via')         filter (where e.type = 'leave')                 as leave_via,
-  s.id                                                                        as session_id
+  s.id                                                                        as session_id,
+  max((e.data->>'value')::int) filter (where e.type = 'vote_confidence' and e.data->>'poll' = '1') as confidence1,
+  s.condition->>'stimulus_version'                                             as stimulus_version
 from sessions s
 left join events_dedup e on e.session_id = s.id
 group by s.id

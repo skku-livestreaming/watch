@@ -1,17 +1,10 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>라이브 스트리밍 자극물 프로토타입</title>
-<!-- 본문 글꼴은 Pretendard. 국내 서비스가 실제로 쓰는 글꼴이라 '만든 티'가 덜합니다.
-     jsdelivr가 막힌 환경(아티팩트 미리보기 등)에서는 Noto Sans KR로 떨어집니다. -->
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link rel="stylesheet" as="style" crossorigin
-      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>Live Stream</title>
+<!-- Use system fonts so the interface also works without a font CDN. -->
 <script>
   /* 첫 페인트 전에 테마를 적용합니다. 기본은 치지직과 같은 다크이고, ?theme=light일 때만 화이트입니다. */
   try {
@@ -74,8 +67,7 @@
   --svg-body:#39414f;
   --svg-head:#4a5363;
   --svg-dark:#1b1f27;
-  --font:'Pretendard Variable',Pretendard,'Noto Sans KR',system-ui,-apple-system,
-         'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  --font:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;
   --page:#ffffff;     /* 콘텐츠 바깥 바닥색 — 치지직 화이트처럼 헤더와 같은 흰색 */
 }
 /* ── 다크 테마 (theme=dark) ─────────────── */
@@ -254,7 +246,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .uc-row .v{font-weight:600;font-variant-numeric:tabular-nums}
 .uc-row .v.ai{color:var(--ai)}
 .msg .nm{cursor:pointer}
-/* 플랫폼 공지 줄. 채팅이 열릴 때 투표 결과 한 줄에만 씁니다. */
+/* 플랫폼 공지 줄. 채팅이 열릴 때 Poll results 한 줄에만 씁니다. */
 .msg.sys{
   background:var(--accent-tint);border-left:3px solid #6f8fe8;
   border-radius:0 6px 6px 0;padding:7px 10px;margin:3px 0;
@@ -365,7 +357,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
   border-radius:4px;padding:1px 7px;font-size:13px;font-weight:600;
 }
 .acts-r{display:flex;align-items:center;gap:8px;margin-left:auto}
-/* 참여 종료하기. 방송이 끝나면 종료 화면 가운데에 빨간 버튼으로 뜹니다. 놓치면 참여가
+/* Finish participation. 방송이 끝나면 종료 화면 가운데에 빨간 버튼으로 뜹니다. 놓치면 참여가
    완료로 기록되지 않으므로 눈에 띄게 둡니다. */
 .leave{
   background:#e8352b;border:0;color:#fff;border-radius:12px;
@@ -375,7 +367,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 }
 @keyframes leaveIn{from{opacity:0;transform:scale(.92)}}
 @media (max-width:860px){.tags{display:none}}
-/* 구독 버튼. 누르라는 안내는 두지 않습니다 — 반응 버튼과 같은 원칙. */
+/* Subscribe 버튼. 누르라는 안내는 두지 않습니다 — 반응 버튼과 같은 원칙. */
 .sub{
   background:var(--accent);color:var(--on-accent);
   border:1px solid var(--accent);border-radius:18px;
@@ -550,7 +542,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 }
 .poll-opts button:hover:not(:disabled){border-color:#2f5bc5;background:#eef2fb}
 .poll-opts button:disabled{opacity:.45;cursor:default}
-/* 내 선택은 파란 바탕 + 흰 글자 + 체크로 확 드러나게 둡니다. 고른 뒤에는 다른 쪽을 흐리게. */
+/* Your choice은 파란 바탕 + 흰 글자 + 체크로 확 드러나게 둡니다. 고른 뒤에는 다른 쪽을 흐리게. */
 .poll-opts.picked button:not([aria-pressed="true"]){opacity:.5}
 .poll-opts button[aria-pressed="true"]{
   border-color:#2f5bc5;background:#2f5bc5;color:#fff;opacity:1;font-weight:800;
@@ -559,13 +551,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .poll-opts button[aria-pressed="true"]::before{content:'✓ ';font-weight:900}
 .poll-mine{margin:12px 0 0;font-size:14.5px;font-weight:700;color:#2a52b4}
 
-/* 결과 — 비율(%)은 띄우지 않고 표를 받은 사람 수만 씁니다. 막대 길이는 같은 수를
-   그림으로 옮긴 것이라 따로 숫자를 달지 않습니다. */
+/* Results show relative bar lengths only. Counts, percentages, and totals stay in logs. */
 .poll-res{display:flex;flex-direction:column;gap:9px;margin-top:12px}
 /* 색의 역할을 나눕니다.
    - 막대(몇 명이 골랐나): 두 선택지 모두 같은 주황. 선택지마다 색이 다르면
      색 자체가 한쪽 인상을 만들므로 한 색으로 둡니다.
-   - 내 선택: 파란 테두리 + 파란 배지. 막대와 다른 색이라 섞여 보이지 않습니다.
+   - Your choice: 파란 테두리 + 파란 배지. 막대와 다른 색이라 섞여 보이지 않습니다.
    주황 위 글자(#16181c) 대비는 4.5:1 이상입니다. */
 .poll-res .row{position:relative;border:1.5px solid #c9ced8;border-radius:10px;overflow:hidden;background:#ffffff}
 .poll-res .bar{position:absolute;inset:0 auto 0 0;background:#f6b94f}
@@ -576,22 +567,23 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
   padding:14px 16px;font-size:16.5px;font-weight:600;
 }
 .poll-res .mine-tag{font-size:13px;font-weight:800;background:#2f5bc5;color:#fff;padding:2px 9px;border-radius:5px}
-.poll-res .n{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:800;font-size:18px}
-.poll-res .n small{font-weight:600;color:#3a3f4a;font-size:12.5px}
+.poll-res .mine-tag{margin-left:auto}
 
-/* 이유 작성 — 투표 카드 안 */
-.poll-why{margin-top:14px;display:flex;flex-direction:column;gap:9px;width:100%;text-align:left}
-.poll-why label{font-size:14px;color:#5a6070}
-.poll-why textarea{
-  background:#ffffff;border:1px solid #dfe2e8;border-radius:8px;
-  color:#16181c;padding:10px 12px;font-family:inherit;font-size:15px;resize:vertical;
-}
-.poll-send{
-  align-self:flex-start;background:#2f5bc5;border:0;border-radius:7px;
-  color:#ffffff;font-weight:700;padding:9px 18px;font-size:13.5px;
-}
-.why-note{font-size:12px;color:#5f6676;line-height:1.5}
-.why-note.bad{color:var(--live);font-weight:600}
+/* Required confidence rating, matching the streamer's 1–7 instructions. */
+.poll-confidence{margin:14px 0 0;padding:0;border:0;min-width:0;text-align:left}
+.poll-confidence legend{padding:0;font-size:14px;font-weight:600;color:#3a3f4a}
+.confidence-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin:10px 0 5px}
+.confidence-grid label{position:relative;cursor:pointer}
+.confidence-grid input{position:absolute;opacity:0;width:1px;height:1px}
+.confidence-grid span{display:flex;align-items:center;justify-content:center;min-height:40px;border:1px solid #b9bfcb;border-radius:7px;background:#fff;color:#16181c;font-weight:700}
+.confidence-grid input:checked+span{background:#2f5bc5;color:#fff;border-color:#2f5bc5}
+.confidence-grid input:focus-visible+span{outline:2px solid #2f5bc5;outline-offset:3px}
+.confidence-ends{display:flex;justify-content:space-between;gap:18px;font-size:11.5px;line-height:1.4;color:#5a6070;margin-bottom:12px}
+.confidence-ends span{max-width:46%}
+.confidence-ends span:last-child{text-align:right}
+.poll-send{background:#2f5bc5;border:0;border-radius:7px;color:#fff;font-weight:700;padding:9px 18px;font-size:13.5px;min-height:40px}
+.confidence-note{display:block;font-size:12px;color:#5f6676;line-height:1.5;margin-top:6px}
+.confidence-note.bad{color:#b42318;font-weight:600}
 
 /* 잠김·열림 구분선 */
 .msg.divider{
@@ -626,8 +618,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
    창을 줄이거나 늘려도, 채팅창을 열고 닫아도 영상 안 같은 자리에 같은 줄 수로 보입니다. */
 .ov{
   position:absolute;top:.9cqw;left:.9cqw;z-index:7;
-  /* 높이: 영상 높이의 60%에서 5.25cqw(글자 16px 시절 채팅 두 줄)를 뺀 값. 상자 크기는 그대로 두고 글자만 키웠습니다. */
-  width:calc(33.333% - .9cqw);height:calc(60% - 5.25cqw);
+  /* 높이: 영상 높이의 60%에서 5.25cqw를 뺀 값. 16:9 영상 높이 기준으로 고정해 아래 투표 카드와 겹치지 않습니다. */
+  width:calc(33.333% - .9cqw);height:28.5cqw;
   font-size:1.65cqw;
   pointer-events:none;user-select:none;-webkit-user-select:none;
   -webkit-mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.18) 15%,rgba(0,0,0,.6) 45%,#000 80%);
@@ -773,6 +765,23 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 @media (prefers-reduced-motion:reduce){
   *{animation:none!important;transition:none!important}
 }
+/* The English poll includes a second step. Keep the full question and submit
+   button in normal flow when the video is too narrow for a readable overlay. */
+@container (max-width:760px){
+  .poll{position:static;transform:none;animation:none;width:auto;max-height:none;margin-top:12px;padding:16px}
+  .poll-res .ln{flex-wrap:wrap;padding:12px;gap:6px}
+  .poll-res .lb{flex:1;min-width:65px}
+  .poll-res .mine-tag{order:3}
+  .player.off{aspect-ratio:auto}
+  .endcard{position:relative;inset:auto;min-height:360px;padding:24px 14px;gap:12px}
+  .ec-grid{width:100%}
+  .ec-item{width:calc((100% - 22px)/3);min-width:0}
+  .ec-thumb{height:auto;aspect-ratio:16/9}
+  .ec-t,.ec-v{white-space:normal;overflow-wrap:anywhere}
+  .leave{padding:14px 24px;font-size:17px}
+  .player.off~.ov{display:none}
+}
+.search{white-space:nowrap;overflow:hidden}
 </style>
 </head>
 <body>
@@ -782,13 +791,13 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 <!-- ══ 플랫폼 헤더 ══ -->
 <div class="site" id="siteBar"><div class="inner">
   <span class="ham deco" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span>
-  <nav class="nav deco" aria-hidden="true"><span>게임</span><span>e스포츠</span><span>스포츠</span><span>엔터+</span></nav>
+  <nav class="nav deco" aria-hidden="true"><span>Games</span><span>Esports</span><span>Sports</span><span>Entertainment</span></nav>
   <span class="search deco" aria-hidden="true">
-    채널, 라이브, 동영상 검색
+    Search channels, streams, and videos
     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
   </span>
   <!-- 테마 전환. 다크에서는 해(→ 화이트로), 화이트에서는 달(→ 다크로)을 보여 줍니다. -->
-  <button class="ico" id="themeBtn" type="button" aria-label="화이트 테마로 바꾸기" title="테마 바꾸기">
+  <button class="ico" id="themeBtn" type="button" aria-label="Switch to light theme" title="Change theme">
     <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
     <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
   </button>
@@ -801,31 +810,31 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
   <section class="intro" id="intro"><!-- .intro는 기본이 display:none — hidden 속성을 쓰면 .on이 덮이지 않는다 -->
     <!-- 참가자 식별. 설문 응답과 로그를 묶는 열쇠입니다. -->
     <div class="intro-id" id="introId">
-      <label for="pidEmail">참가자 고유 코드(없을 경우 이메일주소)를 입력해주세요.</label>
+      <label for="pidEmail">Enter your participant code (or your email address if you do not have a code).</label>
       <input id="pidEmail" type="text" autocomplete="off"
-             placeholder="예: P017 또는 example@gmail.com" spellcheck="false">
+             placeholder="e.g. P017 or example@gmail.com" spellcheck="false">
       <span class="id-note" id="idNote"></span><!-- 입력 오류가 있을 때만 안내가 뜹니다 -->
     </div>
     <!-- 종료 안내. 버튼을 안 누르고 창을 닫으면 정상 종료로 기록되지 않습니다(via: closed). -->
     <div class="intro-exit">
-      <h3>방송이 끝나면 꼭 [참여 종료하기]를 눌러주세요</h3>
-      <p>방송이 끝나면 영상 <b>가운데에 빨간 [참여 종료하기] 버튼</b>이 나타납니다. 이 버튼을 눌러야
-         참여가 <b>정상적으로 완료</b>됩니다. 버튼을 누르지 않고 창을 닫으면
-         참여가 완료되지 않습니다.</p>
+      <h3>When the stream ends, click [Finish participation]</h3>
+      <p>When the stream ends, a <b>red [Finish participation] button appears in the center of the video</b>.
+         Click it to <b>complete your participation</b>. Closing the window without clicking this button
+         will leave your participation incomplete.</p>
       <div class="ix-mock" aria-hidden="true">
-        <div class="ix-video">방송이 종료되었습니다
-          <span class="ix-leave">참여 종료하기
+        <div class="ix-video">The stream has ended
+          <span class="ix-leave">Finish participation
             <svg class="ix-ptr" viewBox="0 0 24 24"><path d="M4 2l15 9.5-6.6 1.3 3.9 7.4-2.7 1.4-3.9-7.4L4 18.6z" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/></svg>
           </span>
         </div>
       </div>
       <ol class="ix-steps">
-        <li>방송을 끝까지 시청합니다.</li>
-        <li>"방송이 종료되었습니다"가 뜬 뒤 <b>[참여 종료하기]</b>를 누릅니다.</li>
-        <li>"참여가 완료되었습니다" 화면이 보이면 끝입니다.</li>
+        <li>Watch the stream until it ends.</li>
+        <li>When you see "The stream has ended," click <b>[Finish participation]</b>.</li>
+        <li>You are finished when you see "Your participation is complete."</li>
       </ol>
     </div>
-    <button class="intro-go" id="introGo">시작하기</button>
+    <button class="intro-go" id="introGo">Start watching</button>
   </section>
 
 
@@ -833,26 +842,26 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
   <section class="watch" id="watch">
     <!-- 왼쪽 세로 메뉴(장식) -->
     <aside class="side deco" aria-hidden="true">
-      <span class="it"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10.2 9.4v5.2l4.3-2.6z"/></svg>방송</span>
-      <span class="it"><svg viewBox="0 0 24 24"><circle cx="6.5" cy="6.5" r="2.6"/><circle cx="6.5" cy="17.5" r="2.6"/><path d="M8.6 8 20 17M8.6 16 20 7"/></svg>클립</span>
-      <span class="it"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>카테고리</span>
-      <span class="it"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>편성표</span>
-      <span class="it"><svg viewBox="0 0 24 24"><path d="M12 20s-7.5-4.5-7.5-10.2A4.2 4.2 0 0 1 12 7.3a4.2 4.2 0 0 1 7.5 2.5C19.5 15.5 12 20 12 20z"/></svg>팔로잉</span>
-      <span class="it"><svg viewBox="0 0 24 24"><path d="M5 19.5l1-4.5L16.5 4.5l3.5 3.5L9.5 18.5z"/><path d="M14 7l3.5 3.5"/></svg>치즈팜</span>
+      <span class="it"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10.2 9.4v5.2l4.3-2.6z"/></svg>Live</span>
+      <span class="it"><svg viewBox="0 0 24 24"><circle cx="6.5" cy="6.5" r="2.6"/><circle cx="6.5" cy="17.5" r="2.6"/><path d="M8.6 8 20 17M8.6 16 20 7"/></svg>Clips</span>
+      <span class="it"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>Categories</span>
+      <span class="it"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Schedule</span>
+      <span class="it"><svg viewBox="0 0 24 24"><path d="M12 20s-7.5-4.5-7.5-10.2A4.2 4.2 0 0 1 12 7.3a4.2 4.2 0 0 1 7.5 2.5C19.5 15.5 12 20 12 20z"/></svg>Following</span>
+      <span class="it"><svg viewBox="0 0 24 24"><path d="M5 19.5l1-4.5L16.5 4.5l3.5 3.5L9.5 18.5z"/><path d="M14 7l3.5 3.5"/></svg>Discover</span>
     </aside>
     <div class="stage"><div class="stagein">
       <!-- 영상·투표 카드·채팅을 한 상자에 둡니다. 넓은 화면에서는 이 상자 기준으로
            투표는 왼쪽 2/3, 채팅은 오른쪽 1/3에 겹치고, 좁은 화면에서는 아래로 흐릅니다. -->
       <div class="playwrap" id="playwrap">
       <div class="player" id="player">
-        <!-- 방송 영상. 컨트롤을 두지 않습니다 — 되감거나 건너뛰면 투표·채팅 시각이 어긋납니다. -->
+        <!-- Live stream video. 컨트롤을 두지 않습니다 — 되감거나 건너뛰면 투표·채팅 시각이 어긋납니다. -->
         <video class="scene" id="streamVideo" src="./stream.mp4" preload="metadata" playsinline
                disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback"
-               aria-label="방송 영상"></video>
+               aria-label="Live stream video"></video>
         <div class="ctl" aria-hidden="true"><div class="track"><i></i></div></div>
         <div class="buffer" id="buffer" hidden><i></i></div>
-        <button id="videoRetry" class="video-retry" hidden>영상 재생하기</button>
-        <button id="videoOut" class="video-retry out" hidden>영상을 재생할 수 없어 참여를 종료합니다</button>
+        <button id="videoRetry" class="video-retry" hidden>Play video</button>
+        <button id="videoOut" class="video-retry out" hidden>End participation: video unavailable</button>
 
         <div class="plrow">
           <div class="live"><span class="dot"></span>LIVE</div>
@@ -861,12 +870,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 
 
         <!-- 방송 종료 후 추천. 실제 플랫폼이 영상이 끝나면 띄우는 화면입니다.
-             여기서의 구독·다음 영상 클릭이 마지막 행동 지표입니다. -->
+             여기서의 Subscribe·다음 영상 클릭이 마지막 행동 지표입니다. -->
         <div class="endcard" id="endCard" hidden>
-          <p class="ec-hd">방송이 종료되었습니다</p>
-          <button class="leave" id="leave" hidden>참여 종료하기</button>
-          <button class="ec-sub" id="endSub" aria-pressed="false">구독하기</button>
-          <p class="ec-lb">하루끝 harukkeut 의 다른 영상</p>
+          <p class="ec-hd">The stream has ended</p>
+          <button class="leave" id="leave" hidden>Finish participation</button>
+          <button class="ec-sub" id="endSub" aria-pressed="false">Subscribe</button>
+          <p class="ec-lb">More from Haru</p>
           <div class="ec-grid" id="ecGrid"></div>
           <p class="ec-note" id="ecNote" hidden role="status"></p>
         </div>
@@ -877,24 +886,29 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
            좁은 화면에서는 영상 아래로 내려옵니다 — 겹치면 질문이 잘립니다. -->
       <section class="poll" id="poll" hidden aria-live="polite">
           <div class="poll-head">
-            <span class="poll-tag">투표</span>
+            <span class="poll-tag">Poll</span>
             <span class="poll-timer" id="pollTimer"></span>
           </div>
           <p class="poll-q" id="pollQ"></p>
-          <!-- 질문과 선택지만 둡니다. 조건 설명은 스트리머가 영상에서 말로 합니다. -->
+          <!-- The streamer leaves the question to this card; show both options without persuasive elaboration. -->
           <div class="poll-opts" id="pollOpts"></div>
           <p class="poll-mine" id="pollMine" hidden></p>
           <div class="poll-res" id="pollRes" hidden></div>
-          <!-- 이유 작성은 보드대로 방송 화면 쪽에 둡니다. 투표와 한 흐름으로 묶여야
-               "투표 + 그렇게 생각한 이유"가 하나의 과제로 읽힙니다. -->
-          <div class="poll-why" id="pollWhy" hidden>
-            <label for="whyText">이유가 있으면 한 줄로 적어주세요.</label>
-            <!-- placeholder에 예시를 두지 않습니다. 어떤 예시든 한쪽 논거가 되어
-                 참가자의 이유를 그 방향으로 끌어갑니다. -->
-            <textarea id="whyText" maxlength="120" rows="2"></textarea>
-            <button class="poll-send" id="whySend">보내기</button>
-            <span class="why-note" id="whyNote"></span>
-          </div>
+          <fieldset class="poll-confidence" id="pollConfidence" hidden aria-describedby="confidenceEnds confidenceNote">
+            <legend>How confident are you that your answer is correct?</legend>
+            <div class="confidence-grid">
+                <label><input type="radio" name="confidence" value="1"><span>1</span></label>
+                <label><input type="radio" name="confidence" value="2"><span>2</span></label>
+                <label><input type="radio" name="confidence" value="3"><span>3</span></label>
+                <label><input type="radio" name="confidence" value="4"><span>4</span></label>
+                <label><input type="radio" name="confidence" value="5"><span>5</span></label>
+                <label><input type="radio" name="confidence" value="6"><span>6</span></label>
+                <label><input type="radio" name="confidence" value="7"><span>7</span></label>
+            </div>
+            <div class="confidence-ends" id="confidenceEnds"><span>1 — Not at all sure</span><span>7 — Completely sure</span></div>
+            <button class="poll-send" id="voteSubmit" type="button">Submit vote</button>
+            <span class="confidence-note" id="confidenceNote" role="status">Choose a number from 1 to 7 to submit your vote.</span>
+          </fieldset>
       </section>
 
       <!-- 영상 위 플로팅 채팅(읽기 전용). 채팅창과 같은 줄을 그대로 비춥니다. -->
@@ -902,37 +916,37 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
         <div class="ovfeed" id="ovFeed"></div>
         <div class="ovlock" id="ovLock" hidden>
           <svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 0 0-5 5v3H6a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1h-1V7a5 5 0 0 0-5-5zm0 2a3 3 0 0 1 3 3v3H9V7a3 3 0 0 1 3-3z"/></svg>
-          <span id="ovLockMsg">투표가 끝나면 채팅이 열립니다</span>
+          <span id="ovLockMsg">Chat will reopen after the poll</span>
         </div>
       </div>
       </div>
 
       <div class="info">
-        <h2 id="streamTitle">나랑 수다 떨자</h2>
+        <h2 id="streamTitle">just hanging out</h2>
         <div class="meta">
           <span class="cat">talk</span>
-          <span class="tag">Just Chatting</span><span class="tag">한국어</span><span class="tag">소통</span>
+          <span class="tag">Just Chatting</span><span class="tag">English</span><span class="tag">Chatting</span>
           <span class="up" id="uptime"></span>
         </div>
         <div class="row">
           <span class="chan">
-            <span class="av" aria-hidden="true">하</span>
+            <span class="av" aria-hidden="true">H</span>
             <span class="txt">
-              <span class="who">하루끝 harukkeut</span>
+              <span class="who">Haru</span>
             </span>
           </span>
           <span class="acts-r">
           <!-- 반응 버튼. 누르라고 유도하지 않고 자리만 둡니다 — 노트의
                "명시적으로 행동을 강요하지말고" 반영. -->
           <span class="reacts">
-            <button class="react" id="reactUp" aria-pressed="false" aria-label="좋아요" title="좋아요">
+            <button class="react" id="reactUp" aria-pressed="false" aria-label="Like" title="Like">
               <svg class="th" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h3.5v11H3a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z"/><path d="M8.5 21V10.4l3.8-6.8a1.5 1.5 0 0 1 2.8.9L14.3 9h5.4a1.9 1.9 0 0 1 1.85 2.3l-1.6 7.5A2 2 0 0 1 18 21H8.5z"/></svg><span class="rc" id="rcUp"></span>
             </button>
-            <button class="react down" id="reactDown" aria-pressed="false" aria-label="싫어요" title="싫어요">
+            <button class="react down" id="reactDown" aria-pressed="false" aria-label="Dislike" title="Dislike">
               <svg class="th" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h3.5v11H3a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z"/><path d="M8.5 21V10.4l3.8-6.8a1.5 1.5 0 0 1 2.8.9L14.3 9h5.4a1.9 1.9 0 0 1 1.85 2.3l-1.6 7.5A2 2 0 0 1 18 21H8.5z"/></svg><span class="rc" id="rcDown"></span>
             </button>
           </span>
-          <button class="sub" id="subBtn" aria-pressed="false">구독</button>
+          <button class="sub" id="subBtn" aria-pressed="false">Subscribe</button>
           </span>
         </div>
       </div>
@@ -942,38 +956,38 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
     <!-- 채팅창. 화면 오른쪽에서 열고 닫습니다. 입력은 여기서만 합니다. -->
       <aside class="chat" id="chat" hidden>
       <header>
-        <button class="fold" id="chatFold" aria-label="채팅창 닫기" title="채팅창 닫기"><svg viewBox="0 0 24 24"><path d="M4 5v14M9 12h11M15.5 7.5 20 12l-4.5 4.5"/></svg></button>
-        채팅 <span class="aiq" id="chatAi"></span>
+        <button class="fold" id="chatFold" aria-label="Close chat" title="Close chat"><svg viewBox="0 0 24 24"><path d="M4 5v14M9 12h11M15.5 7.5 20 12l-4.5 4.5"/></svg></button>
+        Stream Chat <span class="aiq" id="chatAi"></span>
         <span class="hic" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></span>
       </header>
       <div class="feed" id="feed"></div>
       <div class="locked" id="chatLocked" hidden>
         <span class="lock-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 0 0-5 5v3H6a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1h-1V7a5 5 0 0 0-5-5zm0 2a3 3 0 0 1 3 3v3H9V7a3 3 0 0 1 3-3z"/></svg></span>
-        <span id="lockMsg">투표가 끝나면 채팅이 열립니다</span>
+        <span id="lockMsg">Chat will reopen after the poll</span>
       </div>
       <footer id="inputRow">
-        <input id="say" placeholder="채팅을 입력하세요" maxlength="60" autocomplete="off">
-        <button class="send" id="sendBtn">채팅</button>
+        <input id="say" placeholder="Send a message" maxlength="60" autocomplete="off">
+        <button class="send" id="sendBtn">Chat</button>
       </footer>
-      <div class="off" id="inputOff" hidden>이 방송은 채팅 입력이 제한되어 있습니다.</div>
+      <div class="off" id="inputOff" hidden>Chat is disabled for this stream.</div>
       </aside>
-      <button class="chat-tab" id="chatTab" aria-label="채팅창 열기"><svg viewBox="0 0 24 24"><path d="M20 5v14M15 12H4M8.5 7.5 4 12l4.5 4.5"/></svg>채팅</button>
+      <button class="chat-tab" id="chatTab" aria-label="Open chat"><svg viewBox="0 0 24 24"><path d="M20 5v14M15 12H4M8.5 7.5 4 12l4.5 4.5"/></svg>Chat</button>
   </section>
 
   <!-- ══ 종료 ══ -->
   <section class="done" id="done">
-    <h2 id="doneTitle">참여가 완료되었습니다</h2>
+    <h2 id="doneTitle">Your participation is complete</h2>
     <p id="sinkNote"></p>
     <!-- 자동 이동이 막힌 경우(팝업 차단·느린 회선)에 누르는 링크 -->
-    <p><a id="returnLink" hidden>자동으로 이동하지 않으면 여기를 눌러주세요</a></p>
+    <p><a id="returnLink" hidden>Click here if you are not redirected automatically</a></p>
     <!-- 로그 상자는 실험자 점검용입니다. 서버로 보내는 동안에는 참가자에게 숨기고,
          ?debug=1 이거나 서버 설정이 비어 있을 때만 보입니다. -->
     <div id="doneDebug" hidden>
     <textarea class="logbox" id="logbox" readonly></textarea>
     <div class="acts">
-      <button id="copyLog">로그 복사</button>
-      <button id="dlLog">JSON 내려받기</button>
-      <button id="again">다시 시작</button>
+      <button id="copyLog">Copy log</button>
+      <button id="dlLog">Download JSON</button>
+      <button id="again">Restart</button>
     </div>
     </div>
   </section>
@@ -998,7 +1012,6 @@ const ConditionRouter = (() => {
   const DEF = {
     label:'mixed', ratio:100, viewers:1243, input:'on', seed:7, pid:'TEST',
     cong:'all',           // study 2 일치도: all | half | none (참가자 투표 기준)
-    why:'on',             // 참가자에게 선택 이유를 쓰게 할지 (다른 시청자 채팅에는 이유가 없음)
     theme:'dark',         // dark(치지직과 같음) | light — 전 조건 동일하게 고정해 쓸 것
     intro:'on'            // 자극물 전 안내 페이지 표시 여부
   };
@@ -1032,7 +1045,6 @@ const ConditionRouter = (() => {
     }
     if (!['human','mixed'].includes(c.label)) c.label = DEF.label;
     if (!['all','half','none'].includes(c.cong)) c.cong = DEF.cong;
-    if (!['on','off'].includes(c.why)) c.why = DEF.why;
     if (!['light','dark'].includes(c.theme)) c.theme = DEF.theme;
     if (!['on','off'].includes(c.intro)) c.intro = DEF.intro;
     if (!Number.isFinite(c.ratio) || c.ratio<0 || c.ratio>100) c.ratio = DEF.ratio;
@@ -1045,6 +1057,9 @@ const ConditionRouter = (() => {
     const panel = (q.get('panel_id') || '').trim();
     c.panel_id = /^[A-Za-z0-9_-]{1,64}$/.test(panel) ? panel : null;
     if (c.panel_id) c.pid = c.panel_id;
+    c.stimulus_version = '2026-11-en-single-poll-bars-end';
+    c.language = 'en';
+    c.poll_count = 1;
     return c;
   }
   return {read, id:c => `${c.cong}-${c.label}-${c.ratio}-${c.viewers}-${c.seed}`};
@@ -1054,39 +1069,118 @@ let cond = ConditionRouter.read();
 
 /* ── 2. 발화 풀 ───────────────────────────── */
 /* 본문 발화 — 순서 고정. 규모가 작을수록 이 비중이 높습니다. */
-/* ① 입장~투표 구간. **순서대로** 재생되므로 한 편의 대화처럼 읽히게 섞어 씁니다.
-
-   시점은 **4시간 방송의 3시간 30분쯤**입니다. 오래 있던 사람들의 채팅이라
-   인사나 "소리 괜찮나요" 같은 입장 직후 말투는 넣지 않습니다.
-   영상은 스트리머가 직접 만든 말랑이를 만지는 장면으로 시작합니다 — 얼굴은 나오지
-   않으므로 표정 얘기는 쓰지 않습니다. 영상 속 특정 대사에 맞춘 줄은 CUES에 따로 둡니다.
-   딜레마를 암시하는 줄은 절대 넣지 않습니다 — 투표 전에 주제가 새면 사전 의견이 오염됩니다. */
+/* Pre-poll conversation continues from the backlog. The clip starts during a trip recap.
+   Keep question-specific preferences out of this section. */
 const SCRIPT = [
-  'ㅋㅋㅋㅋ','아까 그거 아직도 웃김','ㅇㅇ','벌써 3시간이네','시간 왜 이렇게 빨라',
-  '말랑이 소리 좋다','ㅋㅋㅋ','파란거 제일 말랑해보임','ㅇㅈ','오늘 길게 하시네',
-  '목 안 아프세요','물 좀 드세요','물물','많이 하셨다','ㅎㅎ',
-  '노란거는 젤리같음','그거 직접 만든거예요?','ㅋㅋㅋㅋㅋㅋ','아 ㅋㅋ','맞아요',
-  '보기만 해도 힐링','소리 asmr 같음','좀만 더요','쫀득하다',
-  '저 아직 있어요','ㅇㅇ 보고있음','조용히 보는중','ㅎㅎㅎ','ㅇㅋ',
-  '배고프다','야식 참는중','흰색은 찹쌀떡같음','찹쌀떡ㅋㅋ','ㅋㅋㅋㅋ',
-  '아 나 내일 일찍 일어나야 하는데','저도요','같이 버텨요','ㅋㅋㅋㅋㅋ','ㅇㅈㅇㅈ',
-  '방금 들어왔는데 무슨 얘기중','아 요약좀','ㅋㅋㅋ 설명 불가','그냥 보세요','ㅇㅇ',
-  '말랑이 몇 개 만드신거예요','ㅎㅎ','오', '비누 말랑이 탐난다',
-  'ㅇㅈ','저도 그거 궁금','ㄱㄱ','ㅋㅋㅋㅋ',
-  'ㅇㅇ','진짜요?','우와',
-  '아 그거 아까 나왔는데','ㅋㅋ 또 나옴','ㅇㅋㅇㅋ','ㅎㅎ','ㅋㅋㅋ'
+  "lol",
+  "that trip sounded so good",
+  "honestly need a vacation",
+  "just a couple days??",
+  "you packed so much in",
+  "food tour when",
+  "lol same",
+  "the food is half the reason to travel",
+  "now i want snacks",
+  "sounds like a good time",
+  "lurking while i eat",
+  "lmao",
+  "chat making me hungry again",
+  "i should be asleep",
+  "one more stream before bed",
+  "cozy stream tonight",
+  "the post vacation tiredness is real",
+  "lol",
+  "worth it though",
+  "still here",
+  "anyone else watching instead of working",
+  "guilty",
+  "i have this on in the background",
+  "same lol",
+  "time flew today",
+  "that sounds like such a good weekend",
+  "need the restaurant list",
+  "chat is my dinner entertainment",
+  "living through this trip recap",
+  "lmao",
+  "my travel plans are opening google maps and closing it",
+  "real",
+  "saving up for a trip rn",
+  "travel streams would be fun",
+  "just got here what did i miss",
+  "trip recap",
+  "food and sightseeing apparently",
+  "ty chat",
+  "sounds like i missed a good one",
+  "always end up watching longer than i meant to",
+  "the stream time is a little concerning lol",
+  "one tab left open and it is this one",
+  "lol",
+  "water check chat",
+  "getting a snack brb",
+  "back",
+  "still listening",
+  "love a chill stream",
+  "nice",
+  "i need this kind of weekend",
+  "that sounds fun",
+  "the food alone would get me there",
+  "lmao",
+  "chat never sleeps",
+  "this is my break from studying",
+  "same here",
+  "one more minute turned into an hour",
+  "classic",
+  "lol",
+  "the vacation recap is making me want to book something",
+  "airport snacks hit different",
+  "i always overpack",
+  "same",
+  "a few days away does wonders",
+  "good vibes tonight",
+  "lol",
+  "still here just lurking",
+  "chill stream enjoyers",
+  "i should get back to work soon",
+  "soon is doing a lot of work there",
+  "lmao",
+  "another five minutes",
+  "famous last words",
+  "time zones got me watching this with breakfast",
+  "dinner over here",
+  "chat is everywhere",
+  "lol",
+  "just hanging out",
+  "the background stream stays on",
+  "got my tea",
+  "cozy hours",
+  "nice",
+  "lmao",
+  "actually such a good way to unwind",
+  "chat keeping me company",
+  "lurkers still here",
+  "lol",
+  "all good"
 ];
 
-/* 짧은 반응 — 규모가 커질수록 채팅의 대부분을 차지합니다.
-   대사와 상관없이 아무 때나 섞여 나오므로, **언제 나와도 어색하지 않은 말만** 둡니다
-   (웃음·감탄·말랑이를 보며 하는 짧은 말).
-   뺀 말: 앞사람 말이나 특정 사건에 대한 대답이라 엉뚱한 때 나오면 티가 나는 것들 —
-   '실화냐' '맞말' '그러게' 'ㄷㄷ' 'ㄷㄷㄷ' 'ㅁㅊ' '헐' '헉' '인정' 'ㅇㅈ' 'ㅇㅈㅇㅈ' 'ㄹㅇ'
-   'ㅇㅇ' 'ㅇㅇㅇ' 'ㅇㅋ' 'ㅇㅋㅇㅋ' '오키' 'ㄱㄱ' '아하' 'ㅊㅋ' 'ㄱㅅ' 'ㅎㅇㅌ',
-   'ㅠㅠ' 'ㅠ'(슬프거나 아쉬운 일이 있어야 나오는 말 — 방송 마무리 인사에만 둡니다). */
-const REACTIONS = ['ㅋㅋㅋ','ㅋㅋㅋㅋㅋ','와','ㅎㅎ','오',
-  'ㅋㅋ','굿','오오','ㅋㅋㅋㅋㅋㅋㅋ','ㅋㅋㅋㅋ','ㄱㅇㅇ','아','음','ㅋ',
-  'ㅎㅎㅎ','와우','말랑해보여'];
+/* Context-light short reactions. Dialogue-specific replies belong in CUES. */
+const REACTIONS = [
+  "lol",
+  "lmao",
+  "LUL",
+  "haha",
+  "lolll",
+  "nice",
+  "oh",
+  "LOL",
+  "hehe",
+  "lmaooo",
+  "ooo",
+  "cozy",
+  "chillin",
+  ":)",
+  "vibes",
+  "love that"
+];
 
 /* 짧은 리액션은 반복돼도 자연스럽지만, 같은 게 연달아 나오면 티가 납니다.
    직전 4개 안에 쓴 것은 다시 뽑지 않습니다. */
@@ -1101,105 +1195,112 @@ function pickReact(rnd){
   return v;
 }
 
-/* ── 2-0. Study 2: 투표 두 개 ─────────────────────
-   주제는 영상(stream.mp4)에서 스트리머가 말로 제시하므로 영상과 함께 고정입니다.
-   시각은 전부 **영상 원본 시각(초)** 이고, 대사 받아쓰기(Whisper)에 맞췄습니다.
-     announce  다음 밸런스 게임을 예고하는 말
-     lock      "댓글 막아 둘게요" — 채팅 잠금
-     at        투표 카드가 뜨는 시각(스트리머가 투표를 다 올린 직후)
-     count     카운트다운 "5, 4, 3, 2, 1"의 숫자를 각각 말한 시각 — 카드의 남은 시간이
-               이 말에 맞춰 줄어듭니다(말은 7초에 걸쳐 세지만 숫자는 5부터)
-     close     마감
-     result    "하나 둘 셋" — 결과 공개 + 채팅 해제
-     hide      결과 카드를 내리는 시각(공개 후 약 60초)
-   일치도 조건(cong)은 두 투표에 똑같이 적용됩니다.
-
-   다른 시청자의 입장 발화(saysA/saysB)는 **어느 쪽을 골랐는지만** 드러내고 이유는 붙이지
-   않습니다 — 논거가 붙으면 노출 효과가 '다수 의견'이 아니라 '설득력 있는 논거'로 바뀝니다.
-   양쪽 풀은 같은 개수·같은 말투로 짝을 맞춥니다(한쪽만 길거나 강하면 그게 변수가 됩니다).
-
-   neutral은 결과 공개 뒤의 잡담입니다. 일치도 조건과 무관하게 같은 풀을 쓰므로,
-   결과가 한쪽으로 몰린 경우(all: 내 쪽 전원, none: 내 쪽 1명)와 반반인 경우(half·미투표)
-   **모두에서 말이 되는 줄만** 둡니다('생각보다 갈렸네' 같은 줄은 몰린 결과와 모순).
-   neutral 슬롯 번호는 두 투표가 공유하며 풀 길이로 나눈 나머지를 씁니다(길이가 달라도 됨). */
+/* Single poll. All times are seconds in the current stream.mp4 (266.68 s).
+   The streamer does not read the question aloud; the question is presented here.
+   Stance messages state a choice without supplying persuasive reasons.
+   A/B pools use matching phrasing, and neutral reactions fit every result condition. */
 const POLLS = [
   {
-    id: 1,
-    /* 질문 한 줄과 선택지만 띄웁니다. 조건(맨몸·성인 남성)은 스트리머가 말로 설명합니다.
-       선택지에는 설명을 달지 않습니다 — 한 줄이라도 붙으면 그 자체가 한쪽 논거가 됩니다. */
-    q: '고릴라 한 마리 vs 맨몸 성인 남성 2명, 누가 이길까?',
-    A: {label: '맨몸 성인 남성 2명'},
-    B: {label: '고릴라 한 마리'},
-    order: ['B', 'A'],               // 영상에서 올린 순서(고릴라 → 남성 2명)
-    announce: 69,                    // "밸런스 게임입니다"
-    lock: 147.4,                     // "우선 댓글 막아 둘 거구요"(144.5~146.3)
-    at: 166.3,                       // "이렇게 해서 투표 진행해 보도록 하겠습니다"(~165.6)
-    count: [208.3, 210.0, 212.0, 213.5, 215.1],
-    close: 216.3,                    // "투표 마감하겠습니다"
-    result: 229.2,                   // "투표 결과 띄우면서 댓글도 풀게요, 하나 둘 셋"
-    hide: 287,                       // "다음 밸런스 게임 일단 하나 더 할게요"(~286.5)
-    saysA: [
-      '당연히 맨몸 남자 2명이지', '맨몸 남자 2명', '2명 찍음', '당연히 2명이지',
-      '난 맨몸 남자 2명', '사람 2명이지', '맨몸 2명 쪽 찍었음', '2명 ㄱㄱ',
-      '나도 맨몸 남자 2명', '2명에 한 표', '맨몸 남자 2명 찍었어요', '당연히 사람 2명',
-      '2명 골랐음', '맨몸 2명 ㅇㅇ', '사람팀', '2명 쪽임',
-      '저도 맨몸 남자 2명이요', '2명 1표', '당연히 2명 아님?', '맨몸 남자 2명 쪽',
-      '맨몸 2명 찍었다', '2명 쪽으로 감', '사람 2명 ㄱㄱㄱ', '난 2명 쪽', '2명에 걸었음',
-      '맨몸 남자 쪽', '2명 손', '2명 픽', '맨몸 2명 간다', '저는 2명이요',
+    "id": 1,
+    "q": "Who would win in a fight: 100 unarmed men or one gorilla?",
+    "A": {
+      "label": "100 unarmed men"
+    },
+    "B": {
+      "label": "One gorilla"
+    },
+    "order": [
+      "A",
+      "B"
     ],
-    saysB: [
-      '당연히 고릴라지', '고릴라 한 마리', '고릴라 찍음', '당연히 고릴라 한 마리지',
-      '난 고릴라 한 마리', '고릴라지', '고릴라 쪽 찍었음', '고릴라 ㄱㄱ',
-      '나도 고릴라 한 마리', '고릴라에 한 표', '고릴라 한 마리 찍었어요', '당연히 고릴라',
-      '고릴라 골랐음', '고릴라 ㅇㅇ', '고릴라팀', '고릴라 쪽임',
-      '저도 고릴라요', '고릴라 1표', '당연히 고릴라 아님?', '고릴라 한 마리 쪽',
-      '고릴라 찍었다', '고릴라 쪽으로 감', '고릴라 ㄱㄱㄱ', '난 고릴라 쪽', '고릴라에 걸었음',
-      '고릴라 한 마리 쪽으로', '고릴라 손', '고릴라 픽', '고릴라 간다', '저는 고릴라요',
+    "announce": 123.0,
+    "lock": 169.1,
+    "at": 181.05,
+    "countdown": 199.84,
+    "countdownSeconds": 10,
+    "close": 210.7,
+    "result": 216.2,
+    "hide": null,                   // Keep the result visible until the stream ends.
+    "saysA": [
+      "100 men",
+      "i picked the 100 men",
+      "100 men for me",
+      "team humans",
+      "going with the 100 men",
+      "my vote is 100 men",
+      "100 men imo",
+      "voted 100 men",
+      "the 100 men lol",
+      "gotta go 100 men",
+      "100 men here",
+      "im on team humans",
+      "100 men easy",
+      "i went with 100 men",
+      "100 men for sure",
+      "100 men is my pick",
+      "yeah 100 men",
+      "still picking 100 men",
+      "put me down for 100 men",
+      "humans for me",
+      "100 men all day",
+      "i chose the 100 men",
+      "100 men tbh",
+      "team 100 men",
+      "sticking with 100 men",
+      "100 men gets my vote",
+      "its 100 men for me",
+      "locking in 100 men",
+      "100 men surely",
+      "im taking the 100 men"
     ],
-    neutral: ['이런 주제 웃기다ㅋㅋ', '진지하게 고민됐음',
-              '해보면 알텐데', '이런거 왜 이렇게 재밌지', '결과 신기하다',
-              '결과 보니까 재밌네', '나 진짜 고민했다', '밸런스게임 또 해주세요'],
-  },
-  {
-    id: 2,
-    q: '10년 사귄 애인이 "나는 결혼할 마음이 없어"라고 한다면?',
-    A: {label: '계속 사귄다'},
-    B: {label: '헤어진다'},
-    order: ['A', 'B'],               // 영상에서 말한 순서(계속 사귄다 → 헤어진다)
-    announce: 283.2,                 // "다음 밸런스 게임 일단 하나 더 할게요"
-    lock: 292.2,                     // "여기서 일단 댓글 잠금 우선 해놓고"(288.2~292.5)
-    at: 330,                         // "그래서 투표 한 번 받아보도록 하겠습니다"(~329.6)
-    count: [366.5, 368.3, 371.8, 373.7, 374.9],
-    close: 376.5,                    // "땡!"
-    result: 384.3,                   // "댓글도 이제 풀고 결과 한번 보도록 하겠습니다, 하나 둘 셋"
-    hide: 444,                       // 공개 후 60초 — "다음 방송 때 한번 재밌게 만들어서 올게요"
-    saysA: [
-      '당연히 계속 사귀지', '계속 사귄다', '사귄다 찍음', '당연히 계속 사귄다지',
-      '난 계속 사귄다', '계속 사귀지', '계속 사귄다 쪽 찍었음', '사귄다 ㄱㄱ',
-      '나도 계속 사귄다', '계속 사귄다에 한 표', '계속 사귄다 찍었어요', '당연히 계속 만나지',
-      '사귄다 골랐음', '계속 사귄다 ㅇㅇ', '사귄다팀', '사귄다 쪽임',
-      '저도 계속 사귄다요', '사귄다 1표', '당연히 계속 사귀는거 아님?', '계속 사귄다 쪽',
-      '계속 사귄다 찍었다', '사귄다 쪽으로 감', '사귄다 ㄱㄱㄱ', '난 사귄다 쪽', '계속 사귄다에 걸었음',
-      '계속 만나는 쪽', '사귄다 손', '사귄다 픽', '계속 사귄다 간다', '저는 사귄다요',
+    "saysB": [
+      "the gorilla",
+      "i picked the gorilla",
+      "gorilla for me",
+      "team gorilla",
+      "going with the gorilla",
+      "my vote is gorilla",
+      "gorilla imo",
+      "voted gorilla",
+      "the gorilla lol",
+      "gotta go gorilla",
+      "gorilla here",
+      "im on team gorilla",
+      "gorilla easy",
+      "i went with gorilla",
+      "gorilla for sure",
+      "gorilla is my pick",
+      "yeah gorilla",
+      "still picking gorilla",
+      "put me down for gorilla",
+      "gorilla for me",
+      "gorilla all day",
+      "i chose the gorilla",
+      "gorilla tbh",
+      "team gorilla",
+      "sticking with gorilla",
+      "gorilla gets my vote",
+      "its gorilla for me",
+      "locking in gorilla",
+      "gorilla surely",
+      "im taking the gorilla"
     ],
-    saysB: [
-      '당연히 헤어지지', '헤어진다', '헤어진다 찍음', '당연히 헤어진다지',
-      '난 헤어진다', '헤어지지', '헤어진다 쪽 찍었음', '헤어진다 ㄱㄱ',
-      '나도 헤어진다', '헤어진다에 한 표', '헤어진다 찍었어요', '당연히 헤어져야지',
-      '헤어진다 골랐음', '헤어진다 ㅇㅇ', '헤어진다팀', '헤어진다 쪽임',
-      '저도 헤어진다요', '헤어진다 1표', '당연히 헤어지는거 아님?', '헤어진다 쪽',
-      '헤어진다 찍었다', '헤어진다 쪽으로 감', '헤어진다 ㄱㄱㄱ', '난 헤어진다 쪽', '헤어진다에 걸었음',
-      '헤어지는 쪽', '헤어진다 손', '헤어진다 픽', '헤어진다 간다', '저는 헤어진다요',
-    ],
-    neutral: ['이건 현실적이라 더 어렵다', '진지하게 고민됐음',
-              '이런거 왜 이렇게 재밌지', '결과 신기하다',
-              '결과 보니까 재밌네', '나 진짜 고민했다', '밸런스게임 또 해주세요'],
-  },
+    "neutral": [
+      "chat took that seriously lol",
+      "i actually had to think about it",
+      "that was fun",
+      "the confidence part got me",
+      "i spent way too long on that",
+      "chat is back",
+      "could do these all night",
+      "we need more of these"
+    ]
+  }
 ];
 
 /* 방송 제목. 날짜는 넣지 않습니다. 저챗 방송에 흔한 가벼운 제목이고,
    주제를 암시하는 낱말('판단', '사연', '고민')은 참가자의 해석 틀을 미리 정하므로 피합니다. */
-const STREAM_TITLE = '나랑 수다 떨자';
+const STREAM_TITLE = 'just hanging out';
 
 /* ── 2-1. 밀도 모델 ──────────────────────────
    Flores-Saviaga et al. (2019) HT'19 규모별 실측치를 구간별 로그-로그 보간.
@@ -1332,17 +1433,21 @@ function ScriptSource(c, rnd, span){
   const built = buildTimeline(c, rnd, span);
   // study 2는 본문 자리에 입장 슬롯을 깔아둡니다 (텍스트는 투표 후 결정)
   const slots = applyStanceSlots(built.list, c, rnd);
-  /* 투표별 입장 슬롯을 화자별로 셉니다 — 혼합 조건에서 IdentityAssigner가 함께 맞출 축입니다.
-     채팅 시계는 잠금 동안 멈추므로 투표 1 결과 뒤 구간은 첫 잠금 시각에서,
-     투표 2 결과 뒤 구간은 거기에 (투표 1 결과 → 투표 2 잠금) 길이를 더한 시각에서 시작해
-     방송 종료(END_AT)에서 끝납니다. 타임라인은 SPAN까지 만들어지지만 그 뒤 줄은 화면에 나오지 않으므로 셈에서 뺍니다. */
-  const p1 = POLLS[0].lock - VIDEO_TRIM, p2 = p1 + (POLLS[1].lock - POLLS[0].result);
-  const p3 = p2 + (END_AT - POLLS[1].result);
+  // Convert visible post-poll windows into the paused chat clock.
+  let chatEnd = OUTRO_AT - VIDEO_TRIM;
+  const windows = POLLS.map((poll, i) => {
+    const start = poll.lock - VIDEO_TRIM - POLLS.slice(0, i).reduce((n, p) => n + p.result - p.lock, 0);
+    const end = start + (Math.min(POLLS[i + 1]?.lock ?? OUTRO_AT, OUTRO_AT) - poll.result);
+    chatEnd -= poll.result - poll.lock;
+    return {start, end};
+  });
   const stanceCounts = POLLS.map(() => new Array(built.d.chatters).fill(0));
-  for (const m of built.list) if (m.slot && m.t >= p1 && m.t < p3) stanceCounts[m.t >= p2 ? 1 : 0][m.ci]++;
-  // AI 비율도 화면에 나오는 줄(백로그 포함, 방송 종료 전)만으로 맞춥니다
+  for (const m of built.list){
+    const i = windows.findIndex(w => m.t >= w.start && m.t < w.end);
+    if (m.slot && i >= 0) stanceCounts[i][m.ci]++;
+  }
   const shownCounts = new Array(built.d.chatters).fill(0);
-  for (const m of built.list) if (m.pre || m.t < p3) shownCounts[m.ci]++;
+  for (const m of built.list) if (m.pre || m.t < chatEnd) shownCounts[m.ci]++;
   const pre = built.list.filter(m => m.pre);
   let i = pre.length;                    // 재생은 백로그 다음부터
   return {
@@ -1358,7 +1463,7 @@ function ScriptSource(c, rnd, span){
       while (i < built.list.length && built.list[i].t <= t){ out.push(built.list[i]); i++; }
       return out;
     },
-    note(){ return '고정 스크립트'; }
+    note(){ return 'Scripted'; }
   };
 }
 
@@ -1366,7 +1471,7 @@ function ScriptSource(c, rnd, span){
    이 프로토타입은 정적 페이지라 서버가 없으므로 변주만 흉내냅니다. */
 function LiveSource(c, rnd, span, ctx){
   const base = ScriptSource(c, rnd, span);
-  const TAILS = ['','!','~','ㅋㅋ','...','?'];
+  const TAILS = ['','!','',' lol','...',''];
   let n = 0;
   return {
     kind:'live',
@@ -1379,172 +1484,282 @@ function LiveSource(c, rnd, span, ctx){
       return base.next(t).map(m => {
         n++;
         const last = ctx.lastUserMessage;
-        if (last && n % 4 === 0){ ctx.lastUserMessage = null; return {...m, text: `${last} ㄹㅇ`}; }
+        if (last && n % 4 === 0){ ctx.lastUserMessage = null; return {...m, text: `${last} fr`}; }
         return {...m, text: m.text + TAILS[n % TAILS.length]};
       });
     },
-    note(){ return '실시간 생성(모의)'; }
+    note(){ return 'Simulated live generation'; }
   };
 }
 
 /* ── 4. 정체성 배분 ─────────────────────────
    메시지가 아니라 *화자* 단위로 사람/AI를 배분합니다.
    같은 닉네임이 한 세션 안에서 사람↔AI로 뒤바뀌지 않습니다.          */
-/* 닉네임 풀. 실제 스트리밍 채팅처럼 네 갈래를 섞는다 —
-   두벌식 로마자(한글 발음을 영문 자판 그대로 친 형태), 한글 단어,
-   스트리머 닉 '하루끝'에서 파생된 팬닉, 영문 단어. 숫자 꼬리가 흔하다. */
-/* ── 닉네임 ─────────────────────────────────
-   실제 이용자의 닉네임을 그대로 쓰지 않습니다. 실존 계정에 하지 않은 말을
-   붙이게 되고, 온라인 핸들은 개인정보라 IRB에서 걸립니다.
-   대신 한국어 스트리밍 채팅 닉네임의 **표면 특성 분포**에 맞춰 생성합니다.
-
-   NICK_MIX의 비율이 조정 지점입니다. 치지직·SOOP 방송 몇 개를 훑어
-   유형별 비율을 세어보고 이 숫자만 바꾸면 됩니다.
-   논문에는 "실제 한국어 스트리밍 채팅의 표면 특성 분포에 맞춰 생성했으며
-   실제 이용자 핸들은 사용하지 않았다"로 적습니다.                       */
-
-/* 유형별 비율. 합이 1이 되게 둡니다. */
-const NICK_MIX = {
-  word:  0.38,   // 한글 단어·구     — 치지직·SOOP에서 가장 흔함
-  roman: 0.20,   // 영타 한글        — 자판을 영문에 둔 채 친 한글 (rlfls = 기린)
-  en:    0.18,   // 영문 단어(+숫자) — 아프리카TV 계열의 영문 아이디 흔적
-  id:    0.14,   // 아이디형         — 가입 아이디가 그대로 노출된 경우
-  fan:   0.10    // 팬닉             — 스트리머 이름 변형
-};
-
-/* 영타 한글. 자판을 영문에 둔 채 한글을 쳐서 생긴 문자열입니다. */
-const NICK_ROMAN = ['rlfls','dudtlr','qkrwo','ghkdrl','tjdals','dlwogus','whdgks','dnjstlr',
-  'chlwndms','ajswjs','vkdlxld','rladudtn','tkfkdgo','skanfu','gkwkdy','qudtls','ehdgo',
-  'wjdalsrn','gksrmf','dkssud','rhkswpd','tprPdml','akfVks','dPdml','wkdwkd','qkqthf',
-  'ekfrhk','vlfdy','rmaxls','tnqur','dudgh','gnlrkd','wjsdml','akdkdy','chdrkd'];
-
-/* 한글 단어·구 */
-const NICK_WORD = ['초코마루','퇴근하고싶다','나른한오후','밤식빵','고양이집사','무민',
-  '달리는사람','빵순이','조용한관객','라면물조절','치킨먹고싶다','새벽세시','감자칩',
-  '민트초코','겨울잠','월요병말기','덮밥충','야근각','물멍','이불밖은위험해',
-  '커피수혈','출근싫어','집가고싶다','낮잠요정','불면증환자','떡볶이교','존버중',
-  '오늘도평화','배달음식러버','귀차니즘','침대와한몸','주말만기다려','수면부족',
-  '간식창고','눈팅러','지나가던행인','야식금지','카페인중독','퇴근후한잔','소파붙박이',
-  '아메리카노','비오는날','창가자리','늦잠','겨울이좋아','마감지옥','통장잔고0',
-  '방구석여포','라디오키고','고독한미식가','이따밥','조용히볼게요'];
-
-/* 스트리머 '하루끝'에서 딴 팬닉과 변형 */
-const NICK_FAN = ['하루시작','하루사이','하루중간','이틀끝','사흘끝','하루반','하루끝지킴이',
-  '하루끝단골','하루끝님','하루끝사랑','하루의끝','하루끝붙박이','끝의하루','하루끝1호팬',
-  '하루끝러버','하루처음','반나절끝','하루끝노예','하루끝매니저','하루끝호소인'];
-
-/* 영문 단어 */
-const NICK_EN = ['moon','cozy','latte','pepper','navy','otter','pixel','maple','sodam','rainy',
-  'onion','velvet','pudding','cloudy','bloom','sprout','amber','quiet','tofu','lemon',
-  'marble','nova','ollie','pebble','sunny','teddy','winter','yuzu','ash','berry'];
-
-/* 아이디형 — 가입 아이디가 그대로 노출된 경우 */
-const NICK_IDA = ['kim','lee','park','choi','jung','kang','yoon','han','seo','oh',
-  'min','hyun','jin','sung','woo','young','jae','soo','eun','ji'];
-const NICK_IDB = ['day','night','star','sky','one','two','zip','box','map','log',
-  'cat','dog','bear','fox','owl','bee','ice','sun','sea','air'];
-
-/* 영상 대사에 맞춘 채팅 반응. t는 **스트리머가 말한 영상 시각(초)** 이고(대사 받아쓰기 기준),
-   보고 치는 시간(CUE_DELAY)은 buildCues에서 더합니다.
-      8–39  말랑이 자랑 → "말랑이 마켓 할까봐요"
-     39–55  "오늘 오래 했으니 마지막 콘텐츠 하고 종료해도 될까요?"
-     58–116 "마지막 콘텐츠는 밸런스 게임" → 투표·의견 쓰는 법 설명
-    121–147 투표 1: 고릴라 한 마리 vs 맨몸 성인 남성 2명 → "댓글 막아 둘게요"   (잠금 147 → 카드 166)
-    203–218 "5초 뒤 그만" → 5 4 3 2 1 → "투표 마감"
-    219–229 "결과 띄우면서 댓글도 풀게요, 하나 둘 셋"                         (결과 + 해제 229.2)
-    231–270 "왜 이렇게 댓글을 잘 써주세요, 엄청 많이 올라와요" → "예상한 결과인가요?"
-    277–292 "다음 밸런스 게임 하나 더" → "댓글 잠금 해놓고"                     (잠금 291)
-    296–331 투표 2: 10년 사귄 애인이 결혼할 마음이 없다면 → 계속 사귄다 / 헤어진다 (카드 330)
-    359–377 "5초 뒤 그만" → 5 4 3 2 1 → "땡! 댓글도 풀고 결과"
-    383–417 "하나 둘 셋" → "오늘 감동이에요, 댓글 너무 잘 써주신다" → "예상하셨나요?" (결과 384.3)
-    417–454 "오늘 콘텐츠 마음에 든다, 다음 방송 때 콘텐츠화" → 방송 종료 인사
-  플랫폼 공지는 띄우지 않습니다 — 실제 플랫폼은 예고를 스트리머가 말로 합니다.
-  전부 입장(stance)이 없는 메타 발화라 일치도 조작과 무관합니다. 투표 전 줄에는 어느 쪽이
-  유리하다는 암시를, 결과 뒤 줄에는 결과가 갈렸는지 몰렸는지를 암시하는 말을 넣지 않습니다
-  (스트리머의 "예상하신 결과인가요?"에도 답하지 않고 웃기만 합니다).
-  core=true는 규모와 상관없이 항상 나오는 줄입니다(예고·잠금 신호). 나머지는
-  시청자가 적을수록 일부만 나옵니다. */
-const CUES = [
-  {t:  12.0, text: '직접 만든거 맞아요?'},
-  {t:  17.5, text: 'ㅋㅋㅋ 자화자찬'},
-  {t:  22.0, text: '재능 인정'},
-  {t:  29.0, text: '힐링 ㅇㅈ'},
-  {t:  36.0, text: '말랑이 마켓 ㄱㄱ', core: true},
-  {t:  38.5, text: '사고싶다 진짜'},
-  {t:  50.5, text: '벌써요?ㅠ'},
-  {t:  54.5, text: '네 괜찮아요', core: true},
-  {t:  57.0, text: 'ㅇㅋㅇㅋ'},
-  {t:  66.0, text: '뭔데뭔데', core: true},
-  {t:  70.5, text: '밸런스게임?', core: true},
-  {t:  72.5, text: 'ㄱㄱ'},
-  {t:  82.5, text: '투표 ㄱㄱ', core: true},
-  {t: 104.5, text: '써볼게요'},
-  {t: 114.0, text: '오 재밌겠다'},
-  {t: 119.5, text: 'ㅇㅋ 기다림'},
-  {t: 131.5, text: '고릴라ㅋㅋㅋ', core: true},
-  {t: 144.0, text: '아 채팅 닫는대', core: true},
-  {t: 145.0, text: '아 잠깐만'},
-  {t: 229.5, text: '결과 ㄷㄱㄷㄱ', core: true},
-  {t: 232.0, text: '결과 나왔다'},
-  {t: 238.5, text: '다들 진심이네ㅋㅋ'},
-  {t: 244.5, text: '채팅 폭주ㅋㅋㅋ', core: true},
-  {t: 252.5, text: 'ㅋㅋㅋ 재밌다'},
-  {t: 266.0, text: 'ㅋㅋㅋㅋ'},
-  {t: 285.0, text: '하나 더 ㄱㄱ', core: true},
-  {t: 287.0, text: '좋아요'},
-  {t: 289.5, text: '또 닫는다ㅋㅋ', core: true},
-  {t: 384.5, text: '결과 ㄷㄱㄷㄱ', core: true},
-  {t: 387.5, text: '오 결과'},
-  {t: 391.5, text: '감동ㅋㅋㅋ'},
-  {t: 395.5, text: '저희도 재밌어요', core: true},
-  {t: 413.5, text: 'ㅋㅋㅋ'},
-  {t: 423.0, text: '이런거 자주 해주세요', core: true},
-  {t: 440.0, text: '오 기대된다'},
-  {t: 446.5, text: '다음 방송 언제예요?'},
-  {t: 452.0, text: '밸런스게임 또 해주세요'},
-
-  /* 대답형 반응. 앞사람 말이나 사건에 대한 대답이라 무작위 반응(REACTIONS)에는 두지 않고,
-     어울리는 대사 뒤에만 둡니다. 투표 주제가 나온 뒤에는 어느 쪽이 유리하다는 암시가
-     될 만한 말을, 결과 뒤에는 결과가 갈렸는지 몰렸는지 드러나는 말을 넣지 않습니다. */
-  {t:  18.5, text: '인정'},                // "말랑이를 진짜 잘 만든다는 사실을 깨달았어요"
-  {t:  23.5, text: '실화냐ㅋㅋ'},           // "사온 것들과 비할 게 안 되는 것 같아요"
-  {t:  26.0, text: 'ㄹㅇ?'},
-  {t:  31.5, text: 'ㅇㅈㅇㅈ'},             // "진짜 부드럽고 쫀쫀하고 너무 좋아요"
-  {t:  33.5, text: '쫀쫀해보임'},
-  {t:  46.5, text: '그러게 오래했다'},       // "오늘 방송 오래 했으니까"
-  {t:  55.5, text: 'ㅇㅇ'},                 // "방송 종료하고 싶은데 괜찮으실까요?"
-  {t:  63.5, text: 'ㄱㄱ'},                 // "마지막 콘텐츠 짧게 하나 하고 가도록 할게요"
-  {t:  71.5, text: '오오'},                 // "밸런스 게임입니다"
-  {t:  89.5, text: 'ㅇㅋ'},                 // "원하는 의견 하나씩 선택해 주시면 되고"
-  {t: 107.0, text: '오키'},                 // "원하시면 써주세요"
-  {t: 126.5, text: '두근'},                 // "첫 번째 주제로 이거 하나 해볼게요"
-  {t: 137.5, text: 'ㄷㄷ'},                 // "맨몸에 성인 남성 2명이 있습니다"
-  {t: 140.5, text: '헐ㅋㅋ'},
-  {t: 143.5, text: '고민되네'},             // "둘이 싸우면 누가 이길까에 대한 주제입니다"
-  {t: 232.0, text: 'ㅋㅋㅋㅋ 뭐야'},        // "뭐야"
-  {t: 240.0, text: '그러게ㅋㅋ'},           // "왜 이렇게 오늘 댓글을 잘 써주세요?"
-  {t: 247.5, text: 'ㄷㄷ'},                 // "아니 진짜 엄청 많이 올라와요 지금"
-  {t: 254.0, text: '맞말'},                 // "되게 재밌다"
-  {t: 286.5, text: 'ㅇㅋ'},                 // "다음 밸런스 게임 일단 하나 더 할게요"
-  {t: 395.5, text: '인정'},                 // "댓글 너무 잘 써주신다"
-  {t: 425.0, text: 'ㄹㅇ 재밌었음'},         // "오늘 컨텐츠 되게 마음에 드는 것 같아요"
-  {t: 443.0, text: 'ㅇㅋㅇㅋ'},             // "다음 방송 할 때 한번 재밌게 만들어서 올게요"
-  {t: 454.0, text: '좋아요'},               // "나중에 또 밸런스 게임 하면 재밌을 것 같아요"
+/* Synthetic English-language chat handles. AI and human viewers share this pool.
+   These are authored examples, not a claimed empirical platform distribution. */
+const NICK_MIX = {word:0.45, handle:0.10, en:0.20, id:0.20, fan:0.05};
+const NICK_HANDLE = [
+  "mossytoast",
+  "crumblebyte",
+  "wobblyfern",
+  "sleepywaffle",
+  "mintyorbit",
+  "tinyteapot",
+  "snackstatic",
+  "fuzzycomet",
+  "soupwizard",
+  "softpretzel",
+  "caffeinatedmoth",
+  "rainybutton"
+];
+const NICK_WORD = [
+  "toastafterdark",
+  "justonemoretab",
+  "sleepycrumb",
+  "probablylurking",
+  "couchpotatoish",
+  "snacksidequest",
+  "lowbatteryhours",
+  "keyboardcrouton",
+  "moonlitnoodle",
+  "pebbleonwifi",
+  "notquiteawake",
+  "cozywindow",
+  "pocketwaffles",
+  "slightlytoasted",
+  "blanketseason",
+  "quietlittlecloud",
+  "nightshiftnap",
+  "teabreaktimer",
+  "windowseatpls",
+  "almostweekend",
+  "sparebraincell",
+  "biscuitweather",
+  "tinyspaceplant",
+  "mugofpixels",
+  "socksandstatic",
+  "noodlesatmidnight",
+  "crunchybookmark",
+  "softspokenmoth",
+  "rainydaytoast",
+  "snackcupboard",
+  "permanentlurkmode",
+  "onecrumbshort"
+];
+const NICK_FAN = [
+  "haruafterhours",
+  "harulurkclub",
+  "harusnackbreak",
+  "harulatecrew",
+  "haruchillcorner",
+  "harunightshift",
+  "haruteatime",
+  "haruwatchparty",
+  "harucozyclub",
+  "haruonthecouch"
+];
+const NICK_EN = [
+  "moon",
+  "cozy",
+  "latte",
+  "pepper",
+  "navy",
+  "otter",
+  "pixel",
+  "maple",
+  "rainy",
+  "velvet",
+  "pudding",
+  "cloudy",
+  "bloom",
+  "sprout",
+  "amber",
+  "quiet",
+  "tofu",
+  "lemon",
+  "marble",
+  "nova",
+  "pebble",
+  "sunny",
+  "winter",
+  "berry"
+];
+const NICK_IDA = [
+  "sleepy",
+  "tiny",
+  "fuzzy",
+  "rainy",
+  "cosmic",
+  "minty",
+  "wobbly",
+  "cozy",
+  "mellow",
+  "soggy",
+  "crispy",
+  "dusty",
+  "little",
+  "lazy",
+  "spare",
+  "soft"
+];
+const NICK_IDB = [
+  "toast",
+  "moth",
+  "fern",
+  "pixel",
+  "waffle",
+  "cloud",
+  "comet",
+  "otter",
+  "noodle",
+  "mug",
+  "button",
+  "biscuit",
+  "bean",
+  "pebble",
+  "sock",
+  "orbit"
 ];
 
-/* ③ 마무리 구간. 스트리머가 접으려 할 때의 채팅. */
-const REACT_OUTRO = ['아 벌써요','오늘도 수고하셨어요','잘 봤습니다','다음에 또 와요',
-  '아쉽다','ㅠㅠ','조심히 가세요','푹 쉬세요','내일도 오나요','오늘 재밌었어요',
-  'ㅂㅇㅂㅇ','수고요','굿밤','다음 방송 언제','또 올게요','ㅠㅠㅠ','고생하셨습니다',
-  '밸런스게임 또 해주세요','오늘 꿀잼','ㅇㅇ 잘봤어요'];
+
+/* Responses follow the new English dialogue. buildCues adds typing delay.
+   No pre-poll reaction hints at the question or expresses a preference. */
+const CUES = [
+  {
+    "t": 8,
+    "text": "only a couple days and you did all that?"
+  },
+  {
+    "t": 18,
+    "text": "need that food list"
+  },
+  {
+    "t": 27,
+    "text": "sounds worth the trip"
+  },
+  {
+    "t": 36,
+    "text": "museum arc"
+  },
+  {
+    "t": 45,
+    "text": "you should go back sometime"
+  },
+  {
+    "t": 54,
+    "text": "FIRST zoo trip??",
+    "core": true
+  },
+  {
+    "t": 59,
+    "text": "wait actually your first time lol"
+  },
+  {
+    "t": 68,
+    "text": "the animal lineup"
+  },
+  {
+    "t": 80,
+    "text": "bird lore"
+  },
+  {
+    "t": 87,
+    "text": "the bird section is always huge"
+  },
+  {
+    "t": 99,
+    "text": "good stream today"
+  },
+  {
+    "t": 104,
+    "text": "nooo stay",
+    "core": true
+  },
+  {
+    "t": 108,
+    "text": "one more thing"
+  },
+  {
+    "t": 117,
+    "text": "ONE MORE",
+    "core": true
+  },
+  {
+    "t": 126,
+    "text": "alright lets see it",
+    "core": true
+  },
+  {
+    "t": 134,
+    "text": "poll time"
+  },
+  {
+    "t": 145,
+    "text": "got it"
+  },
+  {
+    "t": 160,
+    "text": "yeah both parts"
+  },
+  {
+    "t": 165,
+    "text": "chat taking a break lol",
+    "core": true
+  },
+  {
+    "t": 217,
+    "text": "oh here we go",
+    "core": true
+  },
+  {
+    "t": 223,
+    "text": "chat is back lol"
+  },
+  {
+    "t": 234,
+    "text": "we have been released",
+    "core": true
+  },
+  {
+    "t": 242,
+    "text": "that was fun actually"
+  },
+  {
+    "t": 247,
+    "text": "do more of these",
+    "core": true
+  }
+];
+
+const REACT_OUTRO = [
+  "ggs",
+  "good stream",
+  "gn chat",
+  "see you tomorrow",
+  "thanks for the stream",
+  "get some rest",
+  "bye chat",
+  "later everyone",
+  "that was fun",
+  "take care",
+  "night night",
+  "catch you next time",
+  "o7",
+  "byeee",
+  "rest up",
+  "see ya",
+  "thanks for hanging out",
+  "gn everyone",
+  "more polls next time",
+  "goodnight"
+];
 
 function makeNick(rnd){
   const pickOf = a => a[Math.floor(rnd() * a.length)];
   const d = n => String(Math.floor(rnd() * n));
   const pad = n => d(n).padStart(String(n - 1).length, '0');
 
-  /* 숫자 꼬리. 유형마다 붙는 비율이 다릅니다 —
-     영타 한글과 아이디형은 거의 붙고, 한글 단어는 덜 붙습니다. */
+  /* Handle suffixes vary by name style; the same generator serves every identity. */
   const tail = (p) => {
     if (rnd() >= p) return '';
     const r = rnd();
@@ -1561,8 +1776,8 @@ function makeNick(rnd){
   let acc = NICK_MIX.word;
   if (r < acc) return pickOf(NICK_WORD) + tail(0.30);
 
-  acc += NICK_MIX.roman;
-  if (r < acc) return pickOf(NICK_ROMAN) + tail(0.88);
+  acc += NICK_MIX.handle;
+  if (r < acc) return pickOf(NICK_HANDLE) + tail(0.88);
 
   acc += NICK_MIX.en;
   if (r < acc){
@@ -1767,8 +1982,8 @@ const uc = {el: null, who: null, since: 0, how: null};
 function userRows(name, isAI){
   const st = userStats[name] || (userStats[name] = {msgs: 0, first_at: null, opens: 0});
   return [
-    ['유형', isAI ? 'AI 시청자' : '실제 이용자', isAI],
-    ['이 방송 채팅', `${st.msgs}개`, false]
+    ['Viewer type', isAI ? 'AI viewer' : 'Human viewer', isAI],
+    ['Messages in this stream', `${st.msgs}`, false]
   ];
 }
 
@@ -1806,7 +2021,7 @@ document.addEventListener('click', e => {
   }
 });
 
-/* 채팅창 열기·닫기. 채팅창은 화면 오른쪽에서 밀려 들어오고 |→ 로 닫힙니다.
+/* Open chat·닫기. 채팅창은 화면 오른쪽에서 밀려 들어오고 |→ 로 닫힙니다.
    열려 있어도 영상 위 플로팅 채팅은 그대로 보입니다(영상 칸이 줄어 가려지지 않음).
    닫힌 채팅창은 애니메이션이 끝나면 hidden으로 내립니다 — 화면 밖으로 밀려나 있어도
    IntersectionObserver는 '보인다'로 세므로, 노출 집계가 부풀지 않게 합니다.
@@ -2045,7 +2260,7 @@ function initSeen(){
   ovObserver = make(ovFeed);
 }
 
-/* 탭을 가리면 그 순간까지만 적립하고 멈춥니다. 돌아오면 다시 시작합니다. */
+/* 탭을 가리면 그 순간까지만 적립하고 멈춥니다. 돌아오면 Restart합니다. */
 function pauseSeen(stop){
   const now = performance.now();
   for (const r of seen.msgs){
@@ -2208,7 +2423,7 @@ const SUPABASE_KEY = 'sb_publishable_eFHG5m2Hx6nyTQWuAgLzbA_19IHKUAV'; // publis
 
 /* 엠브레인 리다이렉트. panel_id로 들어온 참가자만 끝날 때 이 주소로 보냅니다.
    {ID}·{STATUS}를 채워 이동하며, 실제 조사 링크를 받으면 이 주소만 바꿉니다.
-   완료는 [참여 종료하기]를 누른 경우 하나뿐입니다 — 투표·채팅 같은 행동으로는 가르지 않습니다.
+   완료는 [Finish participation]를 누른 경우 하나뿐입니다 — 투표·채팅 같은 행동으로는 가르지 않습니다.
    아웃은 영상을 끝내 재생하지 못한 경우에만 보냅니다. out이 null이면 아웃을 보내지 않습니다. */
 const RETURN_URL = 'http://survey.panel.co.kr/2019/XXXX/m5.asp?panel_id={ID}&status={STATUS}';
 const RETURN_STATUS = {complete: '001', out: null};   // out: 엠브레인 코드 확인 후 채움
@@ -2364,18 +2579,13 @@ addEventListener('pagehide', () => {
 });
 
 /* ── 7. 플레이 루프 ──────────────────────── */
-const SPAN = 470;          // 영상 길이(초). stream.mp4 = 470.1초
-/* 마무리 구간. 스트리머가 방송을 접으려 하는 시점과 실제로 끊기는 시점입니다.
-   끊긴 뒤 추천 화면에서 구독·다음 영상 클릭이 측정됩니다 —
-   "갈 때 붙잡는가"가 이 자극물의 마지막 행동 지표입니다. */
-const OUTRO_AT = 454;      // 영상: "우선은 저는 이제 방송 종료 할 거고요"
-const END_AT   = 468;      // 영상: "여러분 안녕"(~467.4초) 직후 화면이 꺼짐
-const STEP = 0.25;         // 틱 간격(초). 고밀도 조건에서 초당 2회 이상 렌더되도록.
-/* 영상 앞부분 자르기. 0~1.5초는 손을 내려놓고 가만히 있는 장면이라 '방송을 막 켰다'로
-   읽힙니다. 말랑이를 집어 드는 1.5초부터 틀어 이미 진행 중인 방송에 들어온 것처럼 둡니다.
-   모든 시각 상수(CUES·투표·잠금 등)는 영상 원본 시각 그대로이며, 이 값만큼 늦게 시작할 뿐입니다. */
-const VIDEO_TRIM = 1.5;
-/* 방송 경과 시간. 입장 순간(영상 VIDEO_TRIM초)에 3:31:26이고 영상과 함께 흐릅니다. */
+// Verified against the H.264 stream.mp4 (English trip recap, one poll).
+const SPAN = 266.681458;
+const OUTRO_AT = 250.5;
+const END_AT = SPAN;
+const STEP = 0.25;
+const VIDEO_TRIM = 0;
+/* Simulated broadcast uptime at entry, independent of the clip duration. */
 const UPTIME_AT_ENTRY = 3 * 3600 + 31 * 60 + 26;
 /* 입장 직후 버퍼링(ms). 실제 라이브에 들어갈 때처럼 잠깐 검은 화면에 로딩이 돕니다. */
 const ENTRY_BUFFER_MS = 1800;
@@ -2386,7 +2596,7 @@ let viewerSeq = [], viewersShown = null;
 function buildViewerSeq(){
   const rnd = mulberry32(cond.seed * 6007 + cond.viewers);
   viewerSeq = [cond.viewers];
-  for (let i = 0; i < 13; i++){          // 13번 × 40초 = 520초 > 영상 470초
+  for (let i = 0; i < Math.ceil(SPAN / VIEWER_STEP_SEC) + 1; i++){          // Cover the complete current clip.
     const prev = viewerSeq[viewerSeq.length - 1];
     const d = (rnd() < 0.5 ? 3 : 4) * (rnd() < 0.5 ? -1 : 1);
     const next = Math.abs(prev + d - cond.viewers) > 8 ? prev - d : prev + d;
@@ -2409,7 +2619,7 @@ function renderUptime(t){
   const u = UPTIME_AT_ENTRY + Math.max(0, Math.floor(t - VIDEO_TRIM));
   const p2 = n => String(n).padStart(2, '0');
   $('uptime').textContent =
-    `${p2(Math.floor(u / 3600))}:${p2(Math.floor(u / 60) % 60)}:${p2(u % 60)} 스트리밍 중`;
+    `${p2(Math.floor(u / 3600))}:${p2(Math.floor(u / 60) % 60)}:${p2(u % 60)} live`;
 }
 const ctx = {lastUserMessage: null};
 let source = null, ident = null, timer = null, tick = 0, entered = false;
@@ -2440,7 +2650,7 @@ function loop(){
     Logger.add('viewers_shown', {n: vn, at_sec: +tick.toFixed(2)});
   }
 
-  // 투표마다: 예고 → 채팅 잠금 → 투표 카드 → 카운트다운 → 마감 → 결과와 함께 채팅 해제 → 결과 내림
+  // 투표마다: 예고 → 채팅 잠금 → 투표 카드 → 카운트다운 → Closed → 결과와 함께 채팅 해제 → 결과 내림
   POLLS.forEach((d, i) => {
     const p = PS[i];
     if (!p.announced && tick >= d.announce){
@@ -2452,7 +2662,7 @@ function loop(){
     if (p.shown && !p.closed) tickTimer(i);
     if (!p.closed && tick >= d.close) closePoll(i);
     if (!p.resultShown && tick >= d.result) unlockChat(i);
-    if (p.resultShown && !p.resultHidden && tick >= d.hide) hideResult(i);
+    if (p.resultShown && !p.resultHidden && d.hide !== null && tick >= d.hide) hideResult(i);
   });
   if (!outroed && tick >= OUTRO_AT) startOutro();
   // 잠긴 동안 나왔어야 할 반응은 버립니다 — 해제 순간 한꺼번에 쏟아지지 않게
@@ -2467,10 +2677,10 @@ function loop(){
     const i = PS.findIndex(p => p.locked && !p.resultShown);
     if (i >= 0 && PS[i].closed){
       const left = Math.max(0, Math.ceil(POLLS[i].result - tick));
-      setLockMsg(left > 0 ? `채팅이 열리기까지 ${left}초` : '채팅이 열립니다');
+      setLockMsg(left > 0 ? `Chat reopens in ${left}s` : 'Chat is reopening');
     }
   }
-  if (!chatOpen) return;                    // 잠긴 동안 채팅 시계를 세우지 않음
+  if (!chatOpen || outroed) return;
   // 채팅 시계는 잠금이 풀린 뒤부터 흐릅니다. 영상 시각(tick)을 그대로 쓰면
   // 잠금 구간에 쌓인 메시지가 해제 순간 한꺼번에 쏟아집니다 — 5,000명 조건이면
   // 수백 건이 동시에 터집니다.
@@ -2483,7 +2693,7 @@ function loop(){
   const post = a >= 0;
   for (const raw of source.next(chatT)){
     /* 절반 일치 조건은 투표마다 일치·불일치를 번갈아 내보냅니다. 미리 섞어 둔 슬롯을
-       그대로 쓰면 투표 1·2로 나뉘면서 한쪽으로 몇 개씩 기울어(예: 17 대 22), 화면에 오른
+       그대로 쓰면 실제 노출 구간에서 한쪽으로 기울 수 있으므로, 화면에 오른
        입장 발화가 항상 반반(많아야 1개 차이)이 되도록 표시 순서대로 정합니다.
        첫 줄이 일치인지 불일치인지는 시드와 투표 번호로 정합니다.
        혼합 조건은 AI 줄과 사람 줄을 따로 번갈아서, 정체성마다 일치·불일치가 반반이 되게 합니다.
@@ -2533,7 +2743,7 @@ const DEDUP_WINDOW = 30;
 const recentTexts = [];
 const lastUse = new Map();
 let useN = 0, dedupRnd = mulberry32(1601);
-const isShortReact = t => REACTIONS.includes(t) || /^[ㄱ-ㅎㅏ-ㅣ\s!?.~]+$/.test(t);
+const isShortReact = t => REACTIONS.includes(t);
 function isRecentDup(t){ return !isShortReact(t) && recentTexts.includes(t); }
 function noteText(t){
   if (!t || isShortReact(t)) return;
@@ -2594,8 +2804,8 @@ function playVideo(){
       if (videoFails >= VIDEO_FAIL_MAX && cond.panel_id && RETURN_STATUS.out) $('videoOut').hidden = false;
     }
     $('videoRetry').textContent = $('streamVideo').error
-      ? '\uC601\uC0C1\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. stream.mp4 \uD655\uC778 \uD6C4 \uB2E4\uC2DC \uC7AC\uC0DD'
-      : '\uC601\uC0C1 \uC7AC\uC0DD\uD558\uAE30';
+      ? 'Unable to load the video. Click to retry.'
+      : 'Play video';
     $('videoRetry').hidden = false;
   });
 }
@@ -2677,7 +2887,7 @@ const LiveGuard = (() => {
 })();
 
 /* 숫자에 천 단위 구분 */
-const fmt = n => n.toLocaleString('ko-KR');
+const fmt = n => n.toLocaleString('en-US');
 
 function enter(){
   if (entered) return;
@@ -2707,7 +2917,7 @@ function enter(){
   Logger.add('ai_allocation', ident.actual);
   Logger.add('stance_slots', {congruence: cond.cong, ...source.slots});
   Renderer.clear();
-  tick = VIDEO_TRIM; chatT = 0;           // 첫 틱에 잘라낸 3초가 채팅 시계로 몰리지 않게
+  tick = VIDEO_TRIM; chatT = 0;           // Initialize video and paused-chat clocks together.
   /* 참가자는 방송 도중에 들어온 것으로 둡니다. 들어온 순간 채팅창에는
      이미 지나간 대화가 쌓여 있고, 바닥으로 스크롤된 상태입니다.
      빈 채팅창으로 시작하면 "내가 1번 시청자"처럼 읽혀 규모 조작과 어긋납니다. */
@@ -2744,9 +2954,9 @@ function buildCues(){
 /* 종료 후 추천 영상. 클릭해도 이동하지 않고 클릭 사실만 남깁니다 —
    자극물 밖으로 나가면 이후 행동을 못 봅니다. */
 const END_VIDEOS = [
-  {t: '나랑 수다 떨자',      v: '12만 회',  ago: '2일 전', d: '2:41:05'},
-  {t: '오늘은 조용히 저챗',   v: '8.7만 회', ago: '5일 전', d: '1:58:22'},
-  {t: '말랑이 만들기 2탄',    v: '31만 회',  ago: '9일 전', d: '3:07:14'}
+  {t: 'just hanging out',      v: '120K',  ago: '2 days ago', d: '2:41:05'},
+  {t: 'a quiet night in',   v: '87K', ago: '5 days ago', d: '1:58:22'},
+  {t: 'weekend recap & chill',    v: '310K',  ago: '9 days ago', d: '3:07:14'}
 ];
 function renderEndCard(){
   const g = $('ecGrid'); g.innerHTML = '';
@@ -2757,16 +2967,16 @@ function renderEndCard(){
     /* AI 조건에서는 지난 방송 카드에도 같은 표시를 답니다. 이 방송에만 AI가
        있었던 것처럼 읽히면, 참가자가 AI를 이번 회차의 특별한 사건으로 받아들입니다.
        사람 조건에서는 아무것도 붙지 않습니다 — 조건 간 차이는 이 표시 하나입니다. */
-    const aiTag = cond.label === 'mixed' ? '<span class="ec-ai">AI 시청자</span>' : '';
+    const aiTag = cond.label === 'mixed' ? '<span class="ec-ai">AI viewer</span>' : '';
     el.innerHTML = `<span class="ec-thumb" data-d="${v.d || '1:12:40'}"></span>
       <span class="ec-t">${v.t}</span>
-      <span class="ec-v">조회수 ${v.v} · ${v.ago}</span>${aiTag}`;
+      <span class="ec-v">${v.v} views · ${v.ago}</span>${aiTag}`;
     el.addEventListener('click', () => {
       el.style.outline = '2px solid var(--accent)';
       Logger.add('next_video_click', {index: i, title: v.t, at_sec: +tick.toFixed(2)});
       /* 눌러도 아무 반응이 없으면 고장으로 알고 연타합니다. 짧게 알려 줍니다. */
       const n = $('ecNote');
-      n.textContent = '지금은 볼 수 없는 영상입니다.';
+      n.textContent = 'This video is currently unavailable.';
       n.hidden = false;
       clearTimeout(n._t);
       n._t = setTimeout(() => { n.hidden = true; }, 3000);
@@ -2800,7 +3010,7 @@ function startOutro(){
 }
 
 /* 방송 종료. 화면이 꺼지고 그 자리에 추천이 뜹니다.
-   참가자는 여기서 구독하거나 다음 영상을 누르거나, 그냥 나갈 수 있습니다. */
+   참가자는 여기서 Subscribe하거나 다음 영상을 누르거나, 그냥 나갈 수 있습니다. */
 function endStream(){
   $('streamVideo').pause();
   $('videoRetry').hidden = true;
@@ -2808,18 +3018,19 @@ function endStream(){
   ended = true;
   endedAt = performance.now();
   clearInterval(timer);
+  PS.forEach((p, i) => { if (p.resultShown && !p.resultHidden) hideResult(i); });
   Logger.add('stream_ended', {at_sec: +tick.toFixed(2)});
   $('player').classList.add('off');
   renderEndCard();
   $('poll').hidden = true;                  // 투표 카드가 종료 화면 뒤에 비쳐 보이지 않게
   $('endCard').hidden = false;
-  $('endSub').textContent = subscribed ? '구독중' : '구독하기';
+  $('endSub').textContent = subscribed ? 'Subscribed' : 'Subscribe';
   $('endSub').setAttribute('aria-pressed', String(subscribed));
   /* 채팅은 그대로 둡니다 — 실제 플랫폼도 방송이 끝나면 채팅창이 남습니다.
      입력만 막고, 지나간 대화는 계속 읽고 드래그할 수 있습니다. */
   $('inputRow').hidden = true;
   $('inputOff').hidden = false;
-  $('inputOff').textContent = '방송이 종료되어 채팅을 보낼 수 없습니다.';
+  $('inputOff').textContent = 'The stream has ended. Chat is now closed.';
   $('leave').hidden = false;               // 방송 중에는 숨겨 둔 종료 버튼
 }
 
@@ -2881,7 +3092,7 @@ function introGo(){
   if (bad){
     el.classList.add('bad');
     $('idNote').textContent = v.includes('@')
-      ? '이메일 주소를 다시 확인해주세요.' : '코드 또는 이메일 주소를 입력해주세요.';
+      ? 'Please check your email address.' : 'Enter your participant code or email address.';
     $('idNote').classList.add('bad');
     el.focus();
     return;
@@ -2912,8 +3123,8 @@ function setReact(v){
    안 되므로, 해제는 투표 시점이 아니라 스트리머가 결과를 여는 시각에 일어납니다.
    빨리 투표한 사람이 채팅을 더 오래 보는 일이 없습니다.
 
-   투표 결과의 표 수. 비율(%)은 띄우지 않고 사람 수만 보여 줍니다.
-   채팅 일치도 조건(cong)과 같게 둡니다(두 투표 모두).
+   결과 수치는 분석용으로만 계산하고, 화면에는 막대 길이로만 표시합니다.
+   채팅 일치도 조건(cong)과 같게 둡니다.
      all   내가 고른 쪽이 전체, 다른 쪽 0명
      none  내가 고른 쪽은 나 1명, 다른 쪽이 전체 - 1
      half  정확히 50:50(참여 인원을 짝수로 맞춤)
@@ -2923,7 +3134,8 @@ function setReact(v){
 const newPollState = () => ({
   announced: false, locked: false, shown: false, closed: false,
   resultShown: false, resultHidden: false, result: null,
-  vote: null, voteAt: null, voteLocked: false,
+  vote: null, voteAt: null, voteLocked: false, draftChoice: null,
+  confidence: null, confidenceAt: null,
   clicks: 0, firstVote: null, firstVoteAt: null,
   hover: {}, hoverN: {}, hoverIn: {},          // 선택지별 커서 체류 합계·횟수·진행 중인 호버
   lockedAt: null, unlockAt: null,
@@ -2963,10 +3175,10 @@ function lockChat(i){
   const p = PS[i];
   p.locked = true;
   p.lockedAt = +tick.toFixed(2);
-  pushDivider('채팅이 잠겼습니다');
+  pushDivider('Chat paused');
   chatOpen = false;
   showFeed(false);
-  setLockMsg('투표가 끝나면 채팅이 열립니다');
+  setLockMsg('Chat will reopen after the poll');
   $('inputRow').hidden = true;
   $('inputOff').hidden = true;
   Logger.add('chat_locked', {poll: i + 1, at_sec: p.lockedAt});
@@ -2989,10 +3201,8 @@ function unlockChat(i){
   chatOpen = true;
   p.unlockAt = +tick.toFixed(2);
   showFeed(true);
-  pushDivider('채팅이 열렸습니다');
-  const [k1, k2] = d.order;
-  Renderer.push({kind: 'sys', text:
-    `투표 결과 · ${d[k1].label} ${fmt(p.result[k1])}명 / ${d[k2].label} ${fmt(p.result[k2])}명`});
+  pushDivider('Chat resumed');
+  Renderer.push({kind: 'sys', text: 'Poll results are in. Chat is open again.'});
   feed.scrollTop = feed.scrollHeight;
   // 줄이 들어오는 애니메이션이 끝나면 높이가 조금 더 늘어납니다 — 그 뒤 한 번 더
   requestAnimationFrame(() => { feed.scrollTop = feed.scrollHeight; });
@@ -3003,26 +3213,32 @@ function unlockChat(i){
   Logger.add('chat_unlocked', {poll: i + 1, at_sec: p.unlockAt, scheduled_at: d.result});
 }
 
-/* 마감. 이유를 쓰다 만 상태면 적힌 만큼 자동 제출하고 투표를 확정합니다 —
-   제출을 기다리면 결과 공개가 사람마다 달라집니다. 고르지 않았으면 미참여로 남깁니다. */
+/* At the fixed deadline, auto-submit only complete choice + confidence pairs. */
 function closePoll(i){
   const p = PS[i];
   if (p.closed) return;
   if (!p.shown) showPoll(i);
   endHover(i, 'A'); endHover(i, 'B');
   p.closed = true;
-  if (p.vote && cond.why === 'on' && cur === i && !$('pollWhy').hidden) submitWhy(i, true);
-  if (p.vote && !p.voteLocked) lockVote(i);
+  if (p.vote && !p.voteLocked){
+    if (p.confidence !== null) lockVote(i, true);
+    else {
+      p.draftChoice = p.vote;
+      Logger.add('vote_incomplete', {poll:i + 1, choice:p.vote, confidence:null, at_sec:+tick.toFixed(2)});
+      p.vote = null;
+      $('pollMine').textContent = 'Vote not submitted: confidence rating missing.';
+    }
+  }
   if (cur === i){
-    $('pollWhy').hidden = true;
+    $('pollConfidence').hidden = true;
     document.querySelectorAll('#pollOpts button').forEach(b => { b.disabled = true; });
-    $('pollTimer').textContent = '마감';
+    $('pollTimer').textContent = 'Closed';
   }
   Logger.add('poll_closed', {poll: i + 1, at_sec: +tick.toFixed(2), voted: p.vote !== null});
   if (!p.vote) Logger.add('poll_missed', {poll: i + 1, at_sec: +tick.toFixed(2)});
 }
 
-/* 결과 공개. 투표 카드의 선택지 자리에 표 수를 띄웁니다. */
+/* Reveal proportions visually; do not expose precise result values in UI text. */
 function showResult(i){
   const p = PS[i], d = POLLS[i];
   if (p.resultShown) return;
@@ -3051,21 +3267,20 @@ function showResult(i){
   d.order.forEach(k => {
     const row = document.createElement('div');
     row.className = 'row' + (p.vote === k ? ' mine' : '');
-    row.innerHTML = `<span class="bar" style="width:${(p.result[k] / total * 100).toFixed(1)}%"></span>
-      <span class="ln"><span class="lb"></span>${p.vote === k ? '<span class="mine-tag">✓ 내 선택</span>' : ''}
-      <span class="n">${fmt(p.result[k])}<small> / ${fmt(total)}명</small></span></span>`;
+    row.innerHTML = `<span class="bar" aria-hidden="true" style="width:${(p.result[k] / total * 100).toFixed(1)}%"></span>
+      <span class="ln"><span class="lb"></span>${p.vote === k ? '<span class="mine-tag">✓ Your choice</span>' : ''}</span>`;
     row.querySelector('.lb').textContent = d[k].label;
     box.appendChild(row);
   });
   $('pollQ').textContent = d.q;
   $('poll').hidden = false;
   $('pollOpts').hidden = true;
-  $('pollWhy').hidden = true;
+  $('pollConfidence').hidden = true;
   $('pollMine').hidden = !p.vote;
-  if (p.vote) $('pollMine').textContent = `내 선택: ${d[p.vote].label}`;
+  if (p.vote) $('pollMine').textContent = `Your choice: ${d[p.vote].label}`;
   box.hidden = false;
-  $('pollTimer').textContent = `총 ${fmt(total)}명 참여`;
-  $('poll').querySelector('.poll-tag').textContent = '투표 결과';
+  $('pollTimer').textContent = '';
+  $('poll').querySelector('.poll-tag').textContent = 'Poll results';
   Logger.add('poll_result_shown', {
     poll: i + 1, at_sec: +tick.toFixed(2), A: p.result.A, B: p.result.B, total,
     mine: p.vote, mine_share: p.vote ? +(p.result[p.vote] / total).toFixed(3) : null
@@ -3073,21 +3288,20 @@ function showResult(i){
 }
 
 function hideResult(i){
+  if (PS[i].resultHidden) return;
   PS[i].resultHidden = true;
   if (cur === i) $('poll').hidden = true;
   Logger.add('poll_result_hidden', {poll: i + 1, at_sec: +tick.toFixed(2)});
 }
 
-/* 투표 카운트다운. 스트리머가 "5, 4, 3, 2, 1"을 세는 말에 맞춰 남은 시간을 줄입니다.
-   그 전에는 마감 시각이 정해지지 않은 투표입니다(영상에서도 그렇습니다).
-   남은 시간을 붉게 띄우는 연출은 두지 않습니다 — 투표까지의 시간을 DV로 쓰는데
-   마감 압박이 들어가면 그 분포가 조건이 아니라 연출 때문에 눌립니다. */
+/* The streamer says "ten more seconds" once. Count down to the fixed close,
+   without an invented spoken 5-to-1 countdown. */
 function tickTimer(i){
   if (cur !== i) return;
   const d = POLLS[i];
-  const said = d.count.filter(t => tick >= t).length;
-  if (!said) return;
-  $('pollTimer').textContent = tick >= d.close ? '마감' : `${6 - said}초 남음`;
+  if (tick < d.countdown) return;
+  const left = Math.min(d.countdownSeconds, Math.max(0, Math.ceil(d.close - tick)));
+  $('pollTimer').textContent = left ? `${left}s left` : 'Closed';
 }
 
 function showPoll(i){
@@ -3096,15 +3310,15 @@ function showPoll(i){
   cur = i;
   const el = $('poll');
   el.hidden = false;
-  el.querySelector('.poll-tag').textContent = '투표';
+  el.querySelector('.poll-tag').textContent = 'Poll';
   $('pollQ').textContent = d.q;
   $('pollRes').hidden = true;
   $('pollRes').innerHTML = '';
   $('pollMine').hidden = true;
-  $('pollWhy').hidden = true;
-  $('whyText').value = '';
-  $('whyNote').textContent = '';
-  $('whyNote').classList.remove('bad');
+  $('pollConfidence').hidden = true;
+  $('confidenceNote').textContent = 'Choose a number from 1 to 7 to submit your vote.';
+  $('confidenceNote').classList.remove('bad');
+  document.querySelectorAll('input[name=confidence]').forEach(el => { el.checked = false; el.disabled = false; });
   $('pollTimer').textContent = '';
   const box = $('pollOpts');
   box.hidden = false;
@@ -3118,7 +3332,7 @@ function showPoll(i){
     b.textContent = d[k].label;
     /* 선택지 위에 커서를 올린 시간. 두 선택지를 오가며 재는 행동이 그대로 남습니다.
        주의: 체류 시간을 '숙고'로 읽지 않습니다 — 갈등 지표로만 씁니다.
-       확정·마감 뒤에는 재지 않습니다. 버튼이 꺼진 뒤 커서가 그냥 놓여 있던 시간이
+       확정·Closed 뒤에는 재지 않습니다. 버튼이 꺼진 뒤 커서가 그냥 놓여 있던 시간이
        '들여다본 시간'으로 합산되면 안 됩니다(파일럿: 확정 후 19.6초가 반대쪽에 쌓임). */
     b.addEventListener('mouseenter', () => {
       if (p.voteLocked || p.closed) return;
@@ -3131,11 +3345,9 @@ function showPoll(i){
   Logger.add('poll_shown', {poll: i + 1, at_sec: +tick.toFixed(2), close_at: d.close});
 }
 
-/* 투표는 '보내기' 전까지 바꿀 수 있습니다. 바꾼 이력이 그대로 남습니다 —
-   한 번에 고른 사람과 왔다갔다한 사람은 다른 참가자입니다.
-   확정은 이유를 제출하는 순간입니다. */
+/* A draft choice can change until the participant submits both choice and confidence. */
 
-/* 진행 중인 호버를 끝내고 기록합니다. 마우스가 나갈 때, 그리고 확정·마감 순간에
+/* 진행 중인 호버를 끝내고 기록합니다. 마우스가 나갈 때, 그리고 확정·Closed 순간에
    부릅니다 — 확정 순간까지만 셉니다. */
 function endHover(i, k){
   const p = PS[i];
@@ -3166,36 +3378,40 @@ function castVote(i, k){
   document.querySelectorAll('#pollOpts button').forEach(b =>
     b.setAttribute('aria-pressed', String(b.dataset.v === k)));
   $('pollOpts').classList.add('picked');
-  $('pollMine').textContent = `내 선택: ${d[k].label}`;
+  $('pollMine').textContent = `Your choice: ${d[k].label}`;
   $('pollMine').hidden = false;
 
-  if (tick < d.count[0]) $('pollTimer').textContent = '선택함';
+  if (tick < d.countdown) $('pollTimer').textContent = 'Selected';
 
   Logger.add('vote_click', {
     poll: i + 1, choice: k, label: d[k].label, from: prev,
     changed: prev !== null, seq: p.clicks, at_sec: +tick.toFixed(2)
   });
 
-  if (cond.why === 'on'){
-    $('pollWhy').hidden = false;
-    $('whyText').focus();
-  } else {
-    lockVote(i);
-  }
+  // A confidence rating belongs to the selected answer. Changing it requires a new rating.
+  p.confidence = null; p.confidenceAt = null;
+  document.querySelectorAll('input[name=confidence]').forEach(el => { el.checked = false; });
+  $('pollConfidence').hidden = false;
+  $('confidenceNote').textContent = 'Choose a number from 1 to 7 to submit your vote.';
+  $('confidenceNote').classList.remove('bad');
+
 }
 
-/* 확정. 이유를 보낸 시점(또는 이유를 안 받는 조건에서는 투표 시점)에 걸립니다. */
-function lockVote(i){
+/* Commit a complete response; the confidence rating stays private. */
+function lockVote(i, auto = false){
   const p = PS[i], d = POLLS[i];
-  if (p.voteLocked) return;
+  if (p.voteLocked || !p.vote || !Number.isInteger(p.confidence) || p.confidence < 1 || p.confidence > 7) return;
   endHover(i, 'A'); endHover(i, 'B');       // 확정 직전까지만 셉니다
   p.voteLocked = true;
   if (cur === i){
     document.querySelectorAll('#pollOpts button').forEach(b => { b.disabled = true; });
-    if (tick < d.count[0]) $('pollTimer').textContent = '투표함';
+    if (tick < d.countdown) $('pollTimer').textContent = 'Vote submitted';
+    $('pollConfidence').hidden = true;
+    $('pollMine').textContent = `Your choice: ${d[p.vote].label} · Confidence: ${p.confidence}/7`;
   }
+  Logger.add('vote_confidence', {poll:i + 1, choice:p.vote, value:p.confidence, auto, at_sec:+tick.toFixed(2)});
   Logger.add('vote', {
-    poll: i + 1, choice: p.vote, label: d[p.vote].label,
+    poll: i + 1, choice: p.vote, label: d[p.vote].label, confidence: p.confidence, auto,
     at_sec: +tick.toFixed(2),
     first_choice: p.firstVote,
     first_at_sec: p.firstVoteAt === null ? null : +p.firstVoteAt.toFixed(2),
@@ -3207,43 +3423,29 @@ function lockVote(i){
   });
 }
 
-/* auto=true는 마감 시각이 되어 자동 제출된 경우입니다. */
-function submitWhy(i, auto){
-  const el = $('whyText');
-  const v = el.value.trim();
-  /* 이유는 선택입니다. 영상에서 스트리머가 "쓰실 수도 있고 안 쓰실 수도 있어요,
-     원하시면 써주세요"라고 안내하므로, 비워 둔 채 '보내기'를 눌러도 투표가 확정됩니다
-     (vote_reason의 text: null, auto: false로 남아 '안 쓰기로 함'과 '마감에 걸림'이 구분됩니다). */
-  $('pollWhy').hidden = true;
-  if (v){
-    /* 투표 때 적은 이유는 채팅창에 띄우지 않습니다. 세 가지가 걸립니다.
-       ① 측정 — 이 값은 '노출 전 사적 입장'입니다. 채팅에 올라가면 공적 발화가 되어
-          해제 뒤 채팅(user_comment)과 구분이 사라지고, 사적 투표·공적 발화·사후 설문
-          삼중 대조가 성립하지 않습니다.
-       ② 조작 — 지금은 채팅이 잠긴 구간입니다. 내 글만 올라가면 설정이 깨집니다.
-       ③ 자기 일관성 — 자기 입장을 공개로 박아 두면 이후 노출에 따른 의견 변화가
-          억제됩니다. 그 변화가 이 연구의 핵심 종속변수입니다. */
-    Logger.add('vote_reason', {poll: i + 1, text: v, length: v.length, auto: !!auto,
-                               at_sec: +tick.toFixed(2)});
-  } else {
-    Logger.add('vote_reason', {poll: i + 1, text: null, length: 0, auto: !!auto});
-  }
-  return true;
+function setConfidence(value){
+  const p = PS[cur];
+  if (!p.vote || p.voteLocked || p.closed) return;
+  const previous = p.confidence;
+  p.confidence = value;
+  p.confidenceAt = tick;
+  $('confidenceNote').textContent = 'Ready to submit. You can change your answer before submitting.';
+  $('confidenceNote').classList.remove('bad');
+  Logger.add('confidence_click', {poll:cur + 1, choice:p.vote, value, previous, at_sec:+tick.toFixed(2)});
 }
 
-function sendWhy(){
-  const i = cur, p = PS[i];
-  if (!p.vote){
-    $('whyNote').textContent = '먼저 위에서 하나를 골라주세요.';
-    $('whyNote').classList.add('bad');
+function submitVote(){
+  const p = PS[cur];
+  if (p.closed || p.voteLocked) return;
+  if (!p.vote || p.confidence === null){
+    $('confidenceNote').textContent = !p.vote ? 'Choose an answer above first.' : 'Choose a confidence rating from 1 to 7.';
+    $('confidenceNote').classList.add('bad');
     return;
   }
-  if (!submitWhy(i, false)) return;
-  lockVote(i);
+  lockVote(cur);
 }
 
-/* 채팅에 실제로 노출된 시간. 결과 1 공개 ~ 투표 2 잠금, 결과 2 공개 ~ 지금.
-   해제·잠금이 고정 시각이므로 끝까지 본 사람은 전원 같습니다. */
+/* Post-poll chat exposure, measured from the fixed result reveal. */
 function chatExposureSec(){
   let s = 0;
   PS.forEach((p, i) => {
@@ -3255,19 +3457,19 @@ function chatExposureSec(){
   return +s.toFixed(2);
 }
 
-/* 구독. 토글이며 취소도 그대로 남깁니다 — 누른 뒤 무른 것과 안 누른 것은 다른 행동입니다. */
+/* Subscribe. 토글이며 취소도 그대로 남깁니다 — 누른 뒤 무른 것과 안 누른 것은 다른 행동입니다. */
 let subscribed = false;
 function toggleSub(where){
   subscribed = !subscribed;
   $('subBtn').setAttribute('aria-pressed', String(subscribed));
-  $('subBtn').textContent = subscribed ? '구독중' : '구독';
+  $('subBtn').textContent = subscribed ? 'Subscribed' : 'Subscribe';
   $('endSub').setAttribute('aria-pressed', String(subscribed));
-  $('endSub').textContent = subscribed ? '구독중' : '구독하기';
+  $('endSub').textContent = subscribed ? 'Subscribed' : 'Subscribe';
   // 어디서 눌렀는지가 중요합니다 — 보는 중에 누른 것과 떠날 때 누른 것은 다른 행동입니다
   Logger.add('subscribe', {on: subscribed, where, at_sec: +tick.toFixed(2)});
 }
 
-/* 참여 종료하기를 누르지 않고 창을 닫아도 종료 요약은 남깁니다(via: 'closed').
+/* Finish participation를 누르지 않고 창을 닫아도 종료 요약은 남깁니다(via: 'closed').
    via로 정상 종료와 구분합니다. */
 let left = false;
 function leaveSummary(via){
@@ -3296,17 +3498,21 @@ function leaveSummary(via){
     user_cards: Object.fromEntries(
       Object.entries(userStats).filter(([, v]) => v.opens > 0)
         .map(([k, v]) => [k, v.opens])),
-    // 투표별 요약(1: 고릴라, 2: 10년 애인). 선택지별 커서 체류 — 어느 쪽을 더 들여다봤는지
+    // Summary for the single poll, including submitted confidence and draft-only choices.
     polls: PS.map((p, i) => ({
       poll: i + 1,
-      vote: p.vote,
-      label: p.vote ? POLLS[i][p.vote].label : null,
+      vote: p.voteLocked ? p.vote : null,
+      confidence: p.voteLocked ? p.confidence : null,
+      confidence_at_sec: p.confidenceAt,
+      submitted: p.voteLocked,
+      draft_choice: p.voteLocked ? null : (p.draftChoice || p.vote),
+      label: p.voteLocked ? POLLS[i][p.vote].label : null,
       first_choice: p.firstVote,
-      changed: p.firstVote !== null && p.firstVote !== p.vote,
+      changed: p.firstVote !== null && p.firstVote !== (p.vote || p.draftChoice),
       clicks: p.clicks,
       option_hover_ms: {...p.hover},
       option_hover_n: {...p.hoverN},
-      vote_at_sec: p.voteAt === null ? null : +p.voteAt.toFixed(2),
+      vote_at_sec: p.voteLocked && p.voteAt !== null ? +p.voteAt.toFixed(2) : null,
       unlock_at_sec: p.unlockAt,
       shown_congruent: p.shownCong,
       shown_incongruent: p.shownIncong,
@@ -3314,12 +3520,12 @@ function leaveSummary(via){
       shown_congruence_ratio: (p.shownCong + p.shownIncong)
         ? +(p.shownCong / (p.shownCong + p.shownIncong) * 100).toFixed(1) : null
     })),
-    vote: PS[0].vote,                       // 요약 뷰에서 바로 쓰기 위한 사본
-    vote2: PS[1].vote,
+    confidence: PS[0].voteLocked ? PS[0].confidence : null,
+    vote: PS[0].voteLocked ? PS[0].vote : null,
     // 채팅에 실제로 노출된 시간 — 해제·잠금이 고정 시각이므로 끝까지 본 사람은 전원 동일
     chat_exposure_sec: chatExposureSec(),
     congruence: cond.cong,
-    // 두 투표를 합친 값. 투표별 값은 polls[].shown_* 에 있습니다.
+    // Aggregate stance exposure; per-poll fields are in polls[].shown_*.
     shown_congruent: PS.reduce((a, p) => a + p.shownCong, 0),
     shown_incongruent: PS.reduce((a, p) => a + p.shownIncong, 0),
     // 체류 중 실제로 본 입장 발화 중 참가자와 일치한 비율 — 분석에 쓸 값
@@ -3362,28 +3568,28 @@ function leave(via){
   watch.classList.remove('on');
   done.classList.add('on');
   $('doneTitle').textContent = status === 'out'
-    ? '영상을 재생할 수 없어 참여를 종료합니다' : '참여가 완료되었습니다';
+    ? 'End participation: video unavailable' : 'Your participation is complete';
   $('logbox').value = Logger.dump();
   const debug = new URLSearchParams(location.search).get('debug') === '1';
   $('doneDebug').hidden = Sink.enabled() && !debug;
   $('sinkNote').textContent = back && !debug
-    ? '응답을 저장하고 있습니다. 잠시 후 자동으로 이동합니다.'
+    ? 'Saving your responses. You will be redirected shortly.'
     : Sink.enabled()
-      ? (debug ? '서버로 보내는 중…' : '응답이 저장되었습니다. 이제 창을 닫으셔도 됩니다.')
-      : '서버 설정이 비어 있어 로컬에만 쌓였습니다. 아래에서 JSON으로 내려받으세요.';
+      ? (debug ? 'Saving responses…' : 'Your responses have been saved. You may now close this window.')
+      : 'Logging is local only. Download your session as JSON below.';
   /* 세션 종료 시점에 남은 이벤트를 전부 밀어 넣고, debug면 실제 결과를 보여 줍니다. */
   const flushed = Sink.flush(true).then(() => {
     if (!Sink.enabled() || !debug) return;
     const st = Sink.status();
     $('sinkNote').textContent = (st.fail === 0 && st.pending === 0)
-      ? `서버 전송 성공 · 이벤트 ${st.events_ok}건 / 로그 ${Logger.ev.length}건 · session_id: ${Sink.id()}`
-      : `서버 전송 실패 ${st.fail}회, 브라우저에 남은 묶음 ${st.pending}개 · 마지막 오류: ${st.last_error} · session_id: ${Sink.id()}`;
+      ? `Saved ${st.events_ok} events / ${Logger.ev.length} logged · session_id: ${Sink.id()}`
+      : `Save failures: ${st.fail} · pending batches: ${st.pending} · last error: ${st.last_error} · session_id: ${Sink.id()}`;
   });
   if (!back) return;
   /* 로그를 다 보낸 뒤 이동합니다. 먼저 이동하면 leave 요약이 유실될 수 있습니다.
      replace를 써서 뒤로가기로 자극물에 돌아오지 못하게 합니다. debug면 이동하지 않고 주소만 보여 줍니다. */
   $('returnLink').href = back;
-  $('returnLink').textContent = debug ? back : '자동으로 이동하지 않으면 여기를 눌러주세요';
+  $('returnLink').textContent = debug ? back : 'Click here if you are not redirected automatically';
   Promise.race([flushed, new Promise(r => setTimeout(r, RETURN_WAIT_MS))]).then(() => {
     $('returnLink').hidden = false;
     if (!debug) location.replace(back);
@@ -3394,7 +3600,7 @@ function send(){
   const el = $('say');
   const v = el.value.trim();
   if (!v) return;
-  Renderer.push({kind: 'me', name: '나', text: v});
+  Renderer.push({kind: 'me', name: 'You', text: v});
   Logger.add('user_comment', {text: v});
   ctx.lastUserMessage = v;
   el.value = '';
@@ -3419,16 +3625,15 @@ function restart(){
   ctx.lastUserMessage = null;
   Renderer.clear();
   $('poll').hidden = true;
-  $('pollWhy').hidden = true;
+  $('pollConfidence').hidden = true;
   $('pollRes').hidden = true;
   $('pollRes').innerHTML = '';
   $('pollOpts').hidden = false;
   $('pollOpts').classList.remove('picked');
   $('pollMine').hidden = true;
-  $('whyText').value = '';
-  $('whyNote').textContent = '';
+  $('confidenceNote').textContent = 'Choose a number from 1 to 7 to submit your vote.';
   $('pollTimer').textContent = '';
-  setLockMsg('투표가 끝나면 채팅이 열립니다');
+  setLockMsg('Chat will reopen after the poll');
   showFeed(true);
   $('intro').classList.remove('on');
   $('siteBar').style.display = '';
@@ -3442,13 +3647,13 @@ function restart(){
   $('player').classList.remove('off');
   $('endCard').hidden = true;
   $('ecNote').hidden = true;
-  $('inputOff').textContent = '이 방송은 채팅 입력이 제한되어 있습니다.';
+  $('inputOff').textContent = 'Chat is disabled for this stream.';
   Object.assign(scrollStats, {up_events:0, max_depth_px:0, away_ms:0, reached_top:false});
   setChatPanel(CHAT_PANEL_DEFAULT);
   Object.assign(chatPanel, {n: 0, open_ms: 0, since: chatPanel.open ? performance.now() : 0});
   viewersShown = null;
   $('subBtn').setAttribute('aria-pressed', 'false');
-  $('subBtn').textContent = '구독';
+  $('subBtn').textContent = 'Subscribe';
   done.classList.remove('on');
   watch.classList.remove('on');
   Logger.start();
@@ -3456,7 +3661,7 @@ function restart(){
   $('streamTitle').textContent = STREAM_TITLE;
 
   if (cond.intro === 'on'){
-    showIntro();                       // 안내 → 시작하기 → 방송
+    showIntro();                       // 안내 → Start watching → 방송
   } else {
     enter();                           // 링크를 타고 바로 입장
   }
@@ -3464,14 +3669,12 @@ function restart(){
 /* ── 시작 ───────────────────────────────── */
 /* 첫 진입도 restart()를 거칩니다. 예전에는 renderBrowse()를 직접 불러서
    intro=on이어도 첫 화면에 안내 페이지가 안 떴습니다 — 조건을 바꾸거나
-   '다시 시작'을 눌러야 나왔습니다. 참가자에게는 첫 진입이 전부이므로
+   'Restart'을 눌러야 나왔습니다. 참가자에게는 첫 진입이 전부이므로
    부트 경로와 재시작 경로를 하나로 둡니다. */
 /* ── 배선 ───────────────────────────────── */
 $('introGo').addEventListener('click', introGo);
-$('whyText').addEventListener('input', () => {
-  $('whyText').classList.remove('bad');
-  $('whyNote').classList.remove('bad');
-  $('whyNote').textContent = '';
+document.querySelectorAll('input[name=confidence]').forEach(el => {
+  el.addEventListener('change', () => setConfidence(Number(el.value)));
 });
 $('pidEmail').addEventListener('keydown', e => { if (e.key === 'Enter') introGo(); });
 $('pidEmail').addEventListener('input', () => {
@@ -3480,7 +3683,7 @@ $('pidEmail').addEventListener('input', () => {
   $('idNote').textContent = '';
 });
 $('videoOut').addEventListener('click', () => leave('video_failed'));
-$('whySend').addEventListener('click', sendWhy);
+$('voteSubmit').addEventListener('click', submitVote);
 $('subBtn').addEventListener('click', () => toggleSub('header'));
 $('endSub').addEventListener('click', () => toggleSub('endcard'));
 $('reactUp').addEventListener('click', () => setReact('up'));
@@ -3498,9 +3701,9 @@ $('dlLog').addEventListener('click', () => {
   URL.revokeObjectURL(a.href);
 });
 $('copyLog').addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText($('logbox').value); $('copyLog').textContent = '복사됨'; }
+  try { await navigator.clipboard.writeText($('logbox').value); $('copyLog').textContent = 'Copied'; }
   catch { $('logbox').select(); }
-  setTimeout(() => { $('copyLog').textContent = '로그 복사'; }, 1500);
+  setTimeout(() => { $('copyLog').textContent = 'Copy log'; }, 1500);
 });
 
 initChatScroll();
@@ -3524,7 +3727,7 @@ initChatToggle();
 /* 테마 전환. 참가자가 바꾼 사실과 시각을 남깁니다. 입장할 때의 테마는 조건값(theme)입니다. */
 function syncThemeBtn(){
   const dark = document.documentElement.dataset.theme === 'dark';
-  $('themeBtn').setAttribute('aria-label', dark ? '화이트 테마로 바꾸기' : '다크 테마로 바꾸기');
+  $('themeBtn').setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
 }
 $('themeBtn').addEventListener('click', () => {
   const root = document.documentElement;

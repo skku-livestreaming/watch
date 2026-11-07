@@ -1,1 +1,5 @@
 .env
+.local-backups/
+.work-media/
+.work-tools/
+__pycache__/
