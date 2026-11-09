@@ -1578,6 +1578,30 @@ function resolveStance(m, poll, vote){
   return {text: pool[m.ri % pool.length], stance: side, ri: m.ri};
 }
 
+/* 한 화자가 결과 뒤에 양쪽을 다 말하면 입장을 번복하는 것처럼 보입니다. 입장 슬롯은 줄 단위로
+   번갈아 배정되므로(절반 조건, 미투표자) 이 줄의 화자가 이미 반대 입장을 말했다면,
+   같은 정체성 안에서 같은 입장을 말했거나 아직 입장을 말하지 않은 화자에게 줄을 넘깁니다.
+   입장 발화가 적은 화자를 먼저, 같으면 발화가 많은(앞 번호) 화자를 고릅니다.
+   정체성별 일치·불일치 개수는 그대로이므로 일치도·정체성 균형은 바뀌지 않습니다.
+   같은 정체성의 화자가 모두 반대 입장을 말한 경우(화자가 아주 적을 때)에만 원래 화자를 둡니다. */
+const stanceOf = new Map();       // 화자 번호 → 'A' | 'B'
+const stanceN = new Map();        // 화자 번호 → 입장 발화 수
+function stanceSpeaker(raw, side){
+  const roster = ident.roster, ci = raw.ci % roster.length;
+  let pick = ci;
+  if ((stanceOf.get(ci) || side) !== side){
+    let best = -1;
+    for (let i = 0; i < roster.length; i++){
+      if (roster[i].kind !== roster[ci].kind || (stanceOf.get(i) || side) !== side) continue;
+      if (best < 0 || (stanceN.get(i) || 0) < (stanceN.get(best) || 0)) best = i;
+    }
+    if (best >= 0) pick = best;
+  }
+  if (!stanceOf.has(pick)) stanceOf.set(pick, side);
+  stanceN.set(pick, (stanceN.get(pick) || 0) + 1);
+  return pick === ci ? raw : {...raw, ci: pick};
+}
+
 /* ── 3. 댓글 출처 (동일 인터페이스: next(t)) ── */
 function ScriptSource(c, rnd, span){
   const built = buildTimeline(c, rnd, span);
@@ -1829,10 +1853,6 @@ const CUES = [
   {
     "t": 87,
     "text": "the bird section is always huge"
-  },
-  {
-    "t": 99,
-    "text": "good stream today ❤️"
   },
   {
     "t": 104,
@@ -2888,7 +2908,7 @@ function loop(){
     let r = post ? resolveStance(src, POLLS[a], PS[a].vote) : {text: raw.text, stance: null};
     if (post) r = dedupResolve(raw, r, POLLS[a]);
     noteText(r.text);
-    const c = ident.assign(raw);
+    const c = ident.assign(r.stance ? stanceSpeaker(raw, r.stance) : raw);
     c.text = r.text;
     c.stance = r.stance;
     c.poll = r.stance ? a : null;
@@ -3825,6 +3845,7 @@ function restart(){
   entered = false; tick = 0; chatT = 0;
   shownTotal = 0; shownAI = 0;
   shownLines.length = 0;
+  stanceOf.clear(); stanceN.clear();
   chatOpen = true;
   PS = POLLS.map(newPollState); cur = 0;
   react = null;

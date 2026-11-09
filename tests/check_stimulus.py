@@ -95,6 +95,15 @@ def check_chat_output(page):
     assert any(147.5 <= m['t'] < 169.1 and len(m['text'].split()) >= 4 for m in rows), 'Keep substantive dialogue through the instructions'
 
 
+def check_one_side_per_viewer(lines):
+    sides = {}
+    for m in lines:
+        if m.get('stance'):
+            sides.setdefault(m['name'], set()).add(m['stance'])
+    flips = [name for name, s in sides.items() if len(s) > 1]
+    assert not flips, f'Viewers switched sides after the result: {flips}'
+
+
 def check_chat_generation(page):
     data = page.evaluate('''() => {
       const run = c => buildTimeline(c, mulberry32(c.seed * 7919 + c.viewers), SPAN);
@@ -207,6 +216,7 @@ def main():
                 if code in ['b9', 'k3', 'r6']: assert emoji['ai'] == 0, emoji
                 assert not any(HANGUL.search(m['name'] + m['text']) for m in lines)
                 assert not any(m.get('stance') and m['t'] >= 250.5 for m in lines)
+                check_one_side_per_viewer(lines)
                 assert page.evaluate('Logger.ev.filter(e=>e.type==="vote").length') == 1
                 assert not page.evaluate('Logger.ev.some(e=>e.poll>1)')
                 if result['condition'] == 'all': assert summary['shown_incongruent'] == 0
@@ -253,6 +263,10 @@ def main():
             else:
                 assert not state['voteLocked'] and state['vote'] is None
                 assert page.evaluate('Logger.ev.some(e=>e.type==="poll_missed")')
+            if mode == 'no-answer':
+                # Without a vote both sides are shown; each viewer still keeps one side.
+                advance(page, 250.5)
+                check_one_side_per_viewer(page.evaluate('shownLines'))
             assert not errors, errors
             page.close()
         print('PASS: missing confidence, no answer, deadline submission, confidence reset on answer change')
