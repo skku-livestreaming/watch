@@ -1162,7 +1162,9 @@ const SCRIPT = [
   "all good"
 ];
 
-/* Context-light short reactions. Dialogue-specific replies belong in CUES. */
+/* Keep general reactions text-led. Unicode emoji are limited to contextual
+   reactions in CUES and a few farewells in REACT_OUTRO. This is an editorial
+   choice, not an estimate of real-world emoji frequency. */
 const REACTIONS = [
   "lol",
   "lmao",
@@ -1647,7 +1649,7 @@ const CUES = [
   },
   {
     "t": 54,
-    "text": "FIRST zoo trip??",
+    "text": "FIRST zoo trip?? 😮",
     "core": true
   },
   {
@@ -1736,9 +1738,9 @@ const REACT_OUTRO = [
   "good stream",
   "gn chat",
   "see you tomorrow",
-  "thanks for the stream",
+  "thanks for the stream ❤️",
   "get some rest",
-  "bye chat",
+  "bye chat 👋",
   "later everyone",
   "that was fun",
   "take care",
