@@ -572,15 +572,15 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 /* Required confidence rating, matching the streamer's 1–7 instructions. */
 .poll-confidence{margin:14px 0 0;padding:0;border:0;min-width:0;text-align:left}
 .poll-confidence legend{padding:0;font-size:14px;font-weight:600;color:#3a3f4a}
-.confidence-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin:10px 0 5px}
-.confidence-grid label{position:relative;cursor:pointer}
-.confidence-grid input{position:absolute;opacity:0;width:1px;height:1px}
-.confidence-grid span{display:flex;align-items:center;justify-content:center;min-height:40px;border:1px solid #b9bfcb;border-radius:7px;background:#fff;color:#16181c;font-weight:700}
+.confidence-grid{position:relative;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));margin:10px 0 0}
+.confidence-grid::before{content:'';position:absolute;top:19px;left:calc(100% / 14);right:calc(100% / 14);height:2px;background:#b9bfcb}
+.confidence-grid label{position:relative;display:flex;align-items:center;justify-content:center;min-height:40px;cursor:pointer}
+.confidence-grid input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;cursor:inherit}
+.confidence-grid span{width:16px;height:16px;border:2px solid #b9bfcb;border-radius:50%;background:#fff;pointer-events:none}
 .confidence-grid input:checked+span{background:#2f5bc5;color:#fff;border-color:#2f5bc5}
 .confidence-grid input:focus-visible+span{outline:2px solid #2f5bc5;outline-offset:3px}
-.confidence-ends{display:flex;justify-content:space-between;gap:18px;font-size:11.5px;line-height:1.4;color:#5a6070;margin-bottom:12px}
-.confidence-ends span{max-width:46%}
-.confidence-ends span:last-child{text-align:right}
+.confidence-ends{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));font-size:11.5px;line-height:1.4;color:#5a6070;text-align:center;margin-bottom:12px}
+.confidence-ends span:last-child{grid-column:7}
 .poll-send{background:#2f5bc5;border:0;border-radius:7px;color:#fff;font-weight:700;padding:9px 18px;font-size:13.5px;min-height:40px}
 .confidence-note{display:block;font-size:12px;color:#5f6676;line-height:1.5;margin-top:6px}
 .confidence-note.bad{color:#b42318;font-weight:600}
@@ -897,15 +897,15 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
           <fieldset class="poll-confidence" id="pollConfidence" hidden aria-describedby="confidenceEnds confidenceNote">
             <legend>How confident are you that your answer is correct?</legend>
             <div class="confidence-grid">
-                <label><input type="radio" name="confidence" value="1"><span>1</span></label>
-                <label><input type="radio" name="confidence" value="2"><span>2</span></label>
-                <label><input type="radio" name="confidence" value="3"><span>3</span></label>
-                <label><input type="radio" name="confidence" value="4"><span>4</span></label>
-                <label><input type="radio" name="confidence" value="5"><span>5</span></label>
-                <label><input type="radio" name="confidence" value="6"><span>6</span></label>
-                <label><input type="radio" name="confidence" value="7"><span>7</span></label>
+                <label><input type="radio" name="confidence" value="1" aria-label="1"><span aria-hidden="true"></span></label>
+                <label><input type="radio" name="confidence" value="2" aria-label="2"><span aria-hidden="true"></span></label>
+                <label><input type="radio" name="confidence" value="3" aria-label="3"><span aria-hidden="true"></span></label>
+                <label><input type="radio" name="confidence" value="4" aria-label="4"><span aria-hidden="true"></span></label>
+                <label><input type="radio" name="confidence" value="5" aria-label="5"><span aria-hidden="true"></span></label>
+                <label><input type="radio" name="confidence" value="6" aria-label="6"><span aria-hidden="true"></span></label>
+                <label><input type="radio" name="confidence" value="7" aria-label="7"><span aria-hidden="true"></span></label>
             </div>
-            <div class="confidence-ends" id="confidenceEnds"><span>1 — Not at all sure</span><span>7 — Completely sure</span></div>
+            <div class="confidence-ends" id="confidenceEnds"><span>1</span><span>7</span></div>
             <button class="poll-send" id="voteSubmit" type="button">Submit vote</button>
             <span class="confidence-note" id="confidenceNote" role="status">Choose a number from 1 to 7 to submit your vote.</span>
           </fieldset>
@@ -1057,7 +1057,7 @@ const ConditionRouter = (() => {
     const panel = (q.get('panel_id') || '').trim();
     c.panel_id = /^[A-Za-z0-9_-]{1,64}$/.test(panel) ? panel : null;
     if (c.panel_id) c.pid = c.panel_id;
-    c.stimulus_version = '2026-11-en-single-poll-bars-end';
+    c.stimulus_version = '2026-11-en-single-poll-contextual-chat';
     c.language = 'en';
     c.poll_count = 1;
     return c;
@@ -1068,11 +1068,9 @@ const ConditionRouter = (() => {
 let cond = ConditionRouter.read();
 
 /* ── 2. 발화 풀 ───────────────────────────── */
-/* 본문 발화 — 순서 고정. 규모가 작을수록 이 비중이 높습니다. */
-/* Pre-poll conversation continues from the backlog. The clip starts during a trip recap.
-   Keep question-specific preferences out of this section. */
+/* Backlog only: an ordered conversation from before the viewer joined.
+   Live comments use the timed topic pools below, not this finite script. */
 const SCRIPT = [
-  "lol",
   "that trip sounded so good",
   "honestly need a vacation",
   "just a couple days??",
@@ -1083,13 +1081,10 @@ const SCRIPT = [
   "now i want snacks",
   "sounds like a good time",
   "lurking while i eat",
-  "lmao",
   "chat making me hungry again",
   "i should be asleep",
   "one more stream before bed",
-  "cozy stream tonight",
   "the post vacation tiredness is real",
-  "lol",
   "worth it though",
   "still here",
   "anyone else watching instead of working",
@@ -1101,7 +1096,6 @@ const SCRIPT = [
   "need the restaurant list",
   "chat is my dinner entertainment",
   "living through this trip recap",
-  "lmao",
   "my travel plans are opening google maps and closing it",
   "real",
   "saving up for a trip rn",
@@ -1114,88 +1108,230 @@ const SCRIPT = [
   "always end up watching longer than i meant to",
   "the stream time is a little concerning lol",
   "one tab left open and it is this one",
-  "lol",
   "water check chat",
   "getting a snack brb",
   "back",
   "still listening",
-  "love a chill stream",
-  "nice",
   "i need this kind of weekend",
   "that sounds fun",
   "the food alone would get me there",
-  "lmao",
   "chat never sleeps",
   "this is my break from studying",
   "same here",
   "one more minute turned into an hour",
   "classic",
-  "lol",
   "the vacation recap is making me want to book something",
   "airport snacks hit different",
   "i always overpack",
   "same",
   "a few days away does wonders",
-  "good vibes tonight",
-  "lol",
   "still here just lurking",
-  "chill stream enjoyers",
   "i should get back to work soon",
   "soon is doing a lot of work there",
-  "lmao",
   "another five minutes",
   "famous last words",
   "time zones got me watching this with breakfast",
   "dinner over here",
   "chat is everywhere",
-  "lol",
   "just hanging out",
   "the background stream stays on",
   "got my tea",
-  "cozy hours",
-  "nice",
-  "lmao",
   "actually such a good way to unwind",
   "chat keeping me company",
   "lurkers still here",
-  "lol",
   "all good"
 ];
 
-/* Keep general reactions text-led. Unicode emoji are limited to contextual
-   reactions in CUES and a few farewells in REACT_OUTRO. This is an editorial
-   choice, not an estimate of real-world emoji frequency. */
-const REACTIONS = [
-  "lol",
-  "lmao",
-  "LUL",
-  "haha",
-  "lolll",
-  "nice",
-  "oh",
-  "LOL",
-  "hehe",
-  "lmaooo",
-  "ooo",
-  "cozy",
-  "chillin",
-  ":)",
-  "vibes",
-  "love that"
+/* Topic changes follow the dialogue, including the typing delay used by CUES.
+   Each line is used at most once. If a pool runs out, leave a gap until the
+   next topic rather than fill it with laughter. The density model supplies
+   candidate arrival times; it does not require inventing filler.
+   These are editorial choices, not estimates of real-world reaction rates. */
+const CHAT_PHASES = [
+  {at: 0, texts: [
+    "that was a packed trip",
+    "thats a lot for one weekend",
+    "i wouldve needed another day",
+    "i would need a day off after getting back",
+    "the food sounds worth going for",
+    "i tend to overplan and then ignore my own plan",
+    "i always end up spending too much on food when i travel",
+    "now im looking at flights",
+    "what was your favourite meal?",
+    "you should put the places in a list",
+    "would you go again?",
+    "i havent been away in ages",
+    "a short trip is better than no trip",
+    "i like trips where you can just walk around",
+    "i always forget to take pictures on trips",
+    "eating somewhere new is my favourite part",
+    "i wouldve stayed longer",
+    "sounds like you barely stopped moving",
+    "im terrible at planning trips",
+    "i usually just ask people where to eat",
+    "going away for a few days sounds so good rn",
+    "i always check the weather way too many times before a trip",
+    "i need to stop putting off my own trip",
+    "i try to avoid the busiest times when i travel",
+    "i always come home with a list of things i missed",
+    "food recommendations are always welcome",
+    "my trips are mostly walking and eating",
+    "i keep meaning to take a weekend away",
+    "i like leaving some time to just wander",
+    "sounds like you made the most of the time",
+    "i would forget half the things i wanted to do",
+    "id watch a longer trip recap"
+  ]},
+  {at: 38.5, texts: [
+    "i could spend all day in a museum",
+    "what kind of museum was it?",
+    "i always end up missing the last room",
+    "i always lose track of time in museums",
+    "i like doing that on trips too",
+    "theres always one part i spend way too long in",
+    "id go back just for the things i missed",
+    "i need more time for sightseeing than i think",
+    "museums are my rainy day plan",
+    "i should check out the museums near me sometime",
+    "sounds like theres still plenty to go back for",
+    "i always end up reading every little sign",
+    "i keep a whole list of places i want to visit",
+    "i like hearing about the places people actually went",
+    "i havent been to a museum in a while",
+    "its hard fitting everything into a short trip",
+    "i like being able to go at my own pace",
+    "i tend to wander around until closing time",
+    "now i want to go somewhere this weekend",
+    "you can always do another trip"
+  ]},
+  {at: 56.5, texts: [
+    "we went on a school trip when i was little",
+    "seeing them in person must hit different",
+    "i havent been since i was a kid",
+    "what was your favourite animal there?",
+    "i thought everyone had a zoo school trip",
+    "id be there for hours",
+    "i would need more than one visit",
+    "i wouldve guessed youd been before",
+    "seeing them up close must be different",
+    "better late than never i guess",
+    "i used to go with my grandparents",
+    "i dont remember my first visit at all",
+    "first zoo visit as an adult is interesting",
+    "id have no idea where to go first",
+    "my phone would be full of animal photos",
+    "i always end up walking way more than planned",
+    "i could spend ages just watching one enclosure",
+    "thats a different kind of first trip",
+    "we didnt have a zoo near where i grew up either",
+    "now im trying to remember the last time i went",
+    "pictures never really give you a sense of the size",
+    "i always have to stop for a snack halfway round",
+    "id be there until they closed"
+  ]},
+  {at: 82.5, texts: [
+    "i didnt realise there were that many birds",
+    "the signs are doing a lot of work for me",
+    "i always stop to read the bird signs",
+    "i like the little birds too",
+    "i could watch birds for ages",
+    "which bird stood out to you?",
+    "i can identify about three birds total",
+    "i would need the signs for all of them",
+    "i like when you can hear them before you see them",
+    "the bird section sounds like a whole visit by itself",
+    "all my bird photos turn out blurry",
+    "i forget how many different kinds there are",
+    "id probably spend most of my time in that section",
+    "id take forever getting through that bit",
+    "i know nothing about birds but theyre fun to watch",
+    "i like when theres space to sit and watch them",
+    "i thought zoos mostly had bigger animals",
+    "sounds like there was a lot to look at",
+    "birdwatchers would have a field day",
+    "i want to see the photos from this trip"
+  ]},
+  {at: 101.5, texts: [
+    "wait are we ending already?",
+    "i only just got here",
+    "thanks for telling us about the trip",
+    "that went by fast",
+    "i was just getting settled in",
+    "one more story before you go?",
+    "i thought we had a bit longer",
+    "i missed the start today",
+    "dont go just yet",
+    "you should tell us more next time",
+    "i thought there was a bit more time",
+    "i nearly missed the whole thing"
+  ]},
+  {at: 110.5, texts: [
+    "okay now im curious",
+    "okay im listening",
+    "i can stay for one more thing",
+    "i thought you were about to sign off",
+    "alright ill stick around",
+    "hold on let me get back to my desk",
+    "i was about to close the tab",
+    "theres always one more thing",
+    "you cant leave us hanging now",
+    "i was about to say bye",
+    "i have a few more minutes",
+    "lets hear it then",
+    "i picked a good time to get back",
+    "thought i was going to miss the end",
+    "ill wait before getting up",
+    "wasnt expecting something else today"
+  ]},
+  {at: 125.5, texts: [
+    "oh theres a poll",
+    "okay lets hear the question",
+    "ill wait for the choices",
+    "where will the poll show up?",
+    "i usually miss these polls",
+    "let me hear the instructions first",
+    "im here for the poll",
+    "okay youve got my attention",
+    "ill keep an eye on the screen",
+    "i havent done one of these here before",
+    "ill put my food down for this",
+    "let me turn the volume up",
+    "im waiting for the card",
+    "curious what the question is",
+    "i nearly left before the poll",
+    "alright whats the setup?",
+    "waiting to see what the options are",
+    "ill listen before clicking anything",
+    "okay ill take part",
+    "waiting for it to open",
+    "i came back just in time for this",
+    "lets see what were answering"
+  ]},
+  {at: 147.5, texts: [
+    "so pick an answer and then confidence",
+    "okay two parts to it",
+    "confidence from one to seven, got it",
+    "ill check both before submitting",
+    "thanks for explaining the scale",
+    "i was about to ask about the numbers",
+    "so seven means completely sure?",
+    "got the instructions now",
+    "ill read the question when it appears",
+    "waiting for the actual poll",
+    "okay i know what to do",
+    "answer first then how sure we are",
+    "ill wait until it opens",
+    "im following so far",
+    "the confidence part makes sense",
+    "ill make sure i fill in both",
+    "so we need both to submit",
+    "i missed a bit but i think ive got it now",
+    "ready when the card is up",
+    "okay the low end means not sure",
+    "i was wondering how the confidence bit worked",
+    "okay lets see the question then"
+  ]}
 ];
-
-/* 짧은 리액션은 반복돼도 자연스럽지만, 같은 게 연달아 나오면 티가 납니다.
-   직전 4개 안에 쓴 것은 다시 뽑지 않습니다. */
-const recentReacts = [];
-function pickReact(rnd){
-  let v = REACTIONS[Math.floor(rnd() * REACTIONS.length)];
-  for (let g = 0; g < 8 && recentReacts.includes(v); g++){
-    v = REACTIONS[Math.floor(rnd() * REACTIONS.length)];
-  }
-  recentReacts.push(v);
-  if (recentReacts.length > 4) recentReacts.shift();
-  return v;
-}
 
 /* Single poll. All times are seconds in the current stream.mp4 (266.68 s).
    The streamer does not read the question aloud; the question is presented here.
@@ -1204,7 +1340,7 @@ function pickReact(rnd){
 const POLLS = [
   {
     "id": 1,
-    "q": "Who would win in a fight: 100 unarmed men or one gorilla?",
+    "q": "Who would win in a fight: one gorilla or 100 unarmed men?",
     "A": {
       "label": "100 unarmed men"
     },
@@ -1212,8 +1348,8 @@ const POLLS = [
       "label": "One gorilla"
     },
     "order": [
-      "A",
-      "B"
+      "B",
+      "A"
     ],
     "announce": 123.0,
     "lock": 169.1,
@@ -1295,7 +1431,15 @@ const POLLS = [
       "i spent way too long on that",
       "chat is back",
       "could do these all night",
-      "we need more of these"
+      "we need more of these",
+      "i kept changing my mind",
+      "i nearly missed the submit button",
+      "i wasnt as sure as i thought",
+      "that question caught me off guard",
+      "i want to hear what everyone picked",
+      "i made it in before the timer",
+      "the chat pause felt long",
+      "curious what the next question would be"
     ]
   }
 ];
@@ -1317,7 +1461,8 @@ function density(v){
     ? 0.57 * Math.pow(v / 940, 0.755)        // 클러스터 2→3 구간: 가파름
     : Math.min(2.45, 1.95 * Math.pow(v / 4790, 0.151)); // 3→5 구간: 완만, 21,678명에서 포화
   const chatters = Math.max(2, Math.round(Math.pow(v, 0.42)));
-  // 규모가 커질수록 짧은 반응 비중 상승 (문장 길이 6단어 → 3.8단어 경향)
+  // Post-result share of neutral comments among stance messages.
+  // Standalone reactions are scheduled separately in CUES.
   const reactShare = Math.min(0.8, Math.max(0.1, (rate - 0.1) / 2.6));
   return {rate, chatters, reactShare};
 }
@@ -1339,7 +1484,6 @@ function backlogTarget(c){
    텍스트·타이밍·화자 구조만 결정하고 정체성(사람/AI)은 붙이지 않습니다.
    따라서 label·ratio를 바꿔도 이 결과물은 한 글자도 변하지 않습니다.     */
 function buildTimeline(c, rnd, span){
-  recentReacts.length = 0;
   const d = density(c.viewers);
   // 발화량 편중 — 소수 화자가 대화를 독점 (클리크 스트림의 1인당 36메시지 특성)
   const w = [];
@@ -1352,32 +1496,38 @@ function buildTimeline(c, rnd, span){
   };
   const list = [];
   const counts = new Array(d.chatters).fill(0);
-  let si = 0;
+  const phasePools = CHAT_PHASES.map(phase => phase.texts.slice());
+  let phaseIndex = 0;
 
-  /* 입장 직전까지 흘렀던 대화를 같은 타임라인의 앞부분으로 만듭니다.
-     따로 뽑으면 백로그에서 쓴 줄이 입장 직후 다시 나와 반복 구간이 생깁니다.
-     한 대본을 이어서 쓰면 백로그와 그 이후가 한 편의 대화가 됩니다. */
+  /* The backlog has its own ordered conversation. Live topic pools are
+     separate so filling the initial feed cannot exhaust the live dialogue. */
   const preN = backlogTarget(c);
-  for (let k = 0; k < preN; k++){
-    const useReact = si >= SCRIPT.length || rnd() < d.reactShare;
+  for (let k = 0; k < Math.min(preN, SCRIPT.length); k++){
     const ci = pickChatter();
     counts[ci]++;
-    list.push({t: 0, text: useReact ? pickReact(rnd) : SCRIPT[si++],
+    list.push({t: 0, text: SCRIPT[k],
                ci, body: false, pre: true});
   }
 
   let t = 1.5;
   while (t < span){
-    /* 잠금 이후 자리(결과 공개 뒤)의 본문은 입장 슬롯이라 대본 줄이 필요 없습니다.
-       대본이 바닥났다고 반응으로 돌리면 결과 뒤 입장 발화가 하나도 안 나옵니다. */
-    const post = t >= POLLS[0].lock - VIDEO_TRIM;   // 채팅 시계 기준 첫 잠금 이후
-    const useReact = post ? rnd() < d.reactShare
-                          : (si >= SCRIPT.length || rnd() < d.reactShare);
-    const text = useReact ? pickReact(rnd) : post ? '' : SCRIPT[si++];
-    const ci = pickChatter();
-    counts[ci]++;
-    // body = 본문 발화. study 2에서 이 자리만 입장(찬/반) 슬롯이 됩니다.
-    list.push({t: +t.toFixed(2), text, ci, body: !useReact});
+    const at = +t.toFixed(2);
+    const post = at >= POLLS[0].lock - VIDEO_TRIM;
+    const neutral = post && rnd() < d.reactShare;
+    let text = '';
+    if (!post){
+      const videoTime = at + VIDEO_TRIM;
+      while (phaseIndex + 1 < CHAT_PHASES.length &&
+             CHAT_PHASES[phaseIndex + 1].at <= videoTime) phaseIndex++;
+      const pool = phasePools[phaseIndex];
+      text = pool.length ? pool.splice(Math.floor(rnd() * pool.length), 1)[0] : null;
+    }
+    // An exhausted topic leaves a gap; it never turns into random reactions.
+    if (text !== null){
+      const ci = pickChatter();
+      counts[ci]++;
+      list.push({t: at, text, ci, body: post && !neutral});
+    }
     // 포아송 도착 — 간격이 규칙적이지 않게
     t += Math.max(0.2, Math.min(-Math.log(1 - rnd()) / d.rate, 45));
   }
@@ -1406,12 +1556,10 @@ function applyStanceSlots(list, c, rnd){
     list[i].slot = congSet.has(i) ? 'cong' : 'incong';
     list[i].ri = k++;                    // 이유 풀에서 몇 번째를 쓸지 (결정적)
   }
-  /* 반응 자리 일부를 투표 잡담(neutral) 자리로 바꿉니다 — 전부 'ㅋㅋㅋ'면 토론장처럼 안 보입니다.
-     단 첫 투표가 잠긴 뒤의 자리에만 넣습니다. 투표 전에 주제 얘기가 흐르면 사전 의견이
-     오염됩니다. 채팅 시계는 잠금 동안 멈추므로 첫 잠금 이후 자리는 곧 결과 공개 이후 자리입니다.
-     어느 투표의 잡담인지는 그 줄이 화면에 오를 때(결과가 나온 최근 투표) 정합니다. */
+  /* All non-stance slots after the poll use poll-related neutral comments.
+     Never fall back to unprompted laughter, and never expose the topic early. */
   list.forEach((m) => {
-    if (!m.body && m.t >= POLLS[0].lock - VIDEO_TRIM && rnd() < 0.22){
+    if (!m.body && !m.pre && m.t >= POLLS[0].lock - VIDEO_TRIM){
       m.nslot = Math.floor(rnd() * POLLS[0].neutral.length);
     }
   });
@@ -1625,7 +1773,16 @@ const NICK_IDB = [
 
 
 /* Responses follow the new English dialogue. buildCues adds typing delay.
-   No pre-poll reaction hints at the question or expresses a preference. */
+   No pre-poll reaction hints at the question or expresses a preference.
+   The streamer never laughs outright, so there are no standalone laughs here.
+   Emoji appear only on these reactions and in REACT_OUTRO, where pickSpeaker
+   balances them across identities. Stance, neutral and topic lines stay
+   emoji-free because their speakers come from the timeline. Never use animal or
+   strength emoji that could hint at the poll (gorilla, monkey, flexed arm,
+   fire, skull). The streamer talks about birds, so the bird emoji is safe.
+   Emoji-only lines repeat a reaction already in chat (surprise, not wanting the
+   stream to end), the way several viewers pile on in a live chat. The overall
+   share, about 10% of live lines, is an editorial choice, not a measured rate. */
 const CUES = [
   {
     "t": 8,
@@ -1633,7 +1790,7 @@ const CUES = [
   },
   {
     "t": 18,
-    "text": "need that food list"
+    "text": "need that food list 🤤"
   },
   {
     "t": 27,
@@ -1653,8 +1810,13 @@ const CUES = [
     "core": true
   },
   {
+    "t": 56,
+    "text": "😮"
+  },
+  {
     "t": 59,
-    "text": "wait actually your first time lol"
+    "text": "wait youd never been to a zoo before?",
+    "core": true
   },
   {
     "t": 68,
@@ -1662,7 +1824,7 @@ const CUES = [
   },
   {
     "t": 80,
-    "text": "bird lore"
+    "text": "bird lore 🐦"
   },
   {
     "t": 87,
@@ -1670,12 +1832,16 @@ const CUES = [
   },
   {
     "t": 99,
-    "text": "good stream today"
+    "text": "good stream today ❤️"
   },
   {
     "t": 104,
-    "text": "nooo stay",
+    "text": "nooo stay 😭",
     "core": true
+  },
+  {
+    "t": 105.5,
+    "text": "😭😭"
   },
   {
     "t": 108,
@@ -1684,6 +1850,11 @@ const CUES = [
   {
     "t": 117,
     "text": "ONE MORE",
+    "core": true
+  },
+  {
+    "t": 119.5,
+    "text": "👀",
     "core": true
   },
   {
@@ -1697,7 +1868,7 @@ const CUES = [
   },
   {
     "t": 145,
-    "text": "got it"
+    "text": "got it 👍"
   },
   {
     "t": 160,
@@ -1705,17 +1876,17 @@ const CUES = [
   },
   {
     "t": 165,
-    "text": "chat taking a break lol",
+    "text": "see you after the poll 👋",
     "core": true
   },
   {
     "t": 217,
-    "text": "oh here we go",
+    "text": "oh here we go 👀",
     "core": true
   },
   {
     "t": 223,
-    "text": "chat is back lol"
+    "text": "we can type again"
   },
   {
     "t": 234,
@@ -1728,32 +1899,35 @@ const CUES = [
   },
   {
     "t": 247,
-    "text": "do more of these",
+    "text": "do more of these 🙏",
     "core": true
   }
 ];
 
+/* Farewells carry more emoji than the rest of the chat, as they tend to in
+   live chat. Use long-supported emoji only: newer ones (e.g. Emoji 13+ such as
+   the heart hands or saluting face) render as empty boxes on older Windows. */
 const REACT_OUTRO = [
   "ggs",
   "good stream",
-  "gn chat",
+  "gn chat 😴",
   "see you tomorrow",
   "thanks for the stream ❤️",
   "get some rest",
   "bye chat 👋",
   "later everyone",
   "that was fun",
-  "take care",
-  "night night",
-  "catch you next time",
+  "take care ❤️",
+  "night night 🌙",
+  "catch you next time 👋",
   "o7",
-  "byeee",
+  "byeee 👋👋",
   "rest up",
   "see ya",
-  "thanks for hanging out",
-  "gn everyone",
+  "thanks for hanging out 😊",
+  "gn everyone ❤️",
   "more polls next time",
-  "goodnight"
+  "goodnight 💤"
 ];
 
 function makeNick(rnd){
@@ -2735,27 +2909,27 @@ function loop(){
 }
 
 /* ── 같은 문장 반복 방지 ─────────────────────
-   'ㅋㅋㅋ' 같은 짧은 반응은 반복돼도 자연스럽지만, 같은 문장이 짧은 간격으로 다시 나오면
-   봇처럼 보입니다. 최근 화면에 오른 문장 DEDUP_WINDOW개 안에 같은 문장이 있으면
+   최근 화면에 오른 문장 DEDUP_WINDOW개 안에 같은 문장이 있으면
      입장 발화  → 같은 쪽 풀의 다른 문장(전부 최근에 나왔으면 가장 오래전에 나온 것)
-     잡담       → 다른 잡담, 없으면 짧은 반응
+     잡담       → 다른 잡담, 없으면 가장 오래전에 쓴 잡담
      대사 반응·마무리 인사 → 건너뜀
    으로 바꿉니다. 입장(찬/반)은 그대로라 일치도 조작에는 영향이 없습니다. */
 const DEDUP_WINDOW = 30;
 const recentTexts = [];
 const lastUse = new Map();
-let useN = 0, dedupRnd = mulberry32(1601);
-const isShortReact = t => REACTIONS.includes(t);
-function isRecentDup(t){ return !isShortReact(t) && recentTexts.includes(t); }
+let useN = 0;
+// Different spellings of a standalone laugh are the same reaction.
+const textKey = t => /^(?:lo+l+|lma+o+|lul|(?:ha){2,}|hehe)$/i.test(t) ? '[laugh]' : t;
+function isRecentDup(t){ return recentTexts.includes(textKey(t)); }
 function noteText(t){
-  if (!t || isShortReact(t)) return;
-  recentTexts.push(t);
+  if (!t) return;
+  const key = textKey(t);
+  recentTexts.push(key);
   if (recentTexts.length > DEDUP_WINDOW) recentTexts.shift();
-  lastUse.set(t, ++useN);
+  lastUse.set(key, ++useN);
 }
 function resetDedup(){
   recentTexts.length = 0; lastUse.clear(); useN = 0;
-  dedupRnd = mulberry32(cond.seed * 1601 + cond.viewers);
 }
 function dedupResolve(raw, r, poll){
   if (!isRecentDup(r.text)) return r;
@@ -2775,9 +2949,13 @@ function dedupResolve(raw, r, poll){
       const t = pool[(raw.nslot + k) % n];
       if (!isRecentDup(t)) return {...r, text: t};
     }
-    return {...r, text: pickReact(dedupRnd)};
+    // Reuse the least recently used neutral line if every alternative was
+    // seen; a depleted neutral pool must not become a laughter generator.
+    const text = pool.reduce((best, t) =>
+      (lastUse.get(textKey(t)) || 0) < (lastUse.get(textKey(best)) || 0) ? t : best);
+    return {...r, text};
   }
-  return r;   // 대본 줄은 순서대로 한 번씩만 나와 겹치지 않습니다
+  return r;   // 주제별 본문은 각 구간에서 한 번씩만 사용합니다
 }
 
 /* 대본에 없는 고정 줄(영상 반응·마무리 인사)을 올립니다. 최근에 나온 문장이면 건너뜁니다. */
@@ -2942,11 +3120,32 @@ function enter(){
    넘기면 잠금에 걸려 버려집니다. */
 const CUE_DELAY = 2.5;
 let cueQueue = [];
+
+/* Emoji can make a speaker read as warmer and more human. When both identities
+   are in the room, emoji lines alternate between AI and human speakers so this
+   cue does not lean toward one identity. u is one random draw in [0, 1), so the
+   random sequence for every other line is unchanged. */
+const EMOJI_RE = /\p{Extended_Pictographic}/u;
+let emojiTurn = 0;
+function pickSpeaker(text, u){
+  const roster = ident.roster;
+  if (EMOJI_RE.test(text)){
+    const ai = roster.filter(p => p.kind === 'ai');
+    const human = roster.filter(p => p.kind === 'human');
+    if (ai.length && human.length){
+      const side = (cond.seed + emojiTurn++) % 2 ? ai : human;
+      return side[Math.floor(u * side.length)];
+    }
+  }
+  return roster[Math.floor(u * roster.length)];
+}
+
 function buildCues(){
   const rnd = mulberry32(cond.seed * 31337 + cond.viewers);
   const keep = Math.min(1, Math.max(0.35, source.info.rate / 0.57));
+  emojiTurn = 0;
   cueQueue = CUES.filter(m => m.core || rnd() < keep).map(m => {
-    const who = ident.roster[Math.floor(rnd() * ident.roster.length)];
+    const who = pickSpeaker(m.text, rnd());
     const lock = POLLS.find(d => m.t < d.lock && m.t + CUE_DELAY >= d.lock - 0.3);
     const t = lock ? lock.lock - 0.3 : m.t + CUE_DELAY;
     return {t, text: m.text, kind: who.kind, name: who.name};
@@ -3000,13 +3199,13 @@ function startOutro(){
   const pool = REACT_OUTRO.slice();
   outroQueue = [];
   for (let i = 0; i < n; i++){
-    const who = ident.roster[Math.floor(rnd() * ident.roster.length)];
-    outroQueue.push({
-      t: OUTRO_AT + CUE_DELAY + rnd() * (span - CUE_DELAY - 0.7),
-      kind: who.kind, name: who.name,
-      text: pool.length ? pool.splice(Math.floor(rnd() * pool.length), 1)[0]
-                        : REACT_OUTRO[i % REACT_OUTRO.length]
-    });
+    // Draw in the original order (speaker, time, text); the speaker needs the text.
+    const u = rnd();
+    const t = OUTRO_AT + CUE_DELAY + rnd() * (span - CUE_DELAY - 0.7);
+    const text = pool.length ? pool.splice(Math.floor(rnd() * pool.length), 1)[0]
+                             : REACT_OUTRO[i % REACT_OUTRO.length];
+    const who = pickSpeaker(text, u);
+    outroQueue.push({t, kind: who.kind, name: who.name, text});
   }
   outroQueue.sort((a, b) => a.t - b.t);
 }
@@ -3527,6 +3726,11 @@ function leaveSummary(via){
     // 채팅에 실제로 노출된 시간 — 해제·잠금이 고정 시각이므로 끝까지 본 사람은 전원 동일
     chat_exposure_sec: chatExposureSec(),
     congruence: cond.cong,
+    // Emoji lines that reached the feed, by speaker identity. pickSpeaker balances them in mixed rooms.
+    emoji_shown_by_identity: shownLines.reduce((a, m) => {
+      if ((m.kind === 'ai' || m.kind === 'human') && EMOJI_RE.test(m.text)) a[m.kind]++;
+      return a;
+    }, {ai: 0, human: 0}),
     // Aggregate stance exposure; per-poll fields are in polls[].shown_*.
     shown_congruent: PS.reduce((a, p) => a + p.shownCong, 0),
     shown_incongruent: PS.reduce((a, p) => a + p.shownIncong, 0),

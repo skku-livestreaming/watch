@@ -67,6 +67,70 @@ def advance(page, t):
     page.evaluate('(t)=>window.qaAdvance(t)', t)
 
 
+LAUGH = re.compile(r'^(?:lo+l+|lma+o+|lul|(?:ha){2,}|hehe)$', re.I)
+EMOJI = re.compile('[\U0001F000-\U0001FAFF☀-➿]')
+# Gorilla, monkey, monkey face, orangutan, flexed arm, fire, skull, skull and crossbones.
+TOPIC_EMOJI = re.compile('[\U0001F98D\U0001F412\U0001F435\U0001F9A7\U0001F4AA\U0001F525\U0001F480☠]')
+
+
+def check_chat_output(page):
+    data = page.evaluate('({lines:shownLines,cues:CUES,outro:REACT_OUTRO,delay:CUE_DELAY,step:STEP})')
+    rows = [m for m in data['lines'] if m['ph'] != 'before_join']
+    laughs = [m for m in rows if LAUGH.fullmatch(m['text'])]
+    scheduled = [m for m in data['cues'] if LAUGH.fullmatch(m['text'])]
+    assert not scheduled, 'The streamer never laughs outright, so CUES has no standalone laughs'
+    assert not laughs, 'Do not fill dialogue with standalone laughter'
+    assert not any(re.search(r'\b(?:chillin|chill|cozy|vibes)\b|^:\)$', m['text'], re.I) for m in rows)
+    # Emoji only on dialogue reactions and farewells, spread across the stream, never hinting at the poll.
+    scripted = {m['text'] for m in data['cues']} | set(data['outro'])
+    emoji_rows = [m for m in data['lines'] if EMOJI.search(m['text'])]
+    for m in emoji_rows:
+        assert m['text'] in scripted and not m['stance'], m
+        assert not TOPIC_EMOJI.search(m['text']), m
+    times = [m['t'] for m in emoji_rows]
+    assert any(t < 101.5 for t in times) and any(101.5 <= t < 169.1 for t in times) and any(t >= 216.2 for t in times), times
+    # Editorial target of about 10% of live lines, not a measured platform rate.
+    share = sum(1 for m in rows if EMOJI.search(m['text'])) / len(rows)
+    assert 0.07 <= share <= 0.13, share
+    assert any(147.5 <= m['t'] < 169.1 and len(m['text'].split()) >= 4 for m in rows), 'Keep substantive dialogue through the instructions'
+
+
+def check_chat_generation(page):
+    data = page.evaluate('''() => {
+      const run = c => buildTimeline(c, mulberry32(c.seed * 7919 + c.viewers), SPAN);
+      const runs = [];
+      for (const viewers of [100, 1243, 10000]) for (const seed of [1, 7, 29]) {
+        const c = {...cond, viewers, seed};
+        const built = run(c);
+        const other = run({...c, label:'human', ratio:0, cong:'none'});
+        runs.push({viewers, seed, list:built.list, counts:built.counts,
+          identityIndependent:JSON.stringify(built) === JSON.stringify(other)});
+      }
+      resetDedup(); noteText('lolll');
+      const laughVariantsBlocked = ['lol','LOL','lmao','lmaooo','LUL','hehe'].every(isRecentDup);
+      resetDedup();
+      const timelineTexts = [...SCRIPT, ...CHAT_PHASES.flatMap(p => p.texts),
+        ...POLLS.flatMap(p => [...p.saysA, ...p.saysB, ...p.neutral])];
+      return {runs, phases:CHAT_PHASES, lock:POLLS[0].lock - VIDEO_TRIM, laughVariantsBlocked, timelineTexts};
+    }''')
+    assert data['laughVariantsBlocked'], 'Different laugh spellings must share repetition protection'
+    # Timeline speakers cannot be balanced by identity, so these pools stay emoji-free.
+    assert not [t for t in data['timelineTexts'] if EMOJI.search(t)]
+    for run in data['runs']:
+        assert run['identityIndependent'], run
+        assert sum(run['counts']) == len(run['list'])
+        used = set()
+        for m in run['list']:
+            if m.get('pre') or m['t'] >= data['lock']:
+                continue
+            phase = next(p for p in reversed(data['phases']) if p['at'] <= m['t'])
+            assert m['text'] in phase['texts'], (run['viewers'], run['seed'], m)
+            assert not LAUGH.fullmatch(m['text']), m
+            key = (phase['at'], m['text'])
+            assert key not in used, 'Each topic line should be used once, even after pool exhaustion'
+            used.add(key)
+
+
 def main():
     server = ThreadingHTTPServer(('127.0.0.1', 0), partial(QuietHandler, directory=str(ROOT)))
     threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -89,7 +153,7 @@ def main():
                 assert not page.evaluate('chatOpen')
                 advance(page, 181.05)
                 assert page.locator('#poll').is_visible()
-                assert page.locator('#pollOpts button').all_text_contents() == ['100 unarmed men', 'One gorilla']
+                assert page.locator('#pollOpts button').all_text_contents() == ['One gorilla', '100 unarmed men']
                 page.locator(f'#pollOpts button[data-v="{choice}"]').click()
                 page.locator('#voteSubmit').click()
                 assert not page.evaluate('PS[0].voteLocked'), 'Confidence must be required'
@@ -116,7 +180,7 @@ def main():
                 assert page.locator('#pollTimer').inner_text() == ''
                 assert not re.search(r'\d|%', page.locator('#feed .msg.sys').last.inner_text())
                 widths = page.locator('#pollRes .bar').evaluate_all('els => els.map(el=>parseFloat(el.style.width))')
-                for width, side in zip(widths, ['A', 'B']):
+                for width, side in zip(widths, ['B', 'A']):
                     assert abs(width - result['p']['result'][side] / total * 100) < 0.1
                 assert page.evaluate('Logger.ev.find(e=>e.type==="poll_result_shown").total') == total
                 advance(page, 250.5)
@@ -135,6 +199,12 @@ def main():
                 assert summary['saw_end'] and summary['polls'][0]['submitted']
                 assert 'vote2' not in summary
                 lines = page.evaluate('shownLines')
+                check_chat_output(page)
+                emoji = summary['emoji_shown_by_identity']
+                assert emoji['ai'] + emoji['human'] == sum(1 for m in lines if EMOJI.search(m['text']))
+                if code in ['v3', 't8', 'f1']: assert abs(emoji['ai'] - emoji['human']) <= 1, emoji
+                if code in ['q7', 'm2', 'z5']: assert emoji['human'] == 0, emoji
+                if code in ['b9', 'k3', 'r6']: assert emoji['ai'] == 0, emoji
                 assert not any(HANGUL.search(m['name'] + m['text']) for m in lines)
                 assert not any(m.get('stance') and m['t'] >= 250.5 for m in lines)
                 assert page.evaluate('Logger.ev.filter(e=>e.type==="vote").length') == 1
@@ -155,6 +225,12 @@ def main():
                 page.close()
                 checked += 1
         print(f'PASS: {checked} condition/choice combinations, results visible for 50 seconds until stream end, submission, completion')
+
+        page, errors = prepare(browser, base)
+        check_chat_generation(page)
+        assert not errors, errors
+        page.close()
+        print('PASS: contextual chat across 9 viewer/seed combinations, identity independence, no exhaustion filler, laugh-family repetition protection, emoji-free timeline pools')
 
         # Draft-only choices are not submitted; complete responses can auto-submit at the deadline.
         for mode in ['missing-confidence','auto-submit','no-answer','change-answer']:
