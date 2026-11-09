@@ -45,22 +45,74 @@ def prepare(browser, base, code='t8', width=1440, height=1000, extra=''):
     page.goto(f'{base}/?c={code}&debug=1{extra}')
     page.locator('#pidEmail').fill('QA001')
     page.locator('#introGo').click()
-    page.evaluate("""() => {
-      clearInterval(timer); clearTimeout(bufferTimer);
-      const v = document.getElementById('streamVideo');
-      v.pause(); window.qaTime = 0;
-      Object.defineProperties(v, {
-        currentTime:{get:()=>window.qaTime,set:t=>{window.qaTime=t},configurable:true},
-        paused:{get:()=>false,configurable:true},
-        readyState:{get:()=>4,configurable:true}
-      });
-      v.play=()=>Promise.resolve(); v.pause=()=>{};
-      window.qaAdvance = target => {
-        while (tick + STEP < target){ window.qaTime=tick+STEP; loop(); }
-        window.qaTime=target; loop();
-      };
-    }""")
+    page.evaluate(STUB_CLOCK)
     return page, errors
+
+
+# Drive the application clock directly instead of decoding media.
+STUB_CLOCK = """() => {
+  clearInterval(timer); clearTimeout(bufferTimer);
+  const v = document.getElementById('streamVideo');
+  v.pause(); window.qaTime = 0;
+  Object.defineProperties(v, {
+    currentTime:{get:()=>window.qaTime,set:t=>{window.qaTime=t},configurable:true},
+    paused:{get:()=>false,configurable:true},
+    readyState:{get:()=>4,configurable:true}
+  });
+  v.play=()=>Promise.resolve(); v.pause=()=>{};
+  window.qaAdvance = target => {
+    while (tick + STEP < target){ window.qaTime=tick+STEP; loop(); }
+    window.qaTime=target; loop();
+  };
+}"""
+
+
+def check_preview(browser, base):
+    page = browser.new_page(viewport={'width': 1440, 'height': 1000})
+    errors = []
+    page.on('pageerror', lambda error: errors.append(str(error)))
+    page.route('**/*', lambda route: route.fulfill(status=204) if route.request.url.endswith('/stream.mp4') else
+               (route.continue_() if route.request.url.startswith(base) else route.abort()))
+    page.goto(f'{base}/?c=t8&preview=1')
+    assert page.locator('#previewBar').is_visible()
+    assert page.evaluate("cond.preview && cond.intro === 'off' && !Sink.enabled() && entered")
+    assert not page.locator('#intro').is_visible()
+    page.evaluate(STUB_CLOCK)
+    # Speed changes stay and are not logged as participant attempts.
+    page.locator('#previewBar [data-rate="4"]').click()
+    page.wait_for_timeout(100)
+    assert page.evaluate("document.getElementById('streamVideo').playbackRate === 4 && !Logger.ev.some(e => e.type === 'rate_attempt')")
+    def jump(label):
+        page.locator('#previewBar button', has_text=label).click()
+        page.evaluate("document.getElementById('streamVideo').dispatchEvent(new Event('seeked'))")
+    # A server without Range support cannot move the video; state must not run ahead of it.
+    page.evaluate('''() => Object.defineProperty(document.getElementById('streamVideo'), 'currentTime',
+      {get:()=>window.qaTime, set:()=>{}, configurable:true})''')
+    jump('동물원')
+    assert page.evaluate('tick < 1 && !previewSeeking') and page.locator('#pvNote').is_visible()
+    page.evaluate('''() => Object.defineProperty(document.getElementById('streamVideo'), 'currentTime',
+      {get:()=>window.qaTime, set:t=>{window.qaTime=t}, configurable:true})''')
+    # Jump to the vote card, vote, then jump to the results.
+    jump('투표 카드')
+    assert not page.locator('#pvNote').is_visible()
+    assert page.evaluate('Math.abs(tick - (POLLS[0].at - 3)) < 0.01 && !chatOpen && !PS[0].shown')
+    assert not page.evaluate("Logger.ev.some(e => e.type === 'seek_attempt')")
+    advance(page, 181.05)
+    page.locator('#pollOpts button[data-v="B"]').click()
+    page.locator('input[name=confidence][value="6"]').check()
+    page.locator('#voteSubmit').click()
+    jump('결과')
+    advance(page, 230)
+    assert page.evaluate('PS[0].voteLocked && PS[0].resultShown && chatOpen')
+    # Fast-forward keeps the chat clock in step: no pre-poll topic lines after the result.
+    late = page.evaluate('''() => {
+      const topic = new Set(CHAT_PHASES.flatMap(p => p.texts));
+      return shownLines.filter(m => m.t >= POLLS[0].result && topic.has(m.text)).map(m => m.text);
+    }''')
+    assert not late, late
+    assert page.locator('#previewBar button', has_text='투표 안내').is_disabled(), 'No rewinding in preview'
+    assert not errors, errors
+    page.close()
 
 
 def advance(page, t):
@@ -155,6 +207,7 @@ def main():
             for choice in ['A', 'B']:
                 page, errors = prepare(browser, base, code)
                 check_english(page)
+                assert page.locator('#previewBar').count() == 0, 'Participants never see the preview tools'
                 advance(page, 169)
                 assert page.evaluate('chatOpen')
                 assert not page.evaluate('shownLines.some(m=>m.stance)')
@@ -235,6 +288,9 @@ def main():
                 page.close()
                 checked += 1
         print(f'PASS: {checked} condition/choice combinations, results visible for 50 seconds until stream end, submission, completion')
+
+        check_preview(browser, base)
+        print('PASS: researcher preview skips the intro, sends nothing, keeps speed, and fast-forwards in order')
 
         page, errors = prepare(browser, base)
         check_chat_generation(page)

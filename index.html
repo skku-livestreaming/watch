@@ -782,6 +782,17 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
   .player.off~.ov{display:none}
 }
 .search{white-space:nowrap;overflow:hidden}
+/* 연구자 미리보기 도구. ?preview=1일 때만 스크립트가 만듭니다. */
+#previewBar{position:fixed;left:8px;bottom:8px;z-index:9999;display:flex;flex-wrap:wrap;align-items:center;gap:6px;
+  max-width:calc(100vw - 16px);padding:8px 10px;border-radius:8px;background:rgba(17,19,24,.92);color:#fff;
+  font:12px/1.3 system-ui,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.35)}
+#previewBar b{color:#ffd166}
+#previewBar .pv-time{font-variant-numeric:tabular-nums;min-width:40px}
+#previewBar .pv-group{display:inline-flex;flex-wrap:wrap;gap:4px}
+#previewBar button{background:#2a2f3a;color:#fff;border:1px solid #444b5a;border-radius:6px;padding:4px 8px;font:inherit;cursor:pointer}
+#previewBar button[aria-pressed="true"]{background:#2f5bc5;border-color:#2f5bc5}
+#previewBar button:disabled{opacity:.4;cursor:default}
+#previewBar .pv-note{color:#ffb4a8}
 </style>
 </head>
 <body>
@@ -1057,6 +1068,10 @@ const ConditionRouter = (() => {
     const panel = (q.get('panel_id') || '').trim();
     c.panel_id = /^[A-Za-z0-9_-]{1,64}$/.test(panel) ? panel : null;
     if (c.panel_id) c.pid = c.panel_id;
+    /* 연구자 미리보기(?preview=1). 참가자 링크에는 쓰지 않습니다.
+       안내 페이지를 건너뛰고, 로그를 서버로 보내지 않고, 속도·일시정지·앞으로 건너뛰기를 허용합니다. */
+    c.preview = q.get('preview') === '1';
+    if (c.preview){ c.intro = 'off'; if (!c.panel_id) c.pid = 'preview'; }
     c.stimulus_version = '2026-11-en-single-poll-contextual-chat';
     c.language = 'en';
     c.poll_count = 1;
@@ -2627,7 +2642,7 @@ const RETURN_STATUS = {complete: '001', out: null};   // out: 엠브레인 코�
 const Sink = (function(){
   /* 자동화 브라우저(헤드리스 테스트 등, navigator.webdriver = true)는 서버로 보내지 않습니다.
      화면 점검용 자동 테스트가 실제 참가자 데이터에 섞이는 것을 막습니다. */
-  const on = () => Boolean(SUPABASE_URL && SUPABASE_KEY) && !navigator.webdriver;
+  const on = () => Boolean(SUPABASE_URL && SUPABASE_KEY) && !navigator.webdriver && !cond.preview;
   const QKEY = 'stim_retry_q';
   let sessionId = null, queue = [], sending = false;
   /* 새 publishable key(sb_publishable_…)는 JWT가 아니라 Bearer로 보내면 거절됩니다.
@@ -2819,6 +2834,7 @@ function renderUptime(t){
 }
 const ctx = {lastUserMessage: null};
 let source = null, ident = null, timer = null, tick = 0, entered = false;
+let previewSeeking = false;                  // 미리보기 건너뛰기 중에는 정상 루프를 쉽니다
 
 function buildSources(){
   // 타임라인 RNG는 seed와 시청자 수에만 의존 — label/ratio를 바꿔도 내용 불변
@@ -2834,11 +2850,13 @@ const shownLines = [];
 let chatOpen = true;                        // study 2: 채팅 잠금 상태(투표마다 잠기고 결과와 함께 풀림)
 let chatT = 0;                              // 채팅 전용 시계 — 잠금 중에는 멈춤
 
-function loop(){
+function loop(at){
   const video = document.getElementById('streamVideo');
-  if (video.paused || video.readyState < 2) return;
-  const elapsed = Math.max(0, video.currentTime - tick);
-  tick = video.currentTime;
+  // at is set only by the preview fast-forward; normal playback follows the video clock.
+  if (at === undefined && (previewSeeking || video.paused || video.readyState < 2)) return;
+  const now = at === undefined ? video.currentTime : at;
+  const elapsed = Math.max(0, now - tick);
+  tick = now;
   renderUptime(tick);
   const vn = viewersAt(tick);
   if (vn !== viewersShown){
@@ -3055,7 +3073,7 @@ const LiveGuard = (() => {
   });
   v.addEventListener('seeked', () => { internal = false; });
   v.addEventListener('ratechange', () => {
-    if (v.playbackRate === 1) return;
+    if (v.playbackRate === 1 || cond.preview) return;
     Logger.add('rate_attempt', {rate: v.playbackRate, at_sec: +tick.toFixed(2)});
     v.playbackRate = 1;
   });
@@ -3068,7 +3086,7 @@ const LiveGuard = (() => {
   let lastPauseLog = 0, suppressed = 0;
   v.addEventListener('pause', () => {
     setTimeout(() => {
-      if (!entered || ended || left || v.ended) return;
+      if (!entered || ended || left || v.ended || cond.preview) return;
       if (document.visibilityState === 'hidden') return;
       const now = performance.now();
       if (now - lastPauseLog >= 1500){
@@ -3079,11 +3097,15 @@ const LiveGuard = (() => {
     }, 0);
   });
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState !== 'visible') return;
+    if (document.visibilityState !== 'visible' || cond.preview) return;
     if (entered && !ended && !left && v.paused && $('buffer').hidden) playVideo();
   });
   v.addEventListener('contextmenu', e => e.preventDefault());
-  return {reset(){ good = VIDEO_TRIM; if (v.currentTime !== VIDEO_TRIM) set(VIDEO_TRIM); }};
+  return {
+    reset(){ good = VIDEO_TRIM; if (v.currentTime !== VIDEO_TRIM) set(VIDEO_TRIM); },
+    // Preview only: move the video forward without logging a seek attempt.
+    jump(t){ if (t > v.currentTime) set(t); }
+  };
 })();
 
 /* 숫자에 천 단위 구분 */
@@ -3796,7 +3818,8 @@ function leave(via){
   $('doneTitle').textContent = status === 'out'
     ? 'End participation: video unavailable' : 'Your participation is complete';
   $('logbox').value = Logger.dump();
-  const debug = new URLSearchParams(location.search).get('debug') === '1';
+  // Preview behaves like debug at the end: show the address instead of redirecting.
+  const debug = new URLSearchParams(location.search).get('debug') === '1' || cond.preview;
   $('doneDebug').hidden = Sink.enabled() && !debug;
   $('sinkNote').textContent = back && !debug
     ? 'Saving your responses. You will be redirected shortly.'
@@ -3964,6 +3987,73 @@ $('themeBtn').addEventListener('click', () => {
   Logger.add('theme_toggle', {theme: dark ? 'dark' : 'light', at_sec: +tick.toFixed(2)});
 });
 syncThemeBtn();
+/* ── 연구자 미리보기 (?preview=1) ─────────────
+   건너뛸 때는 영상을 먼저 옮기고, 실제로 도착한 시각까지 STEP 간격으로 loop(s)를 돌려
+   채팅·투표를 순서대로 처리합니다. 정상 루프로 한 번에 넘기면 잠금 동안 멈추는 채팅 시계가
+   뒤처져, 투표 전 댓글이 결과 뒤에 나옵니다. 서버가 Range 요청을 지원하지 않으면
+   (python -m http.server 등) 영상이 옮겨지지 않으므로 그 자리까지만 처리하고 알립니다.
+   되감기는 같은 이유로 막고 '처음부터'(새로고침)를 둡니다. */
+function initPreviewBar(){
+  const v = $('streamVideo');
+  const marks = [
+    [52, '동물원'],
+    [98, '마무리 시작'],
+    [POLLS[0].announce - 2, '투표 안내'],
+    [POLLS[0].at - 3, '투표 카드'],
+    [POLLS[0].result - 2, '결과'],
+    [OUTRO_AT - 2, '작별 인사']
+  ];
+  const bar = document.createElement('div');
+  bar.id = 'previewBar';
+  bar.innerHTML = `<b>미리보기 · 기록 안 함</b><span class="pv-time" id="pvTime">00:00</span>
+    <span class="pv-group">${[1, 2, 4].map(r => `<button type="button" data-rate="${r}">${r}×</button>`).join('')}</span>
+    <button type="button" id="pvPause">일시정지</button>
+    <span class="pv-group">${marks.map(([t, l]) => `<button type="button" data-jump="${t}">${l}</button>`).join('')}</span>
+    <button type="button" id="pvRestart">처음부터</button>
+    <span class="pv-note" id="pvNote" hidden>건너뛰기 실패: 이 서버는 영상 구간 요청(Range)을 지원하지 않습니다</span>`;
+  document.body.appendChild(bar);
+  const mmss = t => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
+  bar.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b || b.disabled) return;
+    if (b.dataset.rate){
+      v.defaultPlaybackRate = v.playbackRate = Number(b.dataset.rate);
+    } else if (b.dataset.jump){
+      const t = Number(b.dataset.jump);
+      if (!entered || ended || previewSeeking || t <= tick) return;
+      previewSeeking = true;
+      let settled = false, fallback = 0;
+      const settle = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(fallback);
+        const to = Math.min(v.currentTime, t);
+        for (let s = tick + STEP; s < to; s += STEP) loop(s);
+        if (to > tick) loop(to);
+        previewSeeking = false;
+        $('pvNote').hidden = to >= t - 1;
+      };
+      fallback = setTimeout(settle, 4000);   // seeked가 오지 않는 경우(메타데이터 전 등)
+      v.addEventListener('seeked', settle, {once: true});
+      LiveGuard.jump(t);
+    } else if (b.id === 'pvPause'){
+      v.paused ? playVideo() : v.pause();
+    } else if (b.id === 'pvRestart'){
+      location.reload();
+    }
+  });
+  setInterval(() => {
+    $('pvTime').textContent = mmss(tick);
+    $('pvPause').textContent = v.paused ? '재생' : '일시정지';
+    bar.querySelectorAll('[data-rate]').forEach(b =>
+      b.setAttribute('aria-pressed', String(Number(b.dataset.rate) === v.playbackRate)));
+    bar.querySelectorAll('[data-jump]').forEach(b => {
+      b.disabled = !entered || ended || Number(b.dataset.jump) <= tick;
+    });
+  }, 250);
+}
+if (cond.preview) initPreviewBar();
+
 restart();
 </script>
 </body>
