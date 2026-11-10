@@ -551,23 +551,41 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .poll-opts button[aria-pressed="true"]::before{content:'✓ ';font-weight:900}
 .poll-mine{margin:12px 0 0;font-size:14.5px;font-weight:700;color:#2a52b4}
 
-/* Results show relative bar lengths only. Counts, percentages, and totals stay in logs. */
-.poll-res{display:flex;flex-direction:column;gap:9px;margin-top:12px}
+/* Results show relative bar lengths and the total vote count only.
+   Per-option counts and percentages stay in logs. */
+/* 선택지마다 [막대 칸][칸 바깥 Your choice] 두 열입니다. 고르지 않은 쪽에도 빈 칸을 두어
+   두 막대 칸의 폭이 같습니다(막대 길이를 같은 기준으로 비교할 수 있게). */
+.poll-res{display:grid;grid-template-columns:minmax(0,1fr) max-content;align-items:center;gap:9px 0;margin-top:12px}
+.poll-res .opt{display:contents}
 /* 색의 역할을 나눕니다.
    - 막대(몇 명이 골랐나): 두 선택지 모두 같은 주황. 선택지마다 색이 다르면
      색 자체가 한쪽 인상을 만들므로 한 색으로 둡니다.
-   - Your choice: 파란 테두리 + 파란 배지. 막대와 다른 색이라 섞여 보이지 않습니다.
+   - Your choice: 파란 테두리 + 칸 바깥 파란 배지. 배지가 막대 위에 얹히지 않아
+     막대가 가득 차도 묻히지 않습니다.
    주황 위 글자(#16181c) 대비는 4.5:1 이상입니다. */
 .poll-res .row{position:relative;border:1.5px solid #c9ced8;border-radius:10px;overflow:hidden;background:#ffffff}
-.poll-res .bar{position:absolute;inset:0 auto 0 0;background:#f6b94f}
+/* 폭은 JS가 프레임마다 씁니다(animateResult). CSS transition을 걸면 그 위에 한 번 더 보간됩니다. */
+.poll-res .bar{position:absolute;inset:0 auto 0 0;width:0;background:#f6b94f}
 .poll-res .row.mine{border:3px solid #2f5bc5;box-shadow:0 0 0 4px rgba(47,91,197,.22)}
 .poll-res .row.mine .lb{font-weight:800}
 .poll-res .ln{
   position:relative;display:flex;align-items:center;gap:10px;
   padding:14px 16px;font-size:16.5px;font-weight:600;
 }
-.poll-res .mine-tag{font-size:13px;font-weight:800;background:#2f5bc5;color:#fff;padding:2px 9px;border-radius:5px}
-.poll-res .mine-tag{margin-left:auto}
+.poll-res .mine-tag{
+  display:inline-block;margin-left:12px;white-space:nowrap;
+  font-size:13px;font-weight:800;background:#2f5bc5;color:#fff;padding:3px 9px;border-radius:5px;
+}
+.poll-total{margin:10px 0 0;font-size:13.5px;font-weight:600;color:#5f6676;font-variant-numeric:tabular-nums}
+/* 아주 좁은 화면에서는 배지를 옆에 두면 막대 칸이 너무 좁아 선택지 글이 두 줄이 됩니다.
+   그때는 배지를 해당 칸 바로 위 오른쪽에 붙입니다(여전히 칸 바깥). */
+@media (max-width:400px){
+  .poll-res{display:flex;flex-direction:column;align-items:stretch;gap:9px}
+  .poll-res .opt{display:flex;flex-direction:column;gap:5px}
+  .poll-res .tag-cell{order:-1;align-self:flex-end}
+  .poll-res .tag-cell:empty{display:none}
+  .poll-res .mine-tag{margin-left:0}
+}
 
 /* Required confidence rating, matching the streamer's 1–7 instructions. */
 .poll-confidence{margin:14px 0 0;padding:0;border:0;min-width:0;text-align:left}
@@ -776,7 +794,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
   .poll{position:static;transform:none;animation:none;width:auto;max-height:none;margin-top:12px;padding:16px}
   .poll-res .ln{flex-wrap:wrap;padding:12px;gap:6px}
   .poll-res .lb{flex:1;min-width:65px}
-  .poll-res .mine-tag{order:3}
   .player.off{aspect-ratio:auto}
   .endcard{position:relative;inset:auto;min-height:360px;padding:24px 14px;gap:12px}
   .ec-grid{width:100%}
@@ -910,6 +927,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
           <div class="poll-opts" id="pollOpts"></div>
           <p class="poll-mine" id="pollMine" hidden></p>
           <div class="poll-res" id="pollRes" hidden></div>
+          <p class="poll-total" id="pollTotal" hidden></p>
           <fieldset class="poll-confidence" id="pollConfidence" hidden aria-describedby="confidenceEnds confidenceNote">
             <legend>How confident are you that your answer is correct?</legend>
             <div class="confidence-grid">
@@ -1077,7 +1095,7 @@ const ConditionRouter = (() => {
        안내 페이지를 건너뛰고, 로그를 서버로 보내지 않고, 속도·일시정지·앞으로 건너뛰기를 허용합니다. */
     c.preview = q.get('preview') === '1';
     if (c.preview){ c.intro = 'off'; if (!c.panel_id) c.pid = 'preview'; }
-    c.stimulus_version = '2026-11-en-single-poll-contextual-chat';
+    c.stimulus_version = '2026-11-en-single-poll-result-motion';
     c.language = 'en';
     c.poll_count = 1;
     return c;
@@ -3371,12 +3389,91 @@ function setReact(v){
    안 되므로, 해제는 투표 시점이 아니라 스트리머가 결과를 여는 시각에 일어납니다.
    빨리 투표한 사람이 채팅을 더 오래 보는 일이 없습니다.
 
-   결과 수치는 분석용으로만 계산하고, 화면에는 막대 길이로만 표시합니다.
+   선택지별 수치는 분석용으로만 계산하고, 화면에는 막대 길이와 총 투표 수만 표시합니다.
    채팅 일치도 조건(cong)과 같게 둡니다.
-     all   내가 고른 쪽이 전체, 다른 쪽 0명
-     none  내가 고른 쪽은 나 1명, 다른 쪽이 전체 - 1
+     all   내가 고른 쪽이 거의 전부, 다른 쪽은 RESULT_MINOR_SHARE만큼
+     none  내가 고른 쪽이 RESULT_MINOR_SHARE만큼(나 포함), 다른 쪽이 나머지
      half  정확히 50:50(참여 인원을 짝수로 맞춤)
+   all·none에서 소수 쪽을 0이 아니게 두는 것은 빈 막대가 고장처럼 보이지 않도록,
+   막대가 "조금 차 있게" 보이게 하려는 것입니다. 소수 쪽 비율은 두 조건에서 같습니다.
    투표를 안 했으면 기준이 없으므로 반반 근처입니다. 참여율은 시청자 수의 55~65%(시드 고정). */
+const RESULT_MINOR_SHARE = 0.05;
+
+/* 결과 막대 움직임. 실제 시각(ms) 기준이며 영상 시각과 무관합니다.
+     bounce  all·none·미투표: 두 막대가 왼쪽에서 동시에 차오르며 목표 길이에 부딪혀 튕깁니다
+             (목표를 넘지 않으므로 가득 찬 막대도 칸 밖으로 나가지 않습니다).
+     cross   half: 두 막대가 함께 차오르면서 한쪽이 늘 때 다른 쪽이 줄어드는 반대 방향으로
+             흔들리며 서로 엇갈리다가, 정확히 50:50에 멈춥니다. 먼저 앞서는 쪽은 참가자가 고른
+             쪽으로 고정합니다(참가자마다 같은 흐름을 보도록). 미투표자는 위쪽 선택지.
+   탭이 가려진 채 결과가 나오면 화면에 다시 보일 때 시작합니다 — 가려진 동안에는 프레임이
+   돌지 않아, 그대로 두면 돌아왔을 때 끝난 막대만 보이기 때문입니다.
+   prefers-reduced-motion이어도 조건 간 자극물이 같아야 하므로 움직임은 그대로 두고 로그에만 남깁니다. */
+const RESULT_MOTION = {
+  bounceMs: 1300,
+  crossMs: 3200, crossGrowMs: 600,
+  crossAmp: 24,          // 첫 흔들림의 최대 폭(%p). 양쪽에 반대로 더하고 뺍니다
+  crossPeriodMs: 700,    // 한 번 왕복하는 시간
+  crossDecayMs: 900      // 흔들림이 줄어드는 시간 상수
+};
+let resultAnim = null;   // {i, raf, onVisible, bars, started}
+
+function easeOutBounce(x){
+  const n = 7.5625, d = 2.75;
+  if (x < 1 / d) return n * x * x;
+  if (x < 2 / d) return n * (x -= 1.5 / d) * x + 0.75;
+  if (x < 2.5 / d) return n * (x -= 2.25 / d) * x + 0.9375;
+  return n * (x -= 2.625 / d) * x + 0.984375;
+}
+
+/* t(ms)에서 각 막대 폭(%). 끝 시각에서는 목표값과 정확히 같습니다. */
+function resultWidthAt(t, bar, motion){
+  const M = RESULT_MOTION;
+  if (motion === 'bounce') return bar.target * easeOutBounce(Math.min(1, t / M.bounceMs));
+  const grow = 1 - Math.pow(1 - Math.min(1, t / M.crossGrowMs), 3);
+  const fade = 1 - Math.pow(Math.min(1, t / M.crossMs), 6);   // 끝에서 흔들림을 0으로
+  const wobble = M.crossAmp * Math.exp(-t / M.crossDecayMs) * Math.sin(2 * Math.PI * t / M.crossPeriodMs) * fade;
+  return Math.max(0, bar.target * grow + bar.sign * wobble);
+}
+
+function setFinalWidths(bars){
+  bars.forEach(b => { b.el.style.width = b.target.toFixed(1) + '%'; });
+}
+
+function stopResultAnim(){
+  if (!resultAnim) return;
+  cancelAnimationFrame(resultAnim.raf);
+  if (resultAnim.onVisible) document.removeEventListener('visibilitychange', resultAnim.onVisible);
+  setFinalWidths(resultAnim.bars);
+  resultAnim = null;
+}
+
+function animateResult(i, bars, motion){
+  stopResultAnim();
+  const dur = motion === 'cross' ? RESULT_MOTION.crossMs : RESULT_MOTION.bounceMs;
+  const a = resultAnim = {i, raf: 0, onVisible: null, bars, started: null};
+  bars.forEach(b => { b.el.style.width = '0%'; });
+  const start = deferred => {
+    a.onVisible = null;
+    a.started = +tick.toFixed(2);
+    Logger.add('poll_result_motion', {poll: i + 1, motion, at_sec: a.started, deferred, duration_ms: dur});
+    const t0 = performance.now();
+    const frame = now => {
+      if (resultAnim !== a) return;
+      const t = Math.max(0, now - t0);   // rAF 시각이 t0보다 약간 앞설 수 있습니다
+      if (t >= dur){ setFinalWidths(bars); resultAnim = null; return; }
+      bars.forEach(b => { b.el.style.width = resultWidthAt(t, b, motion).toFixed(2) + '%'; });
+      a.raf = requestAnimationFrame(frame);
+    };
+    a.raf = requestAnimationFrame(frame);
+  };
+  if (document.visibilityState === 'visible') return start(false);
+  a.onVisible = () => {
+    if (document.visibilityState !== 'visible' || resultAnim !== a) return;
+    document.removeEventListener('visibilitychange', a.onVisible);
+    start(true);
+  };
+  document.addEventListener('visibilitychange', a.onVisible);
+}
 
 /* 투표별 진행 상태. 투표 카드(#poll)는 하나를 돌려 씁니다 — cur는 지금 카드에 떠 있는 투표. */
 const newPollState = () => ({
@@ -3495,9 +3592,10 @@ function showResult(i){
   const rnd = mulberry32(cond.seed * 4241 + cond.viewers + i * 104729);
   let total = Math.max(2, Math.round(cond.viewers * (0.55 + rnd() * 0.10)));
   const mineSide = p.vote || 'A';
+  const nMinor = Math.max(1, Math.round(total * RESULT_MINOR_SHARE));
   let nMine;
-  if (p.vote && cond.cong === 'all') nMine = total;
-  else if (p.vote && cond.cong === 'none') nMine = 1;
+  if (p.vote && cond.cong === 'all') nMine = total - nMinor;
+  else if (p.vote && cond.cong === 'none') nMine = nMinor;
   else if (cond.cong === 'half'){
     // 절반 일치 조건은 정확히 50:50 — 참여 인원을 짝수로 맞춰 반씩 나눕니다
     total -= total % 2;
@@ -3512,14 +3610,23 @@ function showResult(i){
 
   const box = $('pollRes');
   box.innerHTML = '';
-  d.order.forEach(k => {
-    const row = document.createElement('div');
-    row.className = 'row' + (p.vote === k ? ' mine' : '');
-    row.innerHTML = `<span class="bar" aria-hidden="true" style="width:${(p.result[k] / total * 100).toFixed(1)}%"></span>
-      <span class="ln"><span class="lb"></span>${p.vote === k ? '<span class="mine-tag">✓ Your choice</span>' : ''}</span>`;
-    row.querySelector('.lb').textContent = d[k].label;
-    box.appendChild(row);
+  const motion = cond.cong === 'half' ? 'cross' : 'bounce';
+  const lead = p.vote || d.order[0];          // cross: 먼저 앞서는 쪽
+  const bars = d.order.map(k => {
+    const opt = document.createElement('div');
+    opt.className = 'opt';
+    // Your choice 배지는 막대 칸(.row) 바깥 옆 칸(.tag-cell)에 둡니다
+    opt.innerHTML = `<div class="row${p.vote === k ? ' mine' : ''}"><span class="bar" aria-hidden="true"></span>
+      <span class="ln"><span class="lb"></span></span></div><span class="tag-cell">${p.vote === k ? '<span class="mine-tag">✓ Your choice</span>' : ''}</span>`;
+    opt.querySelector('.lb').textContent = d[k].label;
+    const el = opt.querySelector('.bar');
+    const target = p.result[k] / total * 100;
+    el.dataset.share = target.toFixed(1);
+    box.appendChild(opt);
+    return {el, k, target, sign: k === lead ? 1 : -1};
   });
+  $('pollTotal').textContent = `Total votes: ${total.toLocaleString('en-US')}`;
+  $('pollTotal').hidden = false;
   $('pollQ').textContent = d.q;
   $('poll').hidden = false;
   $('pollOpts').hidden = true;
@@ -3531,13 +3638,18 @@ function showResult(i){
   $('poll').querySelector('.poll-tag').textContent = 'Poll results';
   Logger.add('poll_result_shown', {
     poll: i + 1, at_sec: +tick.toFixed(2), A: p.result.A, B: p.result.B, total,
-    mine: p.vote, mine_share: p.vote ? +(p.result[p.vote] / total).toFixed(3) : null
+    mine: p.vote, mine_share: p.vote ? +(p.result[p.vote] / total).toFixed(3) : null,
+    total_shown: true, minor_share: RESULT_MINOR_SHARE,
+    motion, motion_lead: motion === 'cross' ? lead : null,   // cross에서 먼저 앞선 선택지(A/B)
+    reduced_motion: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)
   });
+  animateResult(i, bars, motion);
 }
 
 function hideResult(i){
   if (PS[i].resultHidden) return;
   PS[i].resultHidden = true;
+  if (resultAnim && resultAnim.i === i) stopResultAnim();
   if (cur === i) $('poll').hidden = true;
   Logger.add('poll_result_hidden', {poll: i + 1, at_sec: +tick.toFixed(2)});
 }
@@ -3562,6 +3674,7 @@ function showPoll(i){
   $('pollQ').textContent = d.q;
   $('pollRes').hidden = true;
   $('pollRes').innerHTML = '';
+  $('pollTotal').hidden = true;
   $('pollMine').hidden = true;
   $('pollConfidence').hidden = true;
   $('confidenceNote').textContent = 'Choose a number from 1 to 7 to submit your vote.';
@@ -3876,6 +3989,7 @@ function restart(){
   shownLines.length = 0;
   stanceOf.clear(); stanceN.clear();
   chatOpen = true;
+  stopResultAnim();
   PS = POLLS.map(newPollState); cur = 0;
   react = null;
   ctx.lastUserMessage = null;
@@ -3884,6 +3998,7 @@ function restart(){
   $('pollConfidence').hidden = true;
   $('pollRes').hidden = true;
   $('pollRes').innerHTML = '';
+  $('pollTotal').hidden = true;
   $('pollOpts').hidden = false;
   $('pollOpts').classList.remove('picked');
   $('pollMine').hidden = true;

@@ -192,6 +192,92 @@ def check_chat_generation(page):
             used.add(key)
 
 
+# Reveal the result and record both bar widths every animation frame until the motion ends.
+# Bars are listed in display order: [One gorilla (B), 100 unarmed men (A)].
+SAMPLE_MOTION = """async () => {
+  const frames = [];
+  const read = () => [...document.querySelectorAll('#pollRes .bar')].map(b => parseFloat(b.style.width) || 0);
+  if (!PS[0].resultShown) window.qaAdvance(POLLS[0].result);
+  await new Promise(done => {
+    const step = () => { frames.push(read()); if (resultAnim) requestAnimationFrame(step); else done(); };
+    step();
+  });
+  frames.push(read());
+  return {frames, final: [...document.querySelectorAll('#pollRes .bar')].map(b => parseFloat(b.style.width))};
+}"""
+
+
+def vote_and_close(page, choice):
+    advance(page, 181.05)
+    page.locator(f'#pollOpts button[data-v="{choice}"]').click()
+    page.locator('input[name=confidence][value="5"]').check()
+    page.locator('#voteSubmit').click()
+    advance(page, 216.1)
+
+
+def check_result_motion(browser, base):
+    # all/none: both bars fill from the left and bounce off their target, never past it.
+    for code, choice in [('q7', 'B'), ('z5', 'A')]:
+        page, errors = prepare(browser, base, code)
+        vote_and_close(page, choice)
+        data = page.evaluate(SAMPLE_MOTION)
+        frames = data['frames']
+        targets = page.locator('#pollRes .bar').evaluate_all('els => els.map(el=>parseFloat(el.dataset.share))')
+        assert len(frames) > 30, len(frames)
+        assert all(w < 10 for w in frames[0]), frames[0]
+        big = max(range(2), key=lambda j: targets[j])
+        series = [f[big] for f in frames]
+        # The first bounce drops back to about three quarters of the target.
+        hit = next(n for n, w in enumerate(series) if w >= targets[big] * 0.9)
+        assert hit < len(series) - 10 and min(series[hit:]) < targets[big] * 0.85, 'The bar should bounce back after reaching its target'
+        # data-share is rounded to 0.1, so allow that rounding.
+        assert all(f[j] <= targets[j] + 0.06 for f in frames for j in range(2)), 'Bars never overshoot past the target'
+        assert data['final'] == [round(t, 1) for t in targets], (data['final'], targets)
+        assert 0 < min(targets) < 10, 'The minority bar stays slightly filled'
+        motion = page.evaluate('Logger.ev.find(e=>e.type==="poll_result_motion")')
+        assert motion['motion'] == 'bounce' and not motion['deferred']
+        assert not errors, errors
+        page.close()
+
+    # half: the bars swing in opposite directions, cross several times, then end exactly level.
+    page, errors = prepare(browser, base, 'm2')
+    vote_and_close(page, 'A')
+    data = page.evaluate(SAMPLE_MOTION)
+    gaps = [a - b for b, a in data['frames']]          # mine (A) minus other (B)
+    first = next(g for g in gaps if abs(g) > 2)
+    assert first > 0, 'The participant\'s side leads first'
+    signs = [1 if g > 2 else -1 for g in gaps if abs(g) > 2]
+    crossings = sum(1 for x, y in zip(signs, signs[1:]) if x != y)
+    assert crossings >= 3, crossings
+    assert max(gaps) > 10 and min(gaps) < -10, (max(gaps), min(gaps))
+    assert data['final'] == [50, 50], data['final']
+    assert page.evaluate('Logger.ev.find(e=>e.type==="poll_result_shown").motion_lead') == 'A'
+    assert not errors, errors
+    page.close()
+
+    # A result revealed while the tab is hidden waits to animate until the page is visible again.
+    page, errors = prepare(browser, base, 'm2')
+    vote_and_close(page, 'B')
+    page.evaluate('''() => {
+      for (const k of ['hidden', 'visibilityState'])
+        Object.defineProperty(document, k, {get: () => k === 'hidden' ? window.qaHidden : (window.qaHidden ? 'hidden' : 'visible'), configurable: true});
+      window.qaHidden = true;
+      document.dispatchEvent(new Event('visibilitychange'));
+      window.qaAdvance(POLLS[0].result);
+    }''')
+    page.wait_for_timeout(400)
+    assert page.evaluate('resultAnim && resultAnim.started === null')
+    assert page.locator('#pollRes .bar').evaluate_all('els => els.map(el=>el.style.width)') == ['0%', '0%']
+    assert not page.evaluate('Logger.ev.some(e=>e.type==="poll_result_motion")')
+    page.evaluate('() => { window.qaHidden = false; document.dispatchEvent(new Event("visibilitychange")); }')
+    data = page.evaluate(SAMPLE_MOTION)
+    assert data['final'] == [50, 50], data['final']
+    assert len(data['frames']) > 30
+    assert page.evaluate('Logger.ev.find(e=>e.type==="poll_result_motion").deferred')
+    assert not errors, errors
+    page.close()
+
+
 def main():
     server = ThreadingHTTPServer(('127.0.0.1', 0), partial(QuietHandler, directory=str(ROOT)))
     threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -232,19 +318,27 @@ def main():
                 result = page.evaluate('({condition:cond.cong,p:PS[0]})')
                 mine = result['p']['result'][choice]
                 total = result['p']['result']['total']
-                if result['condition'] == 'all': assert mine == total
-                if result['condition'] == 'none': assert mine == 1
+                # all/none leave the minority bar slightly filled, by the same share in both.
+                minor = page.evaluate(f'Math.max(1, Math.round({total} * RESULT_MINOR_SHARE))')
+                assert 0 < minor < total * 0.1
+                if result['condition'] == 'all': assert mine == total - minor
+                if result['condition'] == 'none': assert mine == minor
                 if result['condition'] == 'half': assert mine * 2 == total
-                # Result magnitudes remain visible as bars, with no count/percentage text.
+                # The total vote count is shown; per-option counts and percentages are not.
                 # "100" belongs to the answer wording, not to the voting result.
-                result_text = page.locator('#poll').inner_text().replace('100 unarmed men', '')
+                total_text = page.locator('#pollTotal').inner_text()
+                assert total_text == f'Total votes: {total:,}', total_text
+                result_text = page.locator('#poll').inner_text().replace('100 unarmed men', '').replace(total_text, '')
                 assert not re.search(r'\d|%', result_text), result_text
                 assert page.locator('#pollTimer').inner_text() == ''
                 assert not re.search(r'\d|%', page.locator('#feed .msg.sys').last.inner_text())
-                widths = page.locator('#pollRes .bar').evaluate_all('els => els.map(el=>parseFloat(el.style.width))')
-                for width, side in zip(widths, ['B', 'A']):
-                    assert abs(width - result['p']['result'][side] / total * 100) < 0.1
-                assert page.evaluate('Logger.ev.find(e=>e.type==="poll_result_shown").total') == total
+                # Bars animate toward these targets; check_result_motion covers the motion itself.
+                shares = page.locator('#pollRes .bar').evaluate_all('els => els.map(el=>parseFloat(el.dataset.share))')
+                for share, side in zip(shares, ['B', 'A']):
+                    assert abs(share - result['p']['result'][side] / total * 100) < 0.1
+                shown = page.evaluate('Logger.ev.find(e=>e.type==="poll_result_shown")')
+                assert shown['total'] == total and shown['total_shown']
+                assert shown['motion'] == ('cross' if result['condition'] == 'half' else 'bounce')
                 advance(page, 250.5)
                 assert page.evaluate('outroed')
                 assert page.locator('#poll').is_visible(), 'Keep results visible through the outro'
@@ -288,6 +382,9 @@ def main():
                 page.close()
                 checked += 1
         print(f'PASS: {checked} condition/choice combinations, results visible for 50 seconds until stream end, submission, completion')
+
+        check_result_motion(browser, base)
+        print('PASS: result bars bounce in from the left (all/none), swing and cross before ending exactly level (half), and wait for a hidden tab')
 
         check_preview(browser, base)
         print('PASS: researcher preview skips the intro, sends nothing, keeps speed, and fast-forwards in order')
@@ -389,6 +486,24 @@ def main():
             check_english(page)
             page.locator('input[name=confidence][value="4"]').check()
             page.locator('#voteSubmit').click()
+            advance(page, 216.2)
+            page.wait_for_function('!resultAnim', timeout=6000)
+            # "Your choice" sits outside the chosen row, both rows stay equally wide, and nothing overflows.
+            fit = page.evaluate("""() => {
+              const box = r => r.getBoundingClientRect();
+              const tag = box(document.querySelector('#pollRes .mine-tag'));
+              const mine = box(document.querySelector('#pollRes .row.mine'));
+              const rows = [...document.querySelectorAll('#pollRes .row')].map(box);
+              const poll = box(document.getElementById('poll'));
+              const lb = [...document.querySelectorAll('#pollRes .lb')].map(el =>
+                box(el).height < parseFloat(getComputedStyle(el).fontSize) * 1.8 ? 1 : 2);
+              return {outside: tag.left >= mine.right || tag.bottom <= mine.top,
+                      sameWidth: Math.abs(rows[0].width - rows[1].width) < 4,
+                      inside: tag.right <= poll.right && rows.every(r => r.right <= poll.right),
+                      oneLine: lb.every(n => n === 1)};
+            }""")
+            assert all(fit.values()), (width, fit)
+            assert page.evaluate("document.documentElement.scrollWidth <= innerWidth"), (width, 'result overflow')
             advance(page, 266.69)
             assert page.evaluate("""() => {
               const player=document.getElementById('player').getBoundingClientRect();
