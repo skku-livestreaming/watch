@@ -245,8 +245,9 @@ https://skku-livestreaming.github.io/watch/?c=t8&preview=1
 영상에서는 투표 질문을 소리 내어 읽지 않습니다. 질문과 선택지(One gorilla / 100 unarmed men)는 카드가 제시합니다.
 시청자 입장 발화는 어느 쪽을 골랐는지만 말하며, 한쪽을 설득하는 이유를 붙이지 않습니다.
 
-**투표 제출:** 선택지와 확신도(1 = Not at all sure, 7 = Completely sure)가 모두 있어야 제출됩니다.
-확신도는 선으로 연결된 원 7개로 표시하며, 맨 왼쪽에 1, 맨 오른쪽에 7만 작게 표시합니다.
+**투표 제출:** 선택지와 확신도(1 = Not at all confident, 7 = Extremely confident)가 모두 있어야 제출됩니다.
+확신도는 선으로 연결된 원 7개로 표시하며, 양 끝 원 아래에 1과 7을, 그 아래에 기준 문구 `Not at all confident`(1)와 `Extremely confident`(7)를 작게 표시합니다.
+기준 문구는 7점 확신도 척도 연구에서 흔히 쓰는 표현(1 = not at all confident, 7 = extremely confident)을 따릅니다.
 Submit vote 전에는 답과 확신도를 바꿀 수 있고, 답을 바꾸면 확신도는 다시 선택해야 합니다.
 마감 시 두 값이 모두 있으면 자동 제출하고, 확신도가 없는 선택은 `vote_incomplete`와 `poll_missed`로 기록합니다.
 자유서술 이유 입력란과 `why` 파라미터는 제거했습니다. 투표를 일찍 제출해도 채팅은 결과 공개 시점에 같이 열립니다.

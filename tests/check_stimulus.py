@@ -346,6 +346,10 @@ def main():
             page.locator('#pollOpts button[data-v="A"]').click()
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), (width, 'horizontal overflow')
             assert page.evaluate("document.querySelector('.confidence-grid').scrollWidth <= document.querySelector('.confidence-grid').clientWidth")
+            # Endpoint labels use common confidence-rating wording and stay inside the scale.
+            assert page.locator('#confidenceEnds .anchor-min').inner_text() == 'Not at all confident'
+            assert page.locator('#confidenceEnds .anchor-max').inner_text() == 'Extremely confident'
+            assert page.evaluate("document.querySelector('.confidence-ends').scrollWidth <= document.querySelector('.confidence-ends').clientWidth"), (width, 'anchor overflow')
             assert page.locator('#voteSubmit').is_visible()
             check_english(page)
             page.locator('input[name=confidence][value="4"]').check()
