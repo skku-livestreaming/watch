@@ -639,7 +639,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 }
 .ov .msg .nm{color:#c9d8f5;cursor:default;margin-right:.25em}
 .ov .msg .nm:after{color:rgba(255,255,255,.7)}
-.ov .msg .nm.me{color:#f0c05a}
 .ov .aib{background:rgba(0,0,0,.35);color:#7fe0c4;border-color:rgba(127,224,196,.7);text-shadow:none;
   font-size:.62em;padding:0 .4em;margin-right:.5em;border-radius:.3em}
 .ov .msg.sys{background:rgba(0,0,0,.5);border-left:.19em solid #6f8fe8;color:#fff;text-shadow:none;
@@ -711,7 +710,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 .msg .nm:after{content:':';color:var(--ink-faint);font-weight:400;margin-left:1px}
 .msg .nm.human{color:var(--nick)}
 .msg .nm.ai{color:var(--nick)}   /* 닉네임 색까지 다르면 조건 간 차이가 라벨 하나를 넘어섭니다 */
-.msg .nm.me{color:var(--lab)}
+.msg .nm.me{color:var(--nick)}   /* 참가자 글도 다른 시청자와 같은 색으로 둡니다 */
 /* 조건 간 유일한 차이. 실제 플랫폼이 닉네임 앞에 붙이는 배지 자리와 같습니다. */
 .aib{
   display:inline-block;vertical-align:1px;margin-right:5px;
@@ -3855,7 +3854,8 @@ function send(){
   const el = $('say');
   const v = el.value.trim();
   if (!v) return;
-  Renderer.push({kind: 'me', name: 'You', text: v});
+  /* 참가자 글의 닉네임은 참가자 ID(pid)입니다. 이메일로 들어온 경우 @ 앞부분만 씁니다. */
+  Renderer.push({kind: 'me', name: String(cond.pid).split('@')[0], text: v});
   Logger.add('user_comment', {text: v});
   ctx.lastUserMessage = v;
   el.value = '';
