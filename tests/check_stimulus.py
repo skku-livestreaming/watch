@@ -145,6 +145,18 @@ def check_chat_output(page):
     share = sum(1 for m in rows if EMOJI.search(m['text'])) / len(rows)
     assert 0.07 <= share <= 0.13, share
     assert any(144.5 <= m['t'] < 151.75 and len(m['text'].split()) >= 4 for m in rows), 'Keep substantive dialogue through the instructions'
+    pair = [m for m in rows if m['text'] in (
+        'one more thing before you go?', 'one more thing before you leave?')]
+    assert len(pair) == 2 and pair[0]['name'] != pair[1]['name'], pair
+    assert pair[0]['text'] == 'one more thing before you go?'
+    assert pair[1]['text'] == 'one more thing before you leave?'
+    assert 82 <= pair[0]['t'] < pair[1]['t'] < 84, pair
+    assert 0 < pair[1]['t'] - pair[0]['t'] <= 1, pair
+    kinds = {m['kind'] for m in pair}
+    condition = page.evaluate('({label:cond.label,ratio:cond.ratio})')
+    expected = {'human'} if condition['label'] == 'human' or condition['ratio'] == 0 else (
+        {'ai'} if condition['ratio'] == 100 else {'ai', 'human'})
+    assert kinds == expected, pair
 
 
 def check_one_side_per_viewer(lines):
