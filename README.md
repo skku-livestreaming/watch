@@ -258,7 +258,7 @@ Submit vote 전에는 답과 확신도를 바꿀 수 있고, 답을 바꾸면 �
 
 `leave.polls[]`에는 투표 **1개**만 들어갑니다. `vote`와 `confidence`는 요약용 사본이고 `vote2`는 생성하지 않습니다.
 완료된 투표는 `vote` 이벤트의 `confidence` 및 `vote_confidence.value`에 1–7 값이 저장됩니다.
-세션 조건의 `stimulus_version = 2026-11-en-youth-violence-poll-paired-reaction`와 `language = en`으로 이전 버전과 구분할 수 있습니다. 짝 반응을 추가하기 전 새 영상 버전은 `2026-11-en-youth-violence-poll-synced`입니다.
+세션 조건의 `stimulus_version = 2026-11-en-youth-violence-poll-human-reaction`와 `language = en`으로 이전 버전과 구분할 수 있습니다. 유사 문장 두 개를 배정했던 버전은 `2026-11-en-youth-violence-poll-paired-reaction`이며, 그 전 새 영상 버전은 `2026-11-en-youth-violence-poll-synced`입니다.
 이전 고릴라/100명 영상의 결과 애니메이션 버전은 `2026-11-en-single-poll-result-motion`입니다.
 결과 화면이 바뀌기 전(`all` 100%·`none` 1명, 총 투표 수 비공개, 움직임 없음) 세션은 `2026-11-en-single-poll-contextual-chat`입니다.
 
@@ -355,7 +355,7 @@ Submit vote 전에는 답과 확신도를 바꿀 수 있고, 답을 바꾸면 �
 - `SCRIPT`: 입장 전 백로그의 영어 잡담. 방송 중 댓글과 분리해 입장 시 피드를 채우느라 이후 대본이 소진되지 않도록 합니다.
 - `CHAT_PHASES`: 영상의 농장 게임·작물·동물·시장·마무리·투표 질문과 안내 구간에 맞춘 댓글. 각 구간에서 한 문장은 한 번만 쓰고, 준비한 문장이 소진되면 다음 구간까지 쉽니다. 투표 전에는 Yes/No 입장을 말하지 않습니다. 밀도 모델의 도착 시각을 따르되 빈자리를 무작위 웃음으로 채우지 않습니다.
 - `CUES`: 새 영상의 대사 반응. `t`는 원본 영상 시각이며 실제 출력은 기본 2.5초 뒤입니다. 현재 영상에는 스트리머가 대놓고 웃는 장면이 없으므로 `lolll`·`lmao` 같은 단독 웃음은 넣지 않습니다. 새 영상에서 웃는 대사가 있으면 이곳에만 배치하며, 철자가 달라도 같은 웃음 반응으로 중복을 검사합니다. 잠금 중인 줄은 버립니다. 투표 결과 뒤의 일반 댓글은 `POLLS[].neutral`에서 고릅니다.
-- 82초와 82.75초에는 `one more thing before you go?` / `one more thing before you leave?`를 서로 다른 화자가 말합니다. AI·사람 혼합 조건에서는 각각 한 정체성에 배정하며, 어느 문장을 AI가 말하는지는 seed에 따라 바꿉니다. 전원 AI·전원 사람 조건에서도 같은 두 문장을 같은 시각에 내보내고 화자의 정체성은 해당 조건을 유지합니다. 이 두 문장은 임의 주제별 채팅에서 제외하여 중복 노출을 막습니다.
+- 82초에는 `one more thing before you go?`를 한 번만 내보냅니다. AI·사람 혼합 조건과 전원 사람 조건에서는 사람 화자에게 배정합니다. 전원 AI 조건에서는 해당 조건의 AI 화자를 유지합니다. 비슷한 `one more thing before you leave?` 반응은 제거했으며, 원래 문장도 임의 주제별 채팅에서는 제외하여 중복 노출을 막습니다.
 - 이모지: `CUES`와 `REACT_OUTRO`에만 둡니다. 게임 이름 👀(8초), 동물 이름 😊(38초), 농장 게임 시청자 👋(66초),
   마무리하려는 순간 😭·😭😭(76·78초), “one more thing” 👀(88.7초), 안내 👍(109·144.5초), 채팅 잠금 직전 👋(149초),
   채팅 재개 👀(205.7초), 의견을 들어 준 데 대한 감사 🙏(220초). 실제 출력은 기본 2.5초 뒤입니다.
