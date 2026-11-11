@@ -164,6 +164,38 @@ def check_one_side_per_viewer(lines):
     assert not flips, f'Viewers switched sides after the result: {flips}'
 
 
+def script_without_badges(page):
+    return page.evaluate('shownLines.map(({kind, ...line}) => line)')
+
+
+def check_matched_scripts(browser, base):
+    # Exercise alternate seeds, small/large rosters, and a participant who never votes.
+    for extra, choice in [('&seed=2&viewers=100', 'A'),
+                          ('&seed=2&viewers=100', None),
+                          ('&seed=29&viewers=10000', 'B')]:
+        baseline = None
+        for code in ['m2', 'k3', 't8']:
+            page, errors = prepare(browser, base, code, extra=extra)
+            advance(page, 141.55)
+            if choice:
+                page.locator(f'#pollOpts button[data-v="{choice}"]').click()
+                page.locator('input[name=confidence][value="5"]').check()
+                page.locator('#voteSubmit').click()
+            advance(page, 244.77)
+            script = script_without_badges(page)
+            if baseline is None:
+                baseline = script
+            else:
+                assert script == baseline, (extra, choice, code, 'Identity changed the displayed script')
+            check_one_side_per_viewer(page.evaluate('shownLines'))
+            if choice:
+                summary = page.evaluate('leaveSummary("end_button")')
+                for stats in summary['polls'][0]['shown_by_identity'].values():
+                    assert abs(stats['cong'] - stats['incong']) <= 1, (extra, code, stats)
+            assert not errors, errors
+            page.close()
+
+
 def check_chat_generation(page):
     data = page.evaluate('''() => {
       const run = c => buildTimeline(c, mulberry32(c.seed * 7919 + c.viewers), SPAN);
@@ -291,6 +323,7 @@ def main():
     threading.Thread(target=server.serve_forever, daemon=True).start()
     base = f'http://127.0.0.1:{server.server_port}'
     checked = 0
+    scripts = {}
     with sync_playwright() as pw:
         opts = {'headless': True}
         if os.environ.get('CHROME_PATH'):
@@ -370,6 +403,14 @@ def main():
                 assert summary['saw_end'] and summary['polls'][0]['submitted']
                 assert 'vote2' not in summary
                 lines = page.evaluate('shownLines')
+                # Compare the complete displayed conversation, not just the text pools.
+                # Same congruence and vote must differ only in AI/human badges.
+                key = (result['condition'], choice)
+                script = script_without_badges(page)
+                if key not in scripts:
+                    scripts[key] = script
+                else:
+                    assert script == scripts[key], (code, choice, 'Identity changed words, order, times, or nicknames')
                 check_chat_output(page)
                 emoji = summary['emoji_shown_by_identity']
                 assert emoji['ai'] + emoji['human'] == sum(1 for m in lines if EMOJI.search(m['text']))
@@ -397,6 +438,10 @@ def main():
                 page.close()
                 checked += 1
         print(f'PASS: {checked} condition/choice combinations, results visible for 46 seconds until stream end, submission, completion')
+        print('PASS: complete transcripts match across AI, human, and mixed identities at every congruence and vote')
+
+        check_matched_scripts(browser, base)
+        print('PASS: matched transcripts across alternate seeds, small/large rosters, and no-vote sessions; stance balance and speaker consistency preserved')
 
         check_result_motion(browser, base)
         print('PASS: result bars bounce in from the left (all/none), swing and cross before ending exactly level (half), and wait for a hidden tab')

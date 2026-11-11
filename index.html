@@ -1102,7 +1102,7 @@ const ConditionRouter = (() => {
        안내 페이지를 건너뛰고, 로그를 서버로 보내지 않고, 속도·일시정지·앞으로 건너뛰기를 허용합니다. */
     c.preview = q.get('preview') === '1';
     if (c.preview){ c.intro = 'off'; if (!c.panel_id) c.pid = 'preview'; }
-    c.stimulus_version = '2026-11-en-youth-violence-poll-human-reaction';
+    c.stimulus_version = '2026-11-en-youth-violence-poll-matched-scripts';
     c.language = 'en';
     c.poll_count = 1;
     return c;
@@ -1648,16 +1648,13 @@ function resolveStance(m, poll, vote){
   return {text: pool[m.ri % pool.length], stance: side, ri: m.ri};
 }
 
-/* 한 화자가 결과 뒤에 양쪽을 다 말하면 입장을 번복하는 것처럼 보입니다. 입장 슬롯은 줄 단위로
-   번갈아 배정되므로(절반 조건, 미투표자) 이 줄의 화자가 이미 반대 입장을 말했다면,
-   같은 정체성 안에서 같은 입장을 말했거나 아직 입장을 말하지 않은 화자에게 줄을 넘깁니다.
-   입장 발화가 적은 화자를 먼저, 같으면 발화가 많은(앞 번호) 화자를 고릅니다.
-   정체성별 일치·불일치 개수는 그대로이므로 일치도·정체성 균형은 바뀌지 않습니다.
-   같은 정체성의 화자가 모두 반대 입장을 말한 경우(화자가 아주 적을 때)에만 원래 화자를 둡니다. */
+/* 화자가 입장을 번복하지 않도록 공통 50:50 배정표 안에서 같은 편 화자를 고릅니다.
+   모든 정체성 조건이 이 화자 선택을 재사용하므로 닉네임과 문장 순서가 같습니다.
+   혼합 조건에서도 두 정체성의 찬반 균형을 유지합니다. */
 const stanceOf = new Map();       // 화자 번호 → 'A' | 'B'
 const stanceN = new Map();        // 화자 번호 → 입장 발화 수
 function stanceSpeaker(raw, side){
-  const roster = ident.roster, ci = raw.ci % roster.length;
+  const roster = scriptIdent.roster, ci = raw.ci % roster.length;
   let pick = ci;
   if ((stanceOf.get(ci) || side) !== side){
     let best = -1;
@@ -2869,21 +2866,25 @@ function renderUptime(t){
     `${p2(Math.floor(u / 3600))}:${p2(Math.floor(u / 60) % 60)}:${p2(u % 60)} live`;
 }
 const ctx = {lastUserMessage: null};
-let source = null, ident = null, timer = null, tick = 0, entered = false;
+let source = null, ident = null, scriptIdent = null, timer = null, tick = 0, entered = false;
 let previewSeeking = false;                  // 미리보기 건너뛰기 중에는 정상 루프를 쉽니다
 
 function buildSources(){
   // 타임라인 RNG는 seed와 시청자 수에만 의존 — label/ratio를 바꿔도 내용 불변
   const rnd = mulberry32(cond.seed * 7919 + cond.viewers);
   source = ScriptSource(cond, rnd, SPAN);
-  ident = IdentityAssigner(cond, source.info.chatters, source.counts, source.stanceCounts);
+  // One reference assignment controls words and speakers in every condition.
+  // Actual identity only determines the displayed badge and exposure counts.
+  scriptIdent = IdentityAssigner({...cond, label:'mixed', ratio:50}, source.info.chatters, source.counts, source.stanceCounts);
+  ident = cond.label === 'mixed' && cond.ratio === 50 ? scriptIdent
+    : IdentityAssigner(cond, source.info.chatters, source.counts, source.stanceCounts);
 }
 
 let shownTotal = 0, shownAI = 0;            // 참가자가 실제로 본 메시지 기준 집계
 /* 화면에 올라간 모든 줄의 대본. 메모리에만 둡니다 — 로그에는 채팅 본문을 남기지 않고,
    참가자가 드래그한 글만 text_select로 남깁니다. */
 const shownLines = [];
-let chatOpen = true;                        // study 2: 채팅 잠금 상태(투표마다 잠기고 결과와 함께 풀림)
+let chatOpen = true;                        // study 2: 고정된 잠금·재개 시각을 따릅니다
 let chatT = 0;                              // 채팅 전용 시계 — 잠금 중에는 멈춤
 
 function loop(at){
@@ -2937,24 +2938,18 @@ function loop(at){
   // 수백 건이 동시에 터집니다.
   chatT += elapsed;
 
-  /* 입장 발화는 결과가 공개된 뒤에만 나옵니다. 투표 카드는 채팅이 잠긴 뒤에
-     뜨지만, 순서가 바뀌더라도 투표한 참가자에게만 입장이 먼저 보이는 일이 없게
-     결과 공개를 기준으로 둡니다. 어느 투표에 대한 말인지는 결과가 나온 최근 투표입니다. */
+  /* 입장 발화는 고정된 채팅 재개 뒤에만 나옵니다. 투표 제출 시각과 무관합니다. */
   const a = activePoll();
   const post = a >= 0;
   for (const raw of source.next(chatT)){
-    /* 절반 일치 조건은 투표마다 일치·불일치를 번갈아 내보냅니다. 미리 섞어 둔 슬롯을
-       그대로 쓰면 실제 노출 구간에서 한쪽으로 기울 수 있으므로, 화면에 오른
-       입장 발화가 항상 반반(많아야 1개 차이)이 되도록 표시 순서대로 정합니다.
-       첫 줄이 일치인지 불일치인지는 시드와 투표 번호로 정합니다.
-       혼합 조건은 AI 줄과 사람 줄을 따로 번갈아서, 정체성마다 일치·불일치가 반반이 되게 합니다.
-       사람 줄은 첫 줄을 AI와 반대로 두어 합계도 많아야 1개 차이로 둡니다.
-       한 종류뿐인 조건(전부 AI·전부 사람)은 예전과 똑같이 돕니다. */
+    /* 절반 일치 순서는 실제 정체성이 아닌 공통 50:50 배정표로 결정합니다.
+       혼합 조건은 AI·사람별 찬반 균형을 지키고, 전원 AI·전원 사람 조건도
+       정확히 같은 문장·찬반 순서를 재사용합니다. */
     let src = raw;
-    const kind = ident.assign(raw).kind;
+    const kind = scriptIdent.assign(raw).kind;
     if (post && raw.slot && cond.cong === 'half'){
       const p = PS[a];
-      const both = ident.aiChatters > 0 && ident.aiChatters < source.info.chatters;
+      const both = scriptIdent.aiChatters > 0 && scriptIdent.aiChatters < source.info.chatters;
       const shift = both && kind === 'human' ? 1 : 0;
       const first = (cond.seed + a + shift) % 2 === 0 ? 'cong' : 'incong';
       const other = first === 'cong' ? 'incong' : 'cong';
@@ -3200,23 +3195,25 @@ function enter(){
 const CUE_DELAY = 2.5;
 let cueQueue = [];
 
-/* Emoji can make a speaker read as warmer and more human. When both identities
-   are in the room, emoji lines alternate between AI and human speakers so this
-   cue does not lean toward one identity. u is one random draw in [0, 1), so the
-   random sequence for every other line is unchanged. */
+/* Pick speakers using the shared 50:50 reference, including emoji balance.
+   Map the chosen nickname to its actual identity only after the choice. */
 const EMOJI_RE = /\p{Extended_Pictographic}/u;
 let emojiTurn = 0;
 function pickSpeaker(text, u){
-  const roster = ident.roster;
+  const roster = scriptIdent.roster;
   if (EMOJI_RE.test(text)){
     const ai = roster.filter(p => p.kind === 'ai');
     const human = roster.filter(p => p.kind === 'human');
     if (ai.length && human.length){
       const side = (cond.seed + emojiTurn++) % 2 ? ai : human;
-      return side[Math.floor(u * side.length)];
+      return displaySpeaker(side[Math.floor(u * side.length)]);
     }
   }
-  return roster[Math.floor(u * roster.length)];
+  return displaySpeaker(roster[Math.floor(u * roster.length)]);
+}
+
+function displaySpeaker(reference){
+  return ident.roster[scriptIdent.roster.indexOf(reference)];
 }
 
 function buildCues(){
@@ -3225,10 +3222,9 @@ function buildCues(){
   emojiTurn = 0;
   cueQueue = CUES.filter(m => m.core || rnd() < keep).map(m => {
     const u = rnd();
-    // Use a human for this reaction when the condition includes humans.
-    // All-AI conditions keep their assigned identity without adding a human.
-    const preferred = m.speaker ? ident.roster.filter(p => p.kind === m.speaker) : [];
-    const who = preferred.length ? preferred[Math.floor(u * preferred.length)] : pickSpeaker(m.text, u);
+    // Keep the same nickname across conditions; its reference identity is human.
+    const preferred = m.speaker ? scriptIdent.roster.filter(p => p.kind === m.speaker) : [];
+    const who = preferred.length ? displaySpeaker(preferred[Math.floor(u * preferred.length)]) : pickSpeaker(m.text, u);
     const lock = POLLS.find(d => m.t < d.lock && m.t + CUE_DELAY >= d.lock - 0.3);
     const t = lock ? lock.lock - 0.3 : m.t + CUE_DELAY;
     return {t, text: m.text, kind: who.kind, name: who.name};
@@ -3504,7 +3500,7 @@ const newPollState = () => ({
   lockedAt: null, unlockAt: null,
   shownCong: 0, shownIncong: 0,                // 피드에 붙은 입장 발화(일치/불일치)
   byKind: {ai: {cong: 0, incong: 0}, human: {cong: 0, incong: 0}},   // 위를 화자 정체성별로
-  halfN: {ai: 0, human: 0}                     // 절반 조건: 이 투표에서 내보낸 입장 발화 수(정체성별)
+  halfN: {ai: 0, human: 0}                     // 절반 조건: 공통 기준 배정표의 그룹별 입장 발화 수
 });
 let PS = POLLS.map(newPollState);
 let cur = 0;
