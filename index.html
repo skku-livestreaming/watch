@@ -1095,7 +1095,7 @@ const ConditionRouter = (() => {
        안내 페이지를 건너뛰고, 로그를 서버로 보내지 않고, 속도·일시정지·앞으로 건너뛰기를 허용합니다. */
     c.preview = q.get('preview') === '1';
     if (c.preview){ c.intro = 'off'; if (!c.panel_id) c.pid = 'preview'; }
-    c.stimulus_version = '2026-11-en-single-poll-result-motion';
+    c.stimulus_version = '2026-11-en-youth-violence-poll-synced';
     c.language = 'en';
     c.poll_count = 1;
     return c;
@@ -1109,60 +1109,37 @@ let cond = ConditionRouter.read();
 /* Backlog only: an ordered conversation from before the viewer joined.
    Live comments use the timed topic pools below, not this finite script. */
 const SCRIPT = [
-  "that trip sounded so good",
-  "honestly need a vacation",
-  "just a couple days??",
-  "you packed so much in",
-  "food tour when",
-  "lol same",
-  "the food is half the reason to travel",
-  "now i want snacks",
-  "sounds like a good time",
+  "what have you been playing lately",
+  "i need something new to play",
+  "same game all week for me",
+  "my backlog keeps getting longer",
+  "just got back from work",
+  "finally caught a stream",
+  "still here",
   "lurking while i eat",
-  "chat making me hungry again",
   "i should be asleep",
   "one more stream before bed",
-  "the post vacation tiredness is real",
-  "worth it though",
-  "still here",
   "anyone else watching instead of working",
   "guilty",
   "i have this on in the background",
-  "same lol",
+  "same here",
   "time flew today",
-  "that sounds like such a good weekend",
-  "need the restaurant list",
   "chat is my dinner entertainment",
-  "living through this trip recap",
-  "my travel plans are opening google maps and closing it",
-  "real",
-  "saving up for a trip rn",
-  "travel streams would be fun",
   "just got here what did i miss",
-  "trip recap",
-  "food and sightseeing apparently",
+  "we are talking games",
   "ty chat",
-  "sounds like i missed a good one",
   "always end up watching longer than i meant to",
-  "the stream time is a little concerning lol",
+  "the stream time is a little concerning",
   "one tab left open and it is this one",
   "water check chat",
   "getting a snack brb",
   "back",
   "still listening",
-  "i need this kind of weekend",
   "that sounds fun",
-  "the food alone would get me there",
   "chat never sleeps",
   "this is my break from studying",
-  "same here",
   "one more minute turned into an hour",
   "classic",
-  "the vacation recap is making me want to book something",
-  "airport snacks hit different",
-  "i always overpack",
-  "same",
-  "a few days away does wonders",
   "still here just lurking",
   "i should get back to work soon",
   "soon is doing a lot of work there",
@@ -1174,7 +1151,6 @@ const SCRIPT = [
   "just hanging out",
   "the background stream stays on",
   "got my tea",
-  "actually such a good way to unwind",
   "chat keeping me company",
   "lurkers still here",
   "all good"
@@ -1186,289 +1162,338 @@ const SCRIPT = [
    candidate arrival times; it does not require inventing filler.
    These are editorial choices, not estimates of real-world reaction rates. */
 const CHAT_PHASES = [
-  {at: 0, texts: [
-    "that was a packed trip",
-    "thats a lot for one weekend",
-    "i wouldve needed another day",
-    "i would need a day off after getting back",
-    "the food sounds worth going for",
-    "i tend to overplan and then ignore my own plan",
-    "i always end up spending too much on food when i travel",
-    "now im looking at flights",
-    "what was your favourite meal?",
-    "you should put the places in a list",
-    "would you go again?",
-    "i havent been away in ages",
-    "a short trip is better than no trip",
-    "i like trips where you can just walk around",
-    "i always forget to take pictures on trips",
-    "eating somewhere new is my favourite part",
-    "i wouldve stayed longer",
-    "sounds like you barely stopped moving",
-    "im terrible at planning trips",
-    "i usually just ask people where to eat",
-    "going away for a few days sounds so good rn",
-    "i always check the weather way too many times before a trip",
-    "i need to stop putting off my own trip",
-    "i try to avoid the busiest times when i travel",
-    "i always come home with a list of things i missed",
-    "food recommendations are always welcome",
-    "my trips are mostly walking and eating",
-    "i keep meaning to take a weekend away",
-    "i like leaving some time to just wander",
-    "sounds like you made the most of the time",
-    "i would forget half the things i wanted to do",
-    "id watch a longer trip recap"
-  ]},
-  {at: 38.5, texts: [
-    "i could spend all day in a museum",
-    "what kind of museum was it?",
-    "i always end up missing the last room",
-    "i always lose track of time in museums",
-    "i like doing that on trips too",
-    "theres always one part i spend way too long in",
-    "id go back just for the things i missed",
-    "i need more time for sightseeing than i think",
-    "museums are my rainy day plan",
-    "i should check out the museums near me sometime",
-    "sounds like theres still plenty to go back for",
-    "i always end up reading every little sign",
-    "i keep a whole list of places i want to visit",
-    "i like hearing about the places people actually went",
-    "i havent been to a museum in a while",
-    "its hard fitting everything into a short trip",
-    "i like being able to go at my own pace",
-    "i tend to wander around until closing time",
-    "now i want to go somewhere this weekend",
-    "you can always do another trip"
-  ]},
-  {at: 56.5, texts: [
-    "we went on a school trip when i was little",
-    "seeing them in person must hit different",
-    "i havent been since i was a kid",
-    "what was your favourite animal there?",
-    "i thought everyone had a zoo school trip",
-    "id be there for hours",
-    "i would need more than one visit",
-    "i wouldve guessed youd been before",
-    "seeing them up close must be different",
-    "better late than never i guess",
-    "i used to go with my grandparents",
-    "i dont remember my first visit at all",
-    "first zoo visit as an adult is interesting",
-    "id have no idea where to go first",
-    "my phone would be full of animal photos",
-    "i always end up walking way more than planned",
-    "i could spend ages just watching one enclosure",
-    "thats a different kind of first trip",
-    "we didnt have a zoo near where i grew up either",
-    "now im trying to remember the last time i went",
-    "pictures never really give you a sense of the size",
-    "i always have to stop for a snack halfway round",
-    "id be there until they closed"
-  ]},
-  {at: 82.5, texts: [
-    "i didnt realise there were that many birds",
-    "the signs are doing a lot of work for me",
-    "i always stop to read the bird signs",
-    "i like the little birds too",
-    "i could watch birds for ages",
-    "which bird stood out to you?",
-    "i can identify about three birds total",
-    "i would need the signs for all of them",
-    "i like when you can hear them before you see them",
-    "the bird section sounds like a whole visit by itself",
-    "all my bird photos turn out blurry",
-    "i forget how many different kinds there are",
-    "id probably spend most of my time in that section",
-    "id take forever getting through that bit",
-    "i know nothing about birds but theyre fun to watch",
-    "i like when theres space to sit and watch them",
-    "i thought zoos mostly had bigger animals",
-    "sounds like there was a lot to look at",
-    "birdwatchers would have a field day",
-    "i want to see the photos from this trip"
-  ]},
-  {at: 101.5, texts: [
-    "wait are we ending already?",
-    "i only just got here",
-    "thanks for telling us about the trip",
-    "that went by fast",
-    "i was just getting settled in",
-    "one more story before you go?",
-    "i thought we had a bit longer",
-    "i missed the start today",
-    "dont go just yet",
-    "you should tell us more next time",
-    "i thought there was a bit more time",
-    "i nearly missed the whole thing"
-  ]},
-  {at: 110.5, texts: [
-    "okay now im curious",
-    "okay im listening",
-    "i can stay for one more thing",
-    "i thought you were about to sign off",
-    "alright ill stick around",
-    "hold on let me get back to my desk",
-    "i was about to close the tab",
-    "theres always one more thing",
-    "you cant leave us hanging now",
-    "i was about to say bye",
-    "i have a few more minutes",
-    "lets hear it then",
-    "i picked a good time to get back",
-    "thought i was going to miss the end",
-    "ill wait before getting up",
-    "wasnt expecting something else today"
-  ]},
-  {at: 125.5, texts: [
-    "oh theres a poll",
-    "okay lets hear the question",
-    "ill wait for the choices",
-    "where will the poll show up?",
-    "i usually miss these polls",
-    "let me hear the instructions first",
-    "im here for the poll",
-    "okay youve got my attention",
-    "ill keep an eye on the screen",
-    "i havent done one of these here before",
-    "ill put my food down for this",
-    "let me turn the volume up",
-    "im waiting for the card",
-    "curious what the question is",
-    "i nearly left before the poll",
-    "alright whats the setup?",
-    "waiting to see what the options are",
-    "ill listen before clicking anything",
-    "okay ill take part",
-    "waiting for it to open",
-    "i came back just in time for this",
-    "lets see what were answering"
-  ]},
-  {at: 147.5, texts: [
-    "so pick an answer and then confidence",
-    "okay two parts to it",
-    "confidence from one to seven, got it",
-    "ill check both before submitting",
-    "thanks for explaining the scale",
-    "i was about to ask about the numbers",
-    "so seven means completely sure?",
-    "got the instructions now",
-    "ill read the question when it appears",
-    "waiting for the actual poll",
-    "okay i know what to do",
-    "answer first then how sure we are",
-    "ill wait until it opens",
-    "im following so far",
-    "the confidence part makes sense",
-    "ill make sure i fill in both",
-    "so we need both to submit",
-    "i missed a bit but i think ive got it now",
-    "ready when the card is up",
-    "okay the low end means not sure",
-    "i was wondering how the confidence bit worked",
-    "okay lets see the question then"
-  ]}
+  {
+    "at": 0,
+    "texts": [
+      "what was the game called?",
+      "i keep forgetting game names too",
+      "a farming game sounds good rn",
+      "i need something slower to play",
+      "how long did you end up playing?",
+      "i always lose track of time with those games",
+      "was it on pc?",
+      "i have way too many games waiting already",
+      "i could use a game like that",
+      "did you just start it yesterday?",
+      "i like being able to play at my own pace",
+      "there goes another evening",
+      "i get so invested in these games",
+      "i need a break from competitive games",
+      "ill add it to the list",
+      "tell us the name when you remember",
+      "i would watch you play that",
+      "that sounds like a good evening"
+    ]
+  },
+  {
+    "at": 17,
+    "texts": [
+      "what did you plant first?",
+      "i always plant way too much",
+      "berries would be my first pick",
+      "can you cook with what you grow?",
+      "i spend ages deciding where everything goes",
+      "i like games where i can build up a little farm",
+      "my inventory would be full already",
+      "i always forget to water something",
+      "how big can you make the farm?",
+      "i would end up planting one of everything",
+      "i like being able to grow different things",
+      "the bread part sounds nice",
+      "i would fill the place with fruit trees",
+      "i always run out of space",
+      "can you move the trees later?",
+      "i get attached to my little plots",
+      "i would never remember when to harvest",
+      "now i want to try this"
+    ]
+  },
+  {
+    "at": 35.5,
+    "texts": [
+      "can you name the animals?",
+      "i would spend all my time looking after them",
+      "the farm keeps getting bigger",
+      "i always get the chickens first",
+      "do the animals wander around?",
+      "that sounds like a lot to keep track of",
+      "i would have to name every single one",
+      "i like having animals in farming games",
+      "how long until you unlock them?",
+      "id forget what i was doing and just feed them",
+      "i never have enough room for everything",
+      "my farm layout would be a mess",
+      "i would save up for the animals first",
+      "can you build different pens?",
+      "thats a whole routine every day",
+      "i like having little jobs to do",
+      "i would be taking screenshots of the farm"
+    ]
+  },
+  {
+    "at": 50,
+    "texts": [
+      "the market part sounds fun",
+      "i would keep half the crops by accident",
+      "can you talk to the villagers too?",
+      "i like having somewhere to sell everything",
+      "do the villagers ask for specific things?",
+      "i would spend too long at the market",
+      "i like games with a little town to visit",
+      "i always forget what i meant to sell",
+      "can you use the money to expand?",
+      "i would want to see everyones farms",
+      "that sounds like a nice way to spend an evening",
+      "i need to stop starting new games",
+      "i can see why you kept playing",
+      "the town part would keep me busy",
+      "i like having a reason to grow different crops"
+    ]
+  },
+  {
+    "at": 63,
+    "texts": [
+      "i play farming games too",
+      "i might have played that one",
+      "i need the name before i know",
+      "not yet but it sounds fun",
+      "ive been meaning to try one",
+      "i would give it a go",
+      "ive spent so many hours in games like that",
+      "i think i know the one you mean",
+      "i havent played it yet",
+      "a few people in chat know it",
+      "i keep coming back to farming games",
+      "let us know when you remember the name",
+      "i have a similar game going rn",
+      "i would watch a stream of it"
+    ]
+  },
+  {
+    "at": 77,
+    "texts": [
+      "wait are we ending already?",
+      "i only just got here",
+      "that went by fast",
+      "thanks for hanging out today",
+      "you sound ready for some sleep",
+      "get some rest after this",
+      "i was just getting settled in",
+      "long stream today",
+      "you should tell us more next time",
+      "i nearly missed the whole thing",
+      "i missed the start today",
+      "one more thing before you go?"
+    ]
+  },
+  {
+    "at": 89,
+    "texts": [
+      "okay now im curious",
+      "okay im listening",
+      "i can stay for one more thing",
+      "i thought you were about to sign off",
+      "alright ill stick around",
+      "hold on let me get back to my desk",
+      "i was about to close the tab",
+      "theres always one more thing",
+      "you cant leave us hanging now",
+      "i was about to say bye",
+      "i have a few more minutes",
+      "lets hear it then",
+      "i picked a good time to get back",
+      "thought i was going to miss the end",
+      "ill wait before getting up",
+      "wasnt expecting something else today"
+    ]
+  },
+  {
+    "at": 102.5,
+    "texts": [
+      "oh theres a poll",
+      "okay lets hear the question",
+      "ill wait for the choices",
+      "where will the poll show up?",
+      "i usually miss these polls",
+      "let me hear the instructions first",
+      "im here for the poll",
+      "okay youve got my attention",
+      "ill keep an eye on the screen",
+      "i havent done one of these here before",
+      "ill put my food down for this",
+      "let me turn the volume up",
+      "im waiting for the card",
+      "curious what the question is",
+      "i nearly left before the poll",
+      "alright whats the setup?",
+      "waiting to see what the options are",
+      "ill listen before clicking anything",
+      "okay ill take part",
+      "waiting for it to open"
+    ]
+  },
+  {
+    "at": 115.5,
+    "texts": [
+      "okay im following",
+      "ill hear the whole question first",
+      "let me think about the wording",
+      "i want to hear both parts",
+      "okay thats the topic",
+      "im listening to the question",
+      "ill wait until youve finished",
+      "let me pause what im doing",
+      "i came back just in time",
+      "got my attention now",
+      "ill read it again when the card appears",
+      "okay keep going",
+      "i want to make sure i understand it",
+      "ill wait for the options",
+      "i need a moment to think",
+      "interesting question to end on",
+      "im still here listening",
+      "ill read it carefully",
+      "let me focus for a second",
+      "i didnt expect a question today",
+      "okay lets see the poll",
+      "i have time for one question"
+    ]
+  },
+  {
+    "at": 134,
+    "texts": [
+      "waiting for the card now",
+      "okay ill read the question",
+      "let me see the options",
+      "ill check the wording before picking",
+      "i have the sound on now",
+      "im ready for the poll",
+      "okay youve explained the question",
+      "i need to read it once more",
+      "lets see how this works",
+      "ill take a moment before choosing",
+      "okay where do we vote?",
+      "im watching for it"
+    ]
+  },
+  {
+    "at": 144.5,
+    "texts": [
+      "okay yes or no",
+      "i can see the choices",
+      "ill think before submitting",
+      "the poll is on screen now",
+      "got the question in front of me",
+      "ill take a moment with this",
+      "i nearly missed the card",
+      "okay i know where to answer",
+      "ill read the question again",
+      "i can see it now",
+      "ill wait for the rest of the instructions",
+      "got it im following"
+    ]
+  }
 ];
 
-/* Single poll. All times are seconds in the current stream.mp4 (266.68 s).
-   The streamer does not read the question aloud; the question is presented here.
+/* Single poll. All times are seconds in the current stream.mp4 (244.77 s).
+   The streamer reads the question aloud, then opens the Yes/No card.
+   Result reveal and chat reopening follow separate lines in the new recording.
    Stance messages state a choice without supplying persuasive reasons.
    A/B pools use matching phrasing, and neutral reactions fit every result condition. */
 const POLLS = [
   {
     "id": 1,
-    "q": "Who would win in a fight: one gorilla or 100 unarmed men?",
+    "q": "Do you think that video games contribute to youth violence?",
     "A": {
-      "label": "100 unarmed men"
+      "label": "Yes"
     },
     "B": {
-      "label": "One gorilla"
+      "label": "No"
     },
     "order": [
-      "B",
-      "A"
+      "A",
+      "B"
     ],
-    "announce": 123.0,
-    "lock": 169.1,
-    "at": 181.05,
-    "countdown": 199.84,
-    "countdownSeconds": 10,
-    "close": 210.7,
-    "result": 216.2,
-    "hide": null,                   // Keep the result visible until the stream ends.
+    "announce": 100.35,
+    "lock": 151.75,
+    "at": 141.55,
+    "countdown": 183.1,
+    "countdownSeconds": 15,
+    "close": 196.55,
+    "result": 198.85,
+    "hide": null,
     "saysA": [
-      "100 men",
-      "i picked the 100 men",
-      "100 men for me",
-      "team humans",
-      "going with the 100 men",
-      "my vote is 100 men",
-      "100 men imo",
-      "voted 100 men",
-      "the 100 men lol",
-      "gotta go 100 men",
-      "100 men here",
-      "im on team humans",
-      "100 men easy",
-      "i went with 100 men",
-      "100 men for sure",
-      "100 men is my pick",
-      "yeah 100 men",
-      "still picking 100 men",
-      "put me down for 100 men",
-      "humans for me",
-      "100 men all day",
-      "i chose the 100 men",
-      "100 men tbh",
-      "team 100 men",
-      "sticking with 100 men",
-      "100 men gets my vote",
-      "its 100 men for me",
-      "locking in 100 men",
-      "100 men surely",
-      "im taking the 100 men"
+      "yes",
+      "i picked yes",
+      "yes for me",
+      "my answer is yes",
+      "going with yes",
+      "my vote is yes",
+      "yes imo",
+      "voted yes",
+      "i said yes",
+      "id say yes",
+      "yes here",
+      "im going with yes",
+      "yes is my answer",
+      "i went with yes",
+      "i chose yes",
+      "yes is my pick",
+      "yeah i picked yes",
+      "still picking yes",
+      "put me down for yes",
+      "ill go with yes",
+      "i answered yes",
+      "i selected yes",
+      "yes tbh",
+      "sticking with yes",
+      "my choice was yes",
+      "its yes for me",
+      "i put yes",
+      "locking in yes",
+      "i clicked yes",
+      "i ended up picking yes"
     ],
     "saysB": [
-      "the gorilla",
-      "i picked the gorilla",
-      "gorilla for me",
-      "team gorilla",
-      "going with the gorilla",
-      "my vote is gorilla",
-      "gorilla imo",
-      "voted gorilla",
-      "the gorilla lol",
-      "gotta go gorilla",
-      "gorilla here",
-      "im on team gorilla",
-      "gorilla easy",
-      "i went with gorilla",
-      "gorilla for sure",
-      "gorilla is my pick",
-      "yeah gorilla",
-      "still picking gorilla",
-      "put me down for gorilla",
-      "gorilla for me",
-      "gorilla all day",
-      "i chose the gorilla",
-      "gorilla tbh",
-      "team gorilla",
-      "sticking with gorilla",
-      "gorilla gets my vote",
-      "its gorilla for me",
-      "locking in gorilla",
-      "gorilla surely",
-      "im taking the gorilla"
+      "no",
+      "i picked no",
+      "no for me",
+      "my answer is no",
+      "going with no",
+      "my vote is no",
+      "no imo",
+      "voted no",
+      "i said no",
+      "id say no",
+      "no here",
+      "im going with no",
+      "no is my answer",
+      "i went with no",
+      "i chose no",
+      "no is my pick",
+      "yeah i picked no",
+      "still picking no",
+      "put me down for no",
+      "ill go with no",
+      "i answered no",
+      "i selected no",
+      "no tbh",
+      "sticking with no",
+      "my choice was no",
+      "its no for me",
+      "i put no",
+      "locking in no",
+      "i clicked no",
+      "i ended up picking no"
     ],
     "neutral": [
       "chat took that seriously lol",
       "i actually had to think about it",
-      "that was fun",
+      "interesting question",
       "the confidence part got me",
       "i spent way too long on that",
       "chat is back",
-      "could do these all night",
+      "id take part in another poll",
       "we need more of these",
       "i kept changing my mind",
       "i nearly missed the submit button",
@@ -1478,7 +1503,8 @@ const POLLS = [
       "i made it in before the timer",
       "the chat pause felt long",
       "curious what the next question would be"
-    ]
+    ],
+    "reopen": 205.45
   }
 ];
 
@@ -1648,9 +1674,9 @@ function ScriptSource(c, rnd, span){
   // Convert visible post-poll windows into the paused chat clock.
   let chatEnd = OUTRO_AT - VIDEO_TRIM;
   const windows = POLLS.map((poll, i) => {
-    const start = poll.lock - VIDEO_TRIM - POLLS.slice(0, i).reduce((n, p) => n + p.result - p.lock, 0);
-    const end = start + (Math.min(POLLS[i + 1]?.lock ?? OUTRO_AT, OUTRO_AT) - poll.result);
-    chatEnd -= poll.result - poll.lock;
+    const start = poll.lock - VIDEO_TRIM - POLLS.slice(0, i).reduce((n, p) => n + p.reopen - p.lock, 0);
+    const end = start + (Math.min(POLLS[i + 1]?.lock ?? OUTRO_AT, OUTRO_AT) - poll.reopen);
+    chatEnd -= poll.reopen - poll.lock;
     return {start, end};
   });
   const stanceCounts = POLLS.map(() => new Array(built.d.chatters).fill(0));
@@ -1836,128 +1862,103 @@ const NICK_IDB = [
 
 /* Responses follow the new English dialogue. buildCues adds typing delay.
    No pre-poll reaction hints at the question or expresses a preference.
-   The streamer never laughs outright, so there are no standalone laughs here.
+   No standalone laughter is added as filler.
    Emoji appear only on these reactions and in REACT_OUTRO, where pickSpeaker
    balances them across identities. Stance, neutral and topic lines stay
-   emoji-free because their speakers come from the timeline. Never use animal or
-   strength emoji that could hint at the poll (gorilla, monkey, flexed arm,
-   fire, skull). The streamer talks about birds, so the bird emoji is safe.
+   emoji-free because their speakers come from the timeline. Keep emoji neutral
+   so they cannot imply a Yes/No stance on the poll.
    Emoji-only lines repeat a reaction already in chat (surprise, not wanting the
    stream to end), the way several viewers pile on in a live chat. The overall
    share, about 10% of live lines, is an editorial choice, not a measured rate. */
 const CUES = [
   {
     "t": 8,
-    "text": "only a couple days and you did all that?"
-  },
-  {
-    "t": 18,
-    "text": "need that food list 🤤"
-  },
-  {
-    "t": 27,
-    "text": "sounds worth the trip"
-  },
-  {
-    "t": 36,
-    "text": "museum arc"
-  },
-  {
-    "t": 45,
-    "text": "you should go back sometime"
-  },
-  {
-    "t": 54,
-    "text": "FIRST zoo trip?? 😮",
+    "text": "need the name when you remember it 👀",
     "core": true
   },
   {
-    "t": 56,
-    "text": "😮"
+    "t": 20,
+    "text": "a whole fruit and veg setup"
+  },
+  {
+    "t": 29,
+    "text": "bread AND apple trees?"
+  },
+  {
+    "t": 38,
+    "text": "naming every animal immediately 😊",
+    "core": true
+  },
+  {
+    "t": 51,
+    "text": "market day"
   },
   {
     "t": 59,
-    "text": "wait youd never been to a zoo before?",
+    "text": "adding another game to my list"
+  },
+  {
+    "t": 66,
+    "text": "farming game chat has arrived 👋",
     "core": true
   },
   {
-    "t": 68,
-    "text": "the animal lineup"
-  },
-  {
-    "t": 80,
-    "text": "bird lore 🐦"
-  },
-  {
-    "t": 87,
-    "text": "the bird section is always huge"
-  },
-  {
-    "t": 104,
+    "t": 76,
     "text": "nooo stay 😭",
     "core": true
   },
   {
-    "t": 105.5,
+    "t": 78,
     "text": "😭😭"
   },
   {
-    "t": 108,
-    "text": "one more thing"
-  },
-  {
-    "t": 117,
-    "text": "ONE MORE",
+    "t": 88.7,
+    "text": "one more thing 👀",
     "core": true
   },
   {
-    "t": 119.5,
-    "text": "👀",
+    "t": 94.6,
+    "text": "okay lets hear it"
+  },
+  {
+    "t": 101,
+    "text": "poll time",
     "core": true
   },
   {
-    "t": 126,
-    "text": "alright lets see it",
+    "t": 109,
+    "text": "im listening 👍"
+  },
+  {
+    "t": 132,
+    "text": "okay got the question",
     "core": true
   },
   {
-    "t": 134,
-    "text": "poll time"
-  },
-  {
-    "t": 145,
+    "t": 144.5,
     "text": "got it 👍"
   },
   {
-    "t": 160,
-    "text": "yeah both parts"
-  },
-  {
-    "t": 165,
+    "t": 149,
     "text": "see you after the poll 👋",
     "core": true
   },
   {
-    "t": 217,
-    "text": "oh here we go 👀",
+    "t": 205.7,
+    "text": "we can type again 👀",
     "core": true
   },
   {
-    "t": 223,
-    "text": "we can type again"
+    "t": 209,
+    "text": "chat is back"
   },
   {
-    "t": 234,
-    "text": "we have been released",
-    "core": true
+    "t": 215,
+    "text": "give chat a second to catch up"
   },
   {
-    "t": 242,
-    "text": "that was fun actually"
-  },
-  {
-    "t": 247,
-    "text": "do more of these 🙏",
+    "t": 220,
+    "text": "thanks for hearing us out 🙏",
     "core": true
   }
 ];
@@ -2813,9 +2814,9 @@ addEventListener('pagehide', () => {
 });
 
 /* ── 7. 플레이 루프 ──────────────────────── */
-// Verified against the H.264 stream.mp4 (English trip recap, one poll).
-const SPAN = 266.681458;
-const OUTRO_AT = 250.5;
+// Verified against the H.264 stream.mp4 (farming game recap, Yes/No poll).
+const SPAN = 244.766667;
+const OUTRO_AT = 223.75;
 const END_AT = SPAN;
 const STEP = 0.25;
 const VIDEO_TRIM = 0;
@@ -2898,7 +2899,8 @@ function loop(at){
     if (!p.shown && tick >= d.at) showPoll(i);
     if (p.shown && !p.closed) tickTimer(i);
     if (!p.closed && tick >= d.close) closePoll(i);
-    if (!p.resultShown && tick >= d.result) unlockChat(i);
+    if (!p.resultShown && tick >= d.result) showResult(i);
+    if (p.unlockAt === null && tick >= d.reopen) unlockChat(i);
     if (p.resultShown && !p.resultHidden && d.hide !== null && tick >= d.hide) hideResult(i);
   });
   if (!outroed && tick >= OUTRO_AT) startOutro();
@@ -2911,9 +2913,9 @@ function loop(at){
   while (outroQueue.length && outroQueue[0].t <= tick) pushScripted(outroQueue.shift(), 'outro');
   if (!ended && tick >= END_AT){ endStream(); return; }
   if (!chatOpen){
-    const i = PS.findIndex(p => p.locked && !p.resultShown);
+    const i = PS.findIndex(p => p.locked && p.unlockAt === null);
     if (i >= 0 && PS[i].closed){
-      const left = Math.max(0, Math.ceil(POLLS[i].result - tick));
+      const left = Math.max(0, Math.ceil(POLLS[i].reopen - tick));
       setLockMsg(left > 0 ? `Chat reopens in ${left}s` : 'Chat is reopening');
     }
   }
@@ -3386,7 +3388,7 @@ function setReact(v){
 
 /* ── 8-1. Study 2: 투표와 채팅 잠금 ──────── */
 /* 모든 시각은 POLLS에 둔 영상 고정 시각입니다. 채팅 노출 시간이 참가자마다 달라지면
-   안 되므로, 해제는 투표 시점이 아니라 스트리머가 결과를 여는 시각에 일어납니다.
+   안 되므로, 결과 공개와 채팅 해제는 각각 스트리머의 해당 대사 시각에 일어납니다.
    빨리 투표한 사람이 채팅을 더 오래 보는 일이 없습니다.
 
    선택지별 수치는 분석용으로만 계산하고, 화면에는 막대 길이와 총 투표 수만 표시합니다.
@@ -3540,7 +3542,7 @@ function openChat(){
 
 function unlockChat(i){
   const p = PS[i], d = POLLS[i];
-  if (p.resultShown) return;
+  if (p.unlockAt !== null) return;
   if (!p.closed) closePoll(i);
   showResult(i);
   chatOpen = true;
@@ -3555,7 +3557,7 @@ function unlockChat(i){
   const off = cond.input === 'off';
   $('inputRow').hidden = off;
   $('inputOff').hidden = !off;
-  Logger.add('chat_unlocked', {poll: i + 1, at_sec: p.unlockAt, scheduled_at: d.result});
+  Logger.add('chat_unlocked', {poll: i + 1, at_sec: p.unlockAt, scheduled_at: d.reopen});
 }
 
 /* At the fixed deadline, auto-submit only complete choice + confidence pairs. */
@@ -3660,7 +3662,8 @@ function tickTimer(i){
   if (cur !== i) return;
   const d = POLLS[i];
   if (tick < d.countdown) return;
-  const left = Math.min(d.countdownSeconds, Math.max(0, Math.ceil(d.close - tick)));
+  // Follow the spoken "15 more seconds"; the separate "time is up" line closes the poll.
+  const left = Math.min(d.countdownSeconds, Math.max(0, Math.ceil(d.countdown + d.countdownSeconds - tick)));
   $('pollTimer').textContent = left ? `${left}s left` : 'Closed';
 }
 
@@ -3780,7 +3783,7 @@ function lockVote(i, auto = false){
     n_clicks: p.clicks,
     // 처음 고른 뒤 확정까지 걸린 시간 — 망설임의 길이
     settle_sec: p.firstVoteAt === null ? null : +(tick - p.firstVoteAt).toFixed(2),
-    unlock_at: d.result
+    unlock_at: d.reopen
   });
 }
 
@@ -3806,7 +3809,7 @@ function submitVote(){
   lockVote(cur);
 }
 
-/* Post-poll chat exposure, measured from the fixed result reveal. */
+/* Post-poll chat exposure, measured from the fixed chat reopening. */
 function chatExposureSec(){
   let s = 0;
   PS.forEach((p, i) => {
@@ -4117,8 +4120,8 @@ syncThemeBtn();
 function initPreviewBar(){
   const v = $('streamVideo');
   const marks = [
-    [52, '동물원'],
-    [98, '마무리 시작'],
+    [33, '농장 게임'],
+    [73, '마무리 시작'],
     [POLLS[0].announce - 2, '투표 안내'],
     [POLLS[0].at - 3, '투표 카드'],
     [POLLS[0].result - 2, '결과'],

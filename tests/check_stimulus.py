@@ -88,16 +88,16 @@ def check_preview(browser, base):
     # A server without Range support cannot move the video; state must not run ahead of it.
     page.evaluate('''() => Object.defineProperty(document.getElementById('streamVideo'), 'currentTime',
       {get:()=>window.qaTime, set:()=>{}, configurable:true})''')
-    jump('동물원')
+    jump('농장 게임')
     assert page.evaluate('tick < 1 && !previewSeeking') and page.locator('#pvNote').is_visible()
     page.evaluate('''() => Object.defineProperty(document.getElementById('streamVideo'), 'currentTime',
       {get:()=>window.qaTime, set:t=>{window.qaTime=t}, configurable:true})''')
     # Jump to the vote card, vote, then jump to the results.
     jump('투표 카드')
     assert not page.locator('#pvNote').is_visible()
-    assert page.evaluate('Math.abs(tick - (POLLS[0].at - 3)) < 0.01 && !chatOpen && !PS[0].shown')
+    assert page.evaluate('Math.abs(tick - (POLLS[0].at - 3)) < 0.01 && chatOpen && !PS[0].shown')
     assert not page.evaluate("Logger.ev.some(e => e.type === 'seek_attempt')")
-    advance(page, 181.05)
+    advance(page, 141.55)
     page.locator('#pollOpts button[data-v="B"]').click()
     page.locator('input[name=confidence][value="6"]').check()
     page.locator('#voteSubmit').click()
@@ -130,7 +130,7 @@ def check_chat_output(page):
     rows = [m for m in data['lines'] if m['ph'] != 'before_join']
     laughs = [m for m in rows if LAUGH.fullmatch(m['text'])]
     scheduled = [m for m in data['cues'] if LAUGH.fullmatch(m['text'])]
-    assert not scheduled, 'The streamer never laughs outright, so CUES has no standalone laughs'
+    assert not scheduled, 'CUES has no standalone laughs unrelated to the dialogue'
     assert not laughs, 'Do not fill dialogue with standalone laughter'
     assert not any(re.search(r'\b(?:chillin|chill|cozy|vibes)\b|^:\)$', m['text'], re.I) for m in rows)
     # Emoji only on dialogue reactions and farewells, spread across the stream, never hinting at the poll.
@@ -140,11 +140,11 @@ def check_chat_output(page):
         assert m['text'] in scripted and not m['stance'], m
         assert not TOPIC_EMOJI.search(m['text']), m
     times = [m['t'] for m in emoji_rows]
-    assert any(t < 101.5 for t in times) and any(101.5 <= t < 169.1 for t in times) and any(t >= 216.2 for t in times), times
+    assert any(t < 77 for t in times) and any(77 <= t < 151.75 for t in times) and any(t >= 205.45 for t in times), times
     # Editorial target of about 10% of live lines, not a measured platform rate.
     share = sum(1 for m in rows if EMOJI.search(m['text'])) / len(rows)
     assert 0.07 <= share <= 0.13, share
-    assert any(147.5 <= m['t'] < 169.1 and len(m['text'].split()) >= 4 for m in rows), 'Keep substantive dialogue through the instructions'
+    assert any(144.5 <= m['t'] < 151.75 and len(m['text'].split()) >= 4 for m in rows), 'Keep substantive dialogue through the instructions'
 
 
 def check_one_side_per_viewer(lines):
@@ -193,7 +193,7 @@ def check_chat_generation(page):
 
 
 # Reveal the result and record both bar widths every animation frame until the motion ends.
-# Bars are listed in display order: [One gorilla (B), 100 unarmed men (A)].
+# Bars are listed in display order: [Yes (A), No (B)].
 SAMPLE_MOTION = """async () => {
   const frames = [];
   const read = () => [...document.querySelectorAll('#pollRes .bar')].map(b => parseFloat(b.style.width) || 0);
@@ -208,11 +208,11 @@ SAMPLE_MOTION = """async () => {
 
 
 def vote_and_close(page, choice):
-    advance(page, 181.05)
+    advance(page, 141.55)
     page.locator(f'#pollOpts button[data-v="{choice}"]').click()
     page.locator('input[name=confidence][value="5"]').check()
     page.locator('#voteSubmit').click()
-    advance(page, 216.1)
+    advance(page, 198.75)
 
 
 def check_result_motion(browser, base):
@@ -243,7 +243,7 @@ def check_result_motion(browser, base):
     page, errors = prepare(browser, base, 'm2')
     vote_and_close(page, 'A')
     data = page.evaluate(SAMPLE_MOTION)
-    gaps = [a - b for b, a in data['frames']]          # mine (A) minus other (B)
+    gaps = [a - b for a, b in data['frames']]          # mine (A) minus other (B)
     first = next(g for g in gaps if abs(g) > 2)
     assert first > 0, 'The participant\'s side leads first'
     signs = [1 if g > 2 else -1 for g in gaps if abs(g) > 2]
@@ -294,14 +294,17 @@ def main():
                 page, errors = prepare(browser, base, code)
                 check_english(page)
                 assert page.locator('#previewBar').count() == 0, 'Participants never see the preview tools'
-                advance(page, 169)
+                advance(page, 141.5)
+                assert not page.evaluate('PS[0].shown')
+                advance(page, 141.55)
+                assert page.locator('#poll').is_visible() and page.evaluate('chatOpen')
+                advance(page, 151.65)
                 assert page.evaluate('chatOpen')
                 assert not page.evaluate('shownLines.some(m=>m.stance)')
-                advance(page, 169.1)
+                advance(page, 151.75)
                 assert not page.evaluate('chatOpen')
-                advance(page, 181.05)
                 assert page.locator('#poll').is_visible()
-                assert page.locator('#pollOpts button').all_text_contents() == ['One gorilla', '100 unarmed men']
+                assert page.locator('#pollOpts button').all_text_contents() == ['Yes', 'No']
                 page.locator(f'#pollOpts button[data-v="{choice}"]').click()
                 page.locator('#voteSubmit').click()
                 assert not page.evaluate('PS[0].voteLocked'), 'Confidence must be required'
@@ -309,12 +312,16 @@ def main():
                 page.locator('#voteSubmit').click()
                 assert page.evaluate('PS[0].voteLocked && PS[0].confidence===5')
                 assert not page.evaluate('chatOpen'), 'Submitting must not unlock chat early'
-                advance(page, 200)
-                assert page.locator('#pollTimer').inner_text() == '10s left'
-                advance(page, 210.7)
+                advance(page, 183.1)
+                assert page.locator('#pollTimer').inner_text() == '15s left'
+                advance(page, 196.55)
                 assert page.evaluate('PS[0].closed && !chatOpen')
-                advance(page, 216.2)
+                advance(page, 198.85)
+                assert page.evaluate('PS[0].resultShown && !chatOpen && PS[0].unlockAt === null')
+                assert not page.evaluate('shownLines.some(m=>m.stance)'), 'Keep stance messages hidden until chat reopens'
+                advance(page, 205.45)
                 assert page.evaluate('chatOpen && PS[0].resultShown')
+                assert page.evaluate('Logger.ev.find(e=>e.type==="chat_unlocked").scheduled_at') == 205.45
                 result = page.evaluate('({condition:cond.cong,p:PS[0]})')
                 mine = result['p']['result'][choice]
                 total = result['p']['result']['total']
@@ -328,28 +335,28 @@ def main():
                 # "100" belongs to the answer wording, not to the voting result.
                 total_text = page.locator('#pollTotal').inner_text()
                 assert total_text == f'Total votes: {total:,}', total_text
-                result_text = page.locator('#poll').inner_text().replace('100 unarmed men', '').replace(total_text, '')
+                result_text = page.locator('#poll').inner_text().replace(total_text, '')
                 assert not re.search(r'\d|%', result_text), result_text
                 assert page.locator('#pollTimer').inner_text() == ''
                 assert not re.search(r'\d|%', page.locator('#feed .msg.sys').last.inner_text())
                 # Bars animate toward these targets; check_result_motion covers the motion itself.
                 shares = page.locator('#pollRes .bar').evaluate_all('els => els.map(el=>parseFloat(el.dataset.share))')
-                for share, side in zip(shares, ['B', 'A']):
+                for share, side in zip(shares, ['A', 'B']):
                     assert abs(share - result['p']['result'][side] / total * 100) < 0.1
                 shown = page.evaluate('Logger.ev.find(e=>e.type==="poll_result_shown")')
                 assert shown['total'] == total and shown['total_shown']
                 assert shown['motion'] == ('cross' if result['condition'] == 'half' else 'bounce')
-                advance(page, 250.5)
+                advance(page, 223.75)
                 assert page.evaluate('outroed')
                 assert page.locator('#poll').is_visible(), 'Keep results visible through the outro'
-                advance(page, 266.65)
+                advance(page, 244.74)
                 assert page.locator('#poll').is_visible(), 'Keep results visible until the stream ends'
                 assert not page.evaluate('Logger.ev.some(e=>e.type==="poll_result_hidden")')
-                advance(page, 266.69)
+                advance(page, 244.77)
                 assert page.locator('#endCard').is_visible()
                 assert not page.locator('#poll').is_visible()
                 assert page.evaluate('Logger.ev.filter(e=>e.type==="poll_result_hidden").length') == 1
-                assert page.evaluate('Logger.ev.find(e=>e.type==="poll_result_hidden").at_sec - Logger.ev.find(e=>e.type==="poll_result_shown").at_sec') > 50
+                assert page.evaluate('Logger.ev.find(e=>e.type==="poll_result_hidden").at_sec - Logger.ev.find(e=>e.type==="poll_result_shown").at_sec') > 45
                 summary = page.evaluate('leaveSummary("end_button")')
                 assert len(summary['polls']) == 1 and summary['confidence'] == 5
                 assert summary['saw_end'] and summary['polls'][0]['submitted']
@@ -362,7 +369,7 @@ def main():
                 if code in ['q7', 'm2', 'z5']: assert emoji['human'] == 0, emoji
                 if code in ['b9', 'k3', 'r6']: assert emoji['ai'] == 0, emoji
                 assert not any(HANGUL.search(m['name'] + m['text']) for m in lines)
-                assert not any(m.get('stance') and m['t'] >= 250.5 for m in lines)
+                assert not any(m.get('stance') and m['t'] >= 223.75 for m in lines)
                 check_one_side_per_viewer(lines)
                 assert page.evaluate('Logger.ev.filter(e=>e.type==="vote").length') == 1
                 assert not page.evaluate('Logger.ev.some(e=>e.poll>1)')
@@ -381,7 +388,7 @@ def main():
                 assert not errors, errors
                 page.close()
                 checked += 1
-        print(f'PASS: {checked} condition/choice combinations, results visible for 50 seconds until stream end, submission, completion')
+        print(f'PASS: {checked} condition/choice combinations, results visible for 46 seconds until stream end, submission, completion')
 
         check_result_motion(browser, base)
         print('PASS: result bars bounce in from the left (all/none), swing and cross before ending exactly level (half), and wait for a hidden tab')
@@ -398,7 +405,7 @@ def main():
         # Draft-only choices are not submitted; complete responses can auto-submit at the deadline.
         for mode in ['missing-confidence','auto-submit','no-answer','change-answer']:
             page, errors = prepare(browser, base)
-            advance(page, 181.05)
+            advance(page, 141.55)
             if mode != 'no-answer':
                 page.locator('#pollOpts button[data-v="A"]').click()
                 draft = page.evaluate('leaveSummary("closed")')
@@ -409,7 +416,7 @@ def main():
                 page.locator('#pollOpts button[data-v="B"]').click()
                 assert page.evaluate('PS[0].confidence === null')
                 assert page.locator('input[name=confidence]:checked').count() == 0
-            advance(page, 216.2)
+            advance(page, 205.45)
             state = page.evaluate('PS[0]')
             if mode == 'auto-submit':
                 assert state['voteLocked'] and state['vote'] == 'A' and state['confidence'] == 7
@@ -418,7 +425,7 @@ def main():
                 assert page.evaluate('Logger.ev.some(e=>e.type==="poll_missed")')
             if mode == 'no-answer':
                 # Without a vote both sides are shown; each viewer still keeps one side.
-                advance(page, 250.5)
+                advance(page, 223.75)
                 check_one_side_per_viewer(page.evaluate('shownLines'))
             assert not errors, errors
             page.close()
@@ -461,7 +468,7 @@ def main():
 
         # Native media end can fire before the next loop tick; it must also hide/log the result.
         page, errors = prepare(browser, base)
-        advance(page, 266.65)
+        advance(page, 244.74)
         assert page.locator('#poll').is_visible()
         page.evaluate('tick=END_AT;endStream()')
         assert not page.locator('#poll').is_visible()
@@ -474,7 +481,7 @@ def main():
         # Small viewports: poll, radio labels, and result rows must fit their containers.
         for width, height in [(390,844),(320,740),(1024,768),(1440,900)]:
             page, errors = prepare(browser, base, width=width, height=height)
-            advance(page, 181.05)
+            advance(page, 141.55)
             page.locator('#pollOpts button[data-v="A"]').click()
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), (width, 'horizontal overflow')
             assert page.evaluate("document.querySelector('.confidence-grid').scrollWidth <= document.querySelector('.confidence-grid').clientWidth")
@@ -486,7 +493,7 @@ def main():
             check_english(page)
             page.locator('input[name=confidence][value="4"]').check()
             page.locator('#voteSubmit').click()
-            advance(page, 216.2)
+            advance(page, 205.45)
             page.wait_for_function('!resultAnim', timeout=6000)
             # "Your choice" sits outside the chosen row, both rows stay equally wide, and nothing overflows.
             fit = page.evaluate("""() => {
@@ -504,7 +511,7 @@ def main():
             }""")
             assert all(fit.values()), (width, fit)
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth"), (width, 'result overflow')
-            advance(page, 266.69)
+            advance(page, 244.77)
             assert page.evaluate("""() => {
               const player=document.getElementById('player').getBoundingClientRect();
               const finish=document.getElementById('leave').getBoundingClientRect();
