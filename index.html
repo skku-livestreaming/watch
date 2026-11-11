@@ -555,7 +555,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
    Per-option counts and percentages stay in logs. */
 /* 선택지마다 [막대 칸][칸 바깥 Your choice] 두 열입니다. 고르지 않은 쪽에도 빈 칸을 두어
    두 막대 칸의 폭이 같습니다(막대 길이를 같은 기준으로 비교할 수 있게). */
-.poll-res{display:grid;grid-template-columns:minmax(0,1fr) max-content;align-items:center;gap:9px 0;margin-top:12px}
+.poll-result-layout{display:grid;grid-template-columns:minmax(0,1fr) max-content}
+.poll-result-meta{grid-column:1;display:flex;flex-wrap:wrap;align-items:baseline;gap:0 12px}
+.poll-res{grid-column:1 / -1;display:grid;grid-template-columns:subgrid;align-items:center;gap:9px 0;margin-top:12px}
 .poll-res .opt{display:contents}
 /* 색의 역할을 나눕니다.
    - 막대(몇 명이 골랐나): 두 선택지 모두 같은 주황. 선택지마다 색이 다르면
@@ -576,10 +578,11 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
   display:inline-block;margin-left:12px;white-space:nowrap;
   font-size:13px;font-weight:800;background:#2f5bc5;color:#fff;padding:3px 9px;border-radius:5px;
 }
-.poll-total{margin:10px 0 0;font-size:13.5px;font-weight:600;color:#5f6676;font-variant-numeric:tabular-nums}
+.poll-total{margin:12px 0 0 auto;text-align:right;white-space:nowrap;font-size:13.5px;font-weight:600;color:#5f6676;font-variant-numeric:tabular-nums}
 /* 아주 좁은 화면에서는 배지를 옆에 두면 막대 칸이 너무 좁아 선택지 글이 두 줄이 됩니다.
    그때는 배지를 해당 칸 바로 위 오른쪽에 붙입니다(여전히 칸 바깥). */
 @media (max-width:400px){
+  .poll-result-layout{grid-template-columns:minmax(0,1fr)}
   .poll-res{display:flex;flex-direction:column;align-items:stretch;gap:9px}
   .poll-res .opt{display:flex;flex-direction:column;gap:5px}
   .poll-res .tag-cell{order:-1;align-self:flex-end}
@@ -925,9 +928,13 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
           <p class="poll-q" id="pollQ"></p>
           <!-- The streamer leaves the question to this card; show both options without persuasive elaboration. -->
           <div class="poll-opts" id="pollOpts"></div>
-          <p class="poll-mine" id="pollMine" hidden></p>
-          <div class="poll-res" id="pollRes" hidden></div>
-          <p class="poll-total" id="pollTotal" hidden></p>
+          <div class="poll-result-layout">
+            <div class="poll-result-meta">
+              <p class="poll-mine" id="pollMine" hidden></p>
+              <p class="poll-total" id="pollTotal" hidden></p>
+            </div>
+            <div class="poll-res" id="pollRes" hidden></div>
+          </div>
           <fieldset class="poll-confidence" id="pollConfidence" hidden aria-describedby="confidenceEnds confidenceNote">
             <legend>How confident are you that your answer is correct?</legend>
             <div class="confidence-grid">
