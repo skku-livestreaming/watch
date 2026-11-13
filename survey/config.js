@@ -214,7 +214,14 @@ window.SURVEY_CONFIG = {
 
     post: [
       {
-        // 종속변수(T2)는 반드시 사후 설문 맨 앞
+        // 방송 끝난 직후 안내 (문항 없음). 다음 쪽부터 본조사
+        id: 'main_start',
+        blocks: [
+          { type: 'html', html: '<p style="font-size:22px;font-weight:700;margin:0">The main survey begins now!</p>' }
+        ]
+      },
+      {
+        // 종속변수(T2)는 안내 바로 다음, 문항 중 맨 앞
         id: 'dv_revote',
         blocks: [
           { type: 'single', id: 't2_vote', required: true,
