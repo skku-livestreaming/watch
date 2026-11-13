@@ -2,7 +2,7 @@
 
 CloudResearch Connect → 설문(동의·사전) → 셀 균등 배정 → 조건별 설명문 → 자극물(투표 T1) → 설문(재투표 T2·사후) → 디브리핑 → CloudResearch 완료
 
-이 폴더(`survey/`)는 자극물 저장소(`skku-livestreaming/watch`) 안에 있지만 **자극물 파일은 하나도 수정하지 않습니다.** 설문이 자극물을 자기 화면 안에 띄워서 쓰기만 합니다.
+이 폴더(`survey/`)는 자극물 저장소(`skku-livestreaming/watch`) 안에 있습니다. 설문과 자극물을 같은 사이트에 배포하며, 설문이 자극물을 iframe으로 띄웁니다.
 
 ## 파일
 
@@ -11,6 +11,7 @@ CloudResearch Connect → 설문(동의·사전) → 셀 균등 배정 → 조�
 | `index.html` | 설문 엔진 (화면, 흐름, 저장, 자극물 연결) | 거의 없음 |
 | `config.js` | 셀, 주제, 동의서, 설명문, 문항, 이동 주소 | **문항이 바뀌면 여기만** |
 | `apps-script/Code.gs` | 균등 배정 + 응답 저장 (Google 시트) | 없음 |
+| `apps-script/Behavior.gs` | Supabase 행동 요약 동기화 | 스크립트 속성 설정 |
 
 ## 흐름
 
@@ -19,11 +20,11 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
   ① 동의서 (체크해야 Next 활성화)
   ② 사전 문항 (지금은 없음. 선정 기준 탈락도 없음)
   ③ 셀 배정 (서버에서 인원이 가장 적은 셀)
-  ④ 조건별 설명문 (ai / human / mixed), 15초 뒤 입장 버튼 활성화
+  ④ 조건별 설명문 (ai / human / mixed), 항목당 15초·총 45초 뒤 입장 버튼 활성화
   ⑤ 자극물을 설문 화면 안에 띄움  …/watch/?c=셀코드&panel_id=참가자ID
        투표 + 확신도(T1)는 자극물이 자체 DB(Supabase)에 저장
        [Finish participation] → 설문이 감지해 자극물을 닫고 ⑥으로
-  ⑥ 사후 문항 (첫 페이지 = 재투표 + 확신도(T2), 그다음 「라이브 스트리밍 설문지」 PDF 순서: Part 1 → 조작점검 → Part 2 → Part 3)
+  ⑥ 본조사 시작 안내 → 재투표 + 확신도(T2), 사후 문항 ( 그다음 「라이브 스트리밍 설문지」 PDF 순서: Part 1 → 조작점검 → Part 2 → Part 3)
   ⑦ 디브리핑 + 데이터 사용 동의/철회
   ⑧ CloudResearch 완료 주소로 이동
 ```
@@ -31,17 +32,17 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 - 새로고침하거나 창을 닫았다 다시 와도 같은 ID면 이어서 진행하고, 셀도 바뀌지 않아요.
 - 방송 도중 새로고침하면 "Return to the stream" 버튼이 나오고, 다시 들어간 횟수가 `stim_reenter`에 남아요.
 
-## 자극물 연결 방식 (자극물 파일 수정 없음)
+## 자극물 연결 방식
 
 설문 페이지 위에 자극물을 화면 가득 띄우고(iframe), 자극물의 종료 화면이 뜨는지 지켜봐요.
 
-- **종료 감지**: 자극물의 `#done` 화면이 켜지면 설문이 회색 "Saving your responses…" 화면으로 덮고, 자극물이 로그를 다 보낸 신호(`#returnLink` 표시)나 자극물이 다른 주소로 넘어가는 순간을 기다렸다가 사후 문항으로 넘어가요. 최대 대기 6초(`STIM_FLUSH_WAIT_MS`).
+- **종료 감지**: 자극물의 `#done` 화면이 켜지면 설문이 회색 "Saving your responses…" 화면으로 덮고, 자극물이 로그를 다 보낸 신호(`data-save-state="saved"`, 이전 버전의 `#returnLink` 표시)나 자극물이 다른 주소로 넘어가는 순간을 기다렸다가 사후 문항으로 넘어가요. 6초(`STIM_FLUSH_WAIT_MS`) 후에도 저장 미완료면 재시도 버튼을 보여 주고, 참가자는 저장 확인 뒤에만 사후 문항으로 넘어갑니다.
 - **T1 읽기**(`READ_T1: true`): 자극물의 투표 상태(`PS`), 조건 코드(`cond.code`), 세션 ID(`Sink.id()`)를 **읽기만** 해서 설문 데이터에 같이 저장해요.
-- **ID 유출 차단**: 자극물의 복귀 주소(`RETURN_URL`)가 아직 엠브레인 주소라서, 그대로 두면 종료 시 참가자 ID가 그 주소로 전송돼요. 설문 페이지의 보안 규칙(`frame-src 'self'`)으로 자극물이 다른 사이트로 이동하는 것을 막아서 이 전송을 차단해요.
+- **ID 유출 차단**: `RETURN_URL = null`로 외부 패널 복귀를 해제하고, 설문의 `frame-src` 보안 규칙도 유지합니다.
 - **조건**: 종료 감지와 T1 읽기는 설문과 자극물이 같은 사이트(`skku-livestreaming.github.io`)에 있을 때만 동작해요. 실제 실험은 `watch` 저장소의 `survey/` 폴더에 올려야 해요.
-- **다른 곳에서 미리보기**(개인 깃허브, PC 파일): 방송은 그대로 뜨지만 종료 감지는 꺼져요. 점검·관리자 모드에서는 방송 위쪽 가운데에 **Continue to the survey** 버튼이 바로 보여서 그걸로 넘어가요. (실제 참가자 화면에서는 이 버튼이 방송 길이가 지난 뒤에만 나타나는 비상용이에요.)
+- **미리보기 배포**: 저장소 전체를 함께 배포하거나 로컬 HTTP 서버에서 `/survey/`로 여세요. 설문 폴더만 별도 사이트에 올리는 경우에는 `STIMULUS_URL`과 CSP를 함께 설정해야 하며, 다른 출처의 자극물에서는 T1 읽기와 자동 종료 감지가 동작하지 않습니다.
 - 자극물 담당자가 `#done`, `#doneTitle`, `#returnLink`, `PS`, `cond`, `Sink.id()` 이름이나 구조를 바꾸면 종료 감지·T1 읽기도 다시 맞춰야 해요.
-- 예전 방식(자극물로 이동 → 복귀 주소로 돌아옴)이 필요하면 `config.js`의 `STIMULUS_EMBED: false`.
+- 참가자 배포는 같은 출처의 iframe 방식을 사용합니다. 다른 연결 방식은 별도 검증이 필요합니다.
 
 ## 개인 깃허브에 올려 미리보기 (실험 전)
 
@@ -51,7 +52,7 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 4. 1~2분 뒤 `https://내아이디.github.io/livestream-survey/?admin=1` (또는 `?debug=1`)로 열기
 5. 문항을 고치면 저장소에서 `config.js`를 열어 연필(Edit) 아이콘으로 수정 → Commit. 1분쯤 뒤 반영돼요.
 
-`API_URL`이 비어 있으면 응답이 저장되지 않으니 미리보기용으로 안전해요. 공개 저장소라 주소를 아는 사람은 누구나 볼 수 있어요.
+`API_URL`이 비어 있거나 참가자 모집이 닫혀 있으면 일반 참가자는 진행할 수 없습니다. 연구자 미리보기는 `?admin=1` 또는 `?debug=1`을 사용하며 응답을 저장하지 않습니다. 공개 저장소라 주소를 아는 사람은 누구나 볼 수 있어요.
 
 ## 설치
 
@@ -88,9 +89,9 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 | 패널의 `reset` | 처음부터 다시 |
 | `STIMULUS_EXTRA: { preview: '1' }` | 자극물의 연구자 미리보기(구간 이동 버튼, 기록 안 함). **참가자용으로는 절대 켜지 말 것** |
 
-- `API_URL`이 비어 있으면 저장 없이 화면만 돌아가요 (무작위 배정, 응답은 브라우저 콘솔에 출력).
+- `PARTICIPANT_OPEN`은 현재 false입니다. API·완료 주소·동의서 정보를 채운 후 파일럿을 거쳐 true로 바꿉니다. 연구자 미리보기에서는 서버 없이 화면을 확인할 수 있습니다.
 - 점검·관리자 모드에서는 방송이 자극물의 연구자 미리보기(`preview=1`)로 열려요. 구간 이동 버튼이 있고 자극물 DB에 기록되지 않아요.
-- 점검 기록은 시트에 `is_test = 1`로 남고 균등 배정 인원에서 빠져요.
+- 관리자·debug 미리보기는 설문 시트와 자극물 DB에 전송하지 않아요.
 - 점검 중 실제 자극물을 보면 자극물 DB에도 `TEST_…` ID로 기록되니, 분석 전에 걸러 주세요.
 
 ## 문항 바꾸기
@@ -143,7 +144,7 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 - 배정 시점에 9개 셀 중 **인원이 가장 적은 셀**로 넣고, 동률이면 그중 무작위.
 - 인원으로 세는 것: 완료(`complete`), 방송을 마친 사람(`returned`), 배정 후 `IN_PROGRESS_MINUTES`(60분) 안에 있는 진행 중인 사람.
 - 세지 않는 것: 점검 기록, 철회, 탈락, 60분이 지나도 방송을 마치지 않은 사람 (자리를 다음 사람에게 넘김).
-- `CELL_QUOTA`를 정하면 모든 셀이 차는 순간 "모집 마감" 화면이 나와요.
+- 서버 스크립트 속성 `CELL_QUOTA`를 정하면 모든 셀이 차는 순간 "모집 마감" 화면이 나와요.
 - 동의 후에 배정하므로 동의하지 않고 나간 사람은 셀을 차지하지 않아요.
 - 현황은 Apps Script 편집기에서 `showCounts` 함수를 실행하면 볼 수 있어요.
 
@@ -190,11 +191,14 @@ T1(`t1_vote`)과 T2(`t2_vote`)가 같은 A/B 코드라서 한 시트에서 바�
 
 디브리핑에서 철회를 고르면 `responses`의 응답 열과 `log`의 해당 ID 기록이 자동으로 지워지고, 지급 확인에 필요한 ID·상태·조건만 남아요. **자극물 DB의 기록은 자동으로 지워지지 않으니**, `status = withdrawn`인 ID 목록을 자극물 담당자에게 넘겨 삭제를 요청해야 해요.
 
-## 자극물 담당자 요청 사항 (설문 쪽에서는 수정하지 않음)
+## 자극물 연결 수정 반영
 
-1. **참가자 채팅 닉네임**: 지금은 참가자 ID(`cond.pid`)가 닉네임으로 보여서 CloudResearch ID가 화면에 노출돼요 (`send()` 함수). ID 대신 "You"로, AI 배지처럼 이름 앞 배지로 표시해 주세요.
-2. **복귀 주소(`RETURN_URL`)**: 설문 안에 띄우는 방식에서는 쓰지 않아요. 설문 쪽에서 이동을 막고 있지만, 엠브레인 주소는 지우거나 `null` 처리해 두면 더 안전해요.
-3. (선택) 자극물 안내 화면의 "You are finished when you see 'Your participation is complete.'" 문구는 이후 설문이 이어지므로 "continue to the survey"류로 바꾸면 참가자가 덜 헷갈려요.
+- 참가자 채팅 닉네임은 ID 대신 `You`로 표시합니다.
+- `RETURN_URL = null`로 예전 엠브레인 복귀 주소를 비활성화했습니다.
+- 자극물은 설문과 같은 사이트의 상위 경로에서 열고, 설문에서 이미 안내했으므로 자극물의 별도 안내는 건너뜁니다.
+- 종료 후 `data-save-state`를 확인해 로그 전송 완료 또는 최대 대기 시간 뒤 사후 문항으로 돌아갑니다.
+- PR #6의 혼합 조건 안내 문구를 반영해 반반 비율은 말하지 않습니다.
+- 실제 저장 연결은 아직 설정하지 않았습니다. [시트 설치·행동 지표 동기화·500명 검토](STORAGE.md)를 따르세요.
 
 ## IRB와 맞출 것
 
@@ -204,3 +208,9 @@ T1(`t1_vote`)과 T2(`t2_vote`)가 같은 A/B 코드라서 한 시트에서 바�
 - 주의 점검 처리(`ATTENTION.action`)를 계획서 문구와 같게
 - 선정 기준 문항은 지금 설문에 없음(스크린아웃 없음). 계획서와 맞출 것
 - 참가자에게 보이는 전체 흐름은 `?debug=1`로 화면을 캡처해 제출 자료로 쓸 수 있어요
+
+추가된 `apps-script/Behavior.gs`는 원본 Supabase 이벤트의 행동 요약을 `behavior` 시트로 가져옵니다. 설문 철회 시 이 시트의 해당 ID도 삭제하며 다시 가져오지 않습니다. Supabase 원본 삭제는 별도입니다.
+
+참가자 배포 차단·연구자 모드 격리·저장 실패 재시도·중복 탭·입력 초안 복구의 검증 범위는 [STORAGE.md](STORAGE.md)에 정리했습니다.
+
+배정 조건은 서버 `STUDY_CELLS`가 기준입니다. 조건 정의를 바꿀 때에는 `config.js`의 `CELLS`와 함께 갱신하며, 실제 정원과 진행 중 자리 유지 시간은 Apps Script 속성 `CELL_QUOTA`·`IN_PROGRESS_MINUTES`에서 설정합니다.

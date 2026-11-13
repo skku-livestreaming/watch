@@ -11,6 +11,18 @@ const SH_RESP = 'responses';
 const SH_LOG = 'log';
 const ASSIGN_HEADERS = ['pid', 'cell', 'group', 'cong', 'code', 'status', 'assigned_at', 'updated_at', 'is_test'];
 const PID_RE = /^[A-Za-z0-9_-]{1,64}$/;
+// Server-owned conditions: participant requests cannot change the study cells.
+const STUDY_CELLS = [
+  {id:'AI_100',group:'ai',cong:'all',code:'q7'},
+  {id:'AI_50',group:'ai',cong:'half',code:'m2'},
+  {id:'AI_0',group:'ai',cong:'none',code:'z5'},
+  {id:'HUMAN_100',group:'human',cong:'all',code:'b9'},
+  {id:'HUMAN_50',group:'human',cong:'half',code:'k3'},
+  {id:'HUMAN_0',group:'human',cong:'none',code:'r6'},
+  {id:'MIXED_100',group:'mixed',cong:'all',code:'v3'},
+  {id:'MIXED_50',group:'mixed',cong:'half',code:'t8'},
+  {id:'MIXED_0',group:'mixed',cong:'none',code:'f1'}
+];
 
 // 셀 인원으로 세는 상태. 진행 중(assigned/stimulus)은 IN_PROGRESS_MINUTES 안일 때만 셉니다.
 const COUNT_DONE = ['returned', 'complete'];
@@ -59,9 +71,9 @@ function assign_(req) {
     }
   }
 
-  const cells = (req.cells || []).filter(c => c && /^[A-Za-z0-9_]+$/.test(c.id) && /^[A-Za-z0-9]+$/.test(c.code));
-  if (!cells.length) throw new Error('no cells');
-  const isTest = Number(req.is_test) === 1;
+  const cells = STUDY_CELLS;
+  const isTest = pid.startsWith('TEST_');
+  const settings = PropertiesService.getScriptProperties();
 
   let cell = null;
   if (isTest && req.forceCell) cell = cells.find(c => c.id === req.forceCell) || null;
@@ -69,7 +81,7 @@ function assign_(req) {
   const counts = {};
   cells.forEach(c => { counts[c.id] = 0; });
   const now = Date.now();
-  const windowMs = (Number(req.inProgressMinutes) || 60) * 60000;
+  const windowMs = Math.max(1, Number(settings.getProperty('IN_PROGRESS_MINUTES')) || 60) * 60000;
   for (let r = 1; r < rows.length; r++) {
     const row = rows[r];
     if (Number(row[H.is_test]) === 1) continue;           // 점검용 기록은 세지 않음
@@ -81,7 +93,7 @@ function assign_(req) {
   }
 
   if (!cell) {
-    const quota = Number(req.quota) || 0;
+    const quota = Math.max(0, Number(settings.getProperty('CELL_QUOTA')) || 0);
     const open = cells.filter(c => !quota || counts[c.id] < quota);
     if (!open.length) return { ok: true, full: true, counts: counts };
     const min = Math.min.apply(null, open.map(c => counts[c.id]));
@@ -116,15 +128,30 @@ function save_(req) {
 
   const sh = sheet_(SH_RESP, ['pid', 'created_at', 'updated_at', 'status']);
   let headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+  let rowNum = findRow_(sh, pid);
+  if (rowNum >= 0){
+    const previous = sh.getRange(rowNum, 1, 1, headers.length).getValues()[0];
+    const status = previous[headers.indexOf('status')];
+    if (status === 'withdrawn'){
+      setStatus_(pid, 'withdrawn');
+      purgeLog_(pid);
+      if (typeof purgeBehavior_ === 'function') purgeBehavior_(pid);
+      return {ok:true,status:'withdrawn'};
+    }
+    const rank = {consented:1,assigned:2,stimulus:3,returned:4,complete:5};
+    if (data.status && data.status !== 'withdrawn' &&
+        ((rank[status] && rank[data.status] && rank[status] > rank[data.status]) ||
+         ['screened','attention_fail','technical','full','mobile'].includes(status))) data.status = status;
+  }
 
   // 처음 보는 문항이면 열을 오른쪽에 추가
   const fresh = Object.keys(data).filter(k => headers.indexOf(k) < 0);
   if (fresh.length) {
+    ensureSize_(sh, 1, headers.length + fresh.length);
     sh.getRange(1, headers.length + 1, 1, fresh.length).setValues([fresh]);
     headers = headers.concat(fresh);
   }
 
-  let rowNum = findRow_(sh, pid);
   let row;
   if (rowNum < 0) {
     rowNum = sh.getLastRow() + 1;
@@ -140,10 +167,14 @@ function save_(req) {
     headers.forEach((h, i) => { if (KEEP_ON_WITHDRAW.indexOf(h) < 0) row[i] = ''; });
     row[headers.indexOf('status')] = 'withdrawn';
   }
+  ensureSize_(sh, rowNum, headers.length);
   sh.getRange(rowNum, 1, 1, headers.length).setValues([row]);
 
   if (data.status) setStatus_(pid, withdrawn ? 'withdrawn' : data.status);
-  if (withdrawn) purgeLog_(pid);
+  if (withdrawn) {
+    purgeLog_(pid);
+    if (typeof purgeBehavior_ === 'function') purgeBehavior_(pid);
+  }
   else log_(pid, 'save', data);
   return { ok: true };
 }
@@ -175,10 +206,15 @@ function sheet_(name, headers) {
   let sh = ss.getSheetByName(name);
   if (!sh) {
     sh = ss.insertSheet(name);
+    ensureSize_(sh, 1, headers.length);
     sh.getRange(1, 1, 1, headers.length).setValues([headers]);
     sh.setFrozenRows(1);
   }
   return sh;
+}
+function ensureSize_(sh, rows, columns) {
+  if (sh.getMaxColumns() < columns) sh.insertColumnsAfter(sh.getMaxColumns(), columns - sh.getMaxColumns());
+  if (sh.getMaxRows() < rows) sh.insertRowsAfter(sh.getMaxRows(), rows - sh.getMaxRows());
 }
 function index_(headerRow) {
   const H = {};
@@ -191,7 +227,7 @@ function cellOf_(row, H) {
 function findRow_(sh, pid) {
   const last = sh.getLastRow();
   if (last < 2) return -1;
-  const hit = sh.getRange(2, 1, last - 1, 1).createTextFinder(pid).matchEntireCell(true).findNext();
+  const hit = sh.getRange(2, 1, last - 1, 1).createTextFinder(pid).matchCase(true).matchEntireCell(true).findNext();
   return hit ? hit.getRow() : -1;
 }
 // 참가자가 쓴 글이 =, +, -, @로 시작하면 시트가 수식으로 읽지 않게 막습니다

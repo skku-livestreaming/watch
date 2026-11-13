@@ -9,17 +9,20 @@ window.SURVEY_CONFIG = {
 
   // Apps Script 웹 앱 주소(…/exec). 비워 두면 저장 없이 화면만 점검하는 모드로 돌아갑니다.
   API_URL: '',
+  // 실제 저장·완료 주소와 연구 안내를 채우고 파일럿을 확인한 뒤 true로 변경합니다.
+  PARTICIPANT_OPEN: false,
+  ASSET_VERSION: '2026-11-13-participant-v1',
 
   // 자극물 주소. 끝에 ?c=셀코드&panel_id=참가자ID 가 자동으로 붙습니다.
-  // 어디에 올려도(skku, 개인 깃허브, PC 파일) 같은 방송을 띄웁니다.
+  // 현재 설문과 같은 사이트의 상위 폴더에서 방송을 띄웁니다. 로컬 확인도 같은 경로를 사용합니다.
   // 주소를 바꾸면 index.html 맨 위 frame-src 줄의 주소도 같이 바꿀 것
-  STIMULUS_URL: 'https://skku-livestreaming.github.io/watch/',
+  STIMULUS_URL: new URL('../', window.location.href).href.split('?')[0],
   // 자극물에 추가로 넘길 값. 예: 자극물 자체 안내 화면을 끄려면 { intro: 'off' }
-  STIMULUS_EXTRA: {},
+  STIMULUS_EXTRA: {intro: 'off'},
 
   /* 자극물을 설문 페이지 안에 띄우는 방식(true).
      참가자가 [Finish participation]을 누르면 설문이 감지해 사후 문항으로 넘어갑니다.
-     자극물 파일은 수정하지 않으며, 설문과 자극물이 같은 사이트(skku-livestreaming.github.io)에 있어야 동작합니다.
+     설문과 자극물이 같은 사이트에 있어야 종료 감지와 T1 읽기가 동작합니다.
      false면 자극물로 이동하고, 자극물의 복귀 주소(RETURN_URL)로 돌아오는 방식입니다. */
   STIMULUS_EMBED: true,
   // 자극물의 투표 결과(T1 선택·확신도)와 자극물 세션 ID를 읽어 설문 데이터에 함께 저장(읽기만 함)
@@ -51,8 +54,8 @@ window.SURVEY_CONFIG = {
     { id: 'MIXED_50',  group: 'mixed', cong: 'half', code: 't8' },
     { id: 'MIXED_0',   group: 'mixed', cong: 'none', code: 'f1' }
   ],
-  CELL_QUOTA: 0,               // 셀당 최대 인원 (0 = 제한 없음). 다 차면 "모집 마감" 화면
-  IN_PROGRESS_MINUTES: 60,     // 배정 후 이 시간 안에 돌아오지 않으면 자리를 다른 사람에게 넘깁니다
+  CELL_QUOTA: 0,               // 표시용 기본값. 실제 정원은 서버 스크립트 속성 CELL_QUOTA에서 설정 (0 = 제한 없음)
+  IN_PROGRESS_MINUTES: 60,     // 서버 스크립트 속성 IN_PROGRESS_MINUTES의 기본값 (진행 중 자리 유지 시간)
 
   /* ── 3. 투표 주제 ─────────────────────────────────────────────
      자극물의 투표와 같은 질문·선택지로 맞춥니다. A/B 값은 자극물 로그의 choice(A/B)와 같아야
@@ -152,7 +155,8 @@ window.SURVEY_CONFIG = {
         aiRows: [0, 0, 0, 0]
       },
       mixed: {
-        headline: '<span class="hl">Half</span> of the viewers in this stream are <span class="hl">AI</span>, and <span class="hl">half</span> are <span class="hl">people</span>.',
+        // PR #6: describe the mixed audience without revealing its ratio.
+        headline: 'This stream is a space where <span class="hl">AI</span> and <span class="hl">people</span> watch together.',
         sub: 'Messages written by AI are marked with an <span class="aib">AI</span> label.',
         aiRows: [1, 0, 0, 1]
       }

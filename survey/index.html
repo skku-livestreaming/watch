@@ -190,7 +190,8 @@
   .cp-top:before{content:'';width:7px;height:7px;border-radius:50%;background:#E5332A}
   .cp-feed{padding:10px 8px 14px;display:flex;flex-direction:column;gap:4px;font-size:14px;min-height:128px}
   .cp-msg{padding:2px 8px;animation:chatIn 8s ease-out infinite both;animation-delay:var(--d)}
-  .cp-nm{color:#B7C0D0;font-weight:700;margin-right:5px}
+  .cp-nm{color:#e3c4ff;font-weight:700;margin-right:5px}
+  .cp-msg:has(.aib) .cp-nm{color:#7fe0c4}
   .cp-nm:after{content:':';color:#6F737C;font-weight:400;margin-left:1px}
   .aib{display:inline-block;vertical-align:1px;margin-right:6px;background:rgba(87,195,166,.18);color:#57C3A6;
     border:1px solid rgba(87,195,166,.45);border-radius:3px;padding:0 4px;font-size:10px;font-weight:800;letter-spacing:.03em;line-height:1.5}
@@ -237,6 +238,7 @@
   #stimWrap{position:fixed;inset:0;background:#000;z-index:10}
   #stimWrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
   #stimCover{position:absolute;inset:0;background:var(--page);display:flex;align-items:center;justify-content:center}
+  #stimError{position:absolute;inset:0;background:var(--page);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center;z-index:3}
   #stimFallback{position:absolute;left:50%;top:14px;transform:translateX(-50%);z-index:2;box-shadow:0 2px 10px rgba(0,0,0,.35)}
 
   #dbg{position:fixed;right:12px;bottom:12px;background:#111;color:#e8e8e8;font:12px/1.5 Consolas,Menlo,monospace;
@@ -265,7 +267,7 @@
 <main id="app"></main>
 <div id="net" hidden></div>
 <div id="dbg" hidden></div>
-<script src="config.js"></script>
+<script src="config.js?v=2026-11-13-participant-v1"></script>
 <script>
 (() => {
 'use strict';
@@ -275,16 +277,20 @@ const Q = new URLSearchParams(location.search);
 /* 관리자 모드(?admin=1): 아무 화면으로나 바로 이동·조건 전환. 응답은 어디에도 저장하지 않습니다(API 끔). */
 const ADMIN = Q.get('admin') === '1';
 const DEBUG = Q.get('debug') === '1' || ADMIN;
-if (ADMIN) C.API_URL = '';
+const RESEARCH_API_URL = C.API_URL;
+if (DEBUG) C.API_URL = '';
 // 대기 시간을 3초로 줄일지: 점검 모드는 항상, 관리자 모드는 패널의 선택을 따름(기본 = 실제 시간)
 let FAST = Q.get('debug') === '1';
 if (ADMIN){ try { FAST = sessionStorage.getItem('lsv_admin_fast') === '1'; } catch (e) {} }
-const KEY = 'lsv_' + C.STUDY_ID + (ADMIN ? '_admin' : '');
+const BASE_KEY = 'lsv_' + C.STUDY_ID;
+let KEY = BASE_KEY + (ADMIN ? '_admin' : DEBUG ? '_debug' : '');
 const app = document.getElementById('app');
 const SAVE_WAIT_MS = 6000;      // 페이지를 떠나기 전 저장을 기다리는 최대 시간
 
 /* ───────── 상태 ───────── */
 let S = null;
+let viewVersion = 0, ownsTab = false;
+function participantKey(pid){ if (!DEBUG) KEY = BASE_KEY + '_pid_' + pid; }
 const store = {
   get(){ try { return JSON.parse(localStorage.getItem(KEY)); } catch { return null; } },
   set(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} },
@@ -315,15 +321,21 @@ const interp = s => String(s == null ? '' : s).replace(/\{\{(\w+)\}\}/g, (m, k) 
 
 /* ───────── 서버 통신 ───────── */
 async function api(action, body){
-  const r = await fetch(C.API_URL, {
-    method: 'POST',
-    // text/plain으로 보내야 브라우저의 사전 요청(CORS preflight) 없이 Apps Script에 닿습니다
-    headers: {'Content-Type': 'text/plain;charset=utf-8'},
-    body: JSON.stringify(Object.assign({action, study: C.STUDY_ID}, body))
-  });
-  const j = await r.json();
-  if (!j.ok) throw new Error(j.error || 'api error');
-  return j;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+  try {
+    const r = await fetch(C.API_URL, {
+      method: 'POST',
+      signal: controller.signal,
+      // text/plain으로 보내야 브라우저의 사전 요청(CORS preflight) 없이 Apps Script에 닿습니다
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify(Object.assign({action, study: C.STUDY_ID}, body))
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error || 'api error');
+    return j;
+  } finally { clearTimeout(timeout); }
 }
 
 /* 저장: 바뀐 값만 모아 두었다가 보냅니다. 실패하면 브라우저에 남겨 두고 다시 보냅니다. */
@@ -334,36 +346,109 @@ function save(patch){
   return flush();
 }
 function flush(){
+  if (!S || !S.pid) return Promise.resolve(true);
   if (!C.API_URL){
+    if (!DEBUG) return Promise.resolve(false);
     if (Object.keys(S.pending).length) console.log('[save:local]', S.pending);
     S.pending = {}; store.set();
     return Promise.resolve(true);
   }
-  if (flushing) return flushing.then(() => Object.keys(S.pending).length ? flush() : true);
-  const batch = Object.assign({}, S.pending);
-  if (!Object.keys(batch).length) return Promise.resolve(true);
-  flushing = api('save', {pid: S.pid, data: batch}).then(() => {
-    for (const k of Object.keys(batch)) if (S.pending[k] === batch[k]) delete S.pending[k];
-    store.set(); net(false); retryDelay = 2000; return true;
-  }).catch(e => {
-    console.warn('save failed', e); net(T.errorSave);
-    clearTimeout(retryTimer);
-    retryTimer = setTimeout(flush, retryDelay); retryDelay = Math.min(retryDelay * 2, 30000);
-    return false;
-  }).finally(() => { flushing = null; });
+  if (flushing) return flushing.then(ok => ok && Object.keys(S.pending).length ? flush() : ok);
+  clearTimeout(retryTimer);
+  flushing = (async () => {
+    while (Object.keys(S.pending).length){
+      const batch = Object.assign({}, S.pending);
+      try {
+        await api('save', {pid:S.pid, data:batch});
+        for (const k of Object.keys(batch)) if (S.pending[k] === batch[k]) delete S.pending[k];
+        store.set();
+      } catch (e){
+        console.warn('save failed', e); net(T.errorSave);
+        retryTimer = setTimeout(flush, retryDelay + Math.random() * 500);
+        retryDelay = Math.min(retryDelay * 2, 30000);
+        return false;
+      }
+    }
+    net(false); retryDelay = 2000; return true;
+  })().finally(() => { flushing = null; });
   return flushing;
 }
 const flushWithin = ms => Promise.race([flush(), new Promise(r => setTimeout(() => r(false), ms))]);
 function net(msg){ const el = document.getElementById('net'); el.hidden = !msg; if (msg) el.textContent = msg; }
 window.addEventListener('online', () => flush());
+window.addEventListener('beforeunload', e => {
+  if (!DEBUG && S && (Object.keys(S.pending).length || (S.stage === 'stimulus' && document.getElementById('stimWrap')))){
+    e.preventDefault(); e.returnValue = '';
+  }
+});
+window.addEventListener('pageshow', e => { if (e.persisted && !DEBUG) location.reload(); });
+
+function deploymentIssues(){
+  const issues = [];
+  if (C.PARTICIPANT_OPEN !== true) issues.push('Participant recruitment is closed.');
+  if (C.READ_T1 !== true) issues.push('Enable T1 and session ID reading.');
+  const secure = value => { try { return new URL(value).protocol === 'https:'; } catch { return false; } };
+  if (!secure(RESEARCH_API_URL)) issues.push('Set the HTTPS survey API URL.');
+  if (!secure(C.REDIRECTS.complete) && !String(C.COMPLETION_CODE || '').trim()) issues.push('Set a completion URL or code.');
+  if (C.REDIRECTS.complete && !secure(C.REDIRECTS.complete)) issues.push('The completion URL must use HTTPS.');
+  if (/\[(?:N|Amount|XXXX|Researcher name|email)\]/.test(JSON.stringify([C.CONSENT,C.DEBRIEF])))
+    issues.push('Complete the consent and debriefing information.');
+  try {
+    if (!C.STIMULUS_EMBED || new URL(C.STIMULUS_URL, location.href).origin !== location.origin)
+      issues.push('Use a same-origin embedded stimulus.');
+  } catch { issues.push('Set a valid stimulus URL.'); }
+  return issues;
+}
+function unavailable(){
+  document.getElementById('top').hidden = true;
+  paper('Study unavailable', '<p>This study is not accepting participants at the moment. Please return to the recruitment platform.</p>');
+}
 
 /* ───────── 시작 ───────── */
 function init(){
-  const saved = store.get();
+  if (!DEBUG && deploymentIssues().length) return unavailable();
+  const incoming = Q.get(C.ID_PARAM) || Q.get('panel_id');
+  let lastPid = null;
+  try { lastPid = sessionStorage.getItem(BASE_KEY + '_last_pid'); } catch {}
+  const selectedPid = incoming || lastPid;
+  if (!DEBUG && selectedPid && C.ID_PATTERN.test(selectedPid) && navigator.locks && !ownsTab){
+    navigator.locks.request(BASE_KEY + '_' + selectedPid, {ifAvailable:true}, async lock => {
+      if (!lock){
+        paper('Study already open', '<p>This study is open in another tab. Please continue there, or close that tab and reload this page.</p>');
+        return;
+      }
+      ownsTab = true;
+      init();
+      await new Promise(resolve => window.addEventListener('pagehide', resolve, {once:true}));
+    }).catch(() => unavailable());
+    return;
+  }
+  if (selectedPid && C.ID_PATTERN.test(selectedPid)) participantKey(selectedPid);
+  if (!DEBUG && selectedPid && C.ID_PATTERN.test(selectedPid)){
+    try { sessionStorage.setItem(BASE_KEY + '_last_pid', selectedPid); } catch {}
+  }
+  let saved = store.get();
+  if (!DEBUG && selectedPid && !saved){
+    try {
+      const legacy = JSON.parse(localStorage.getItem(BASE_KEY));
+      if (legacy && legacy.pid === selectedPid && !legacy.meta?.is_test) saved = legacy;
+    } catch {}
+  }
+  const object = value => value && typeof value === 'object' && !Array.isArray(value);
+  if (saved && (!object(saved.meta) || !object(saved.answers) || !object(saved.pending) ||
+      !Number.isInteger(saved.page) || saved.page < 0 ||
+      (!DEBUG && ((saved.meta.is_test && !String(selectedPid).startsWith('TEST_')) ||
+        typeof saved.pid !== 'string' || !C.ID_PATTERN.test(saved.pid) ||
+        (['intro','stimulus','post','debrief','done'].includes(saved.stage) &&
+          !C.CELLS.some(c => c.id === saved.cell?.id && c.code === saved.cell?.code &&
+            c.group === saved.cell?.group && c.cong === saved.cell?.cong)))))) saved = null;
   const retPid = Q.get('panel_id');
-  if (retPid !== null) return handleReturn(retPid, Q.get('status'), saved);
+  if (retPid !== null){
+    if (!C.ID_PATTERN.test(retPid)) return viewId();
+    return handleReturn(retPid, Q.get('status'), saved);
+  }
 
-  let pid = Q.get(C.ID_PARAM);
+  let pid = incoming || lastPid;
   if (!pid && DEBUG) pid = (saved && saved.pid && saved.pid.startsWith('TEST_')) ? saved.pid : 'TEST_' + rand(6);
   if (saved && saved.pid && (!pid || saved.pid === pid)){ S = saved; return render(); }
   if (!pid || !C.ID_PATTERN.test(pid)){ S = newState(null); S.stage = 'id'; return render(); }
@@ -371,6 +456,8 @@ function init(){
 }
 
 function start(pid){
+  participantKey(pid);
+  if (!DEBUG){ try { sessionStorage.setItem(BASE_KEY + '_last_pid', pid); } catch {} }
   S = newState(pid);
   const m = S.meta;
   m.is_test = (DEBUG || pid.startsWith('TEST_')) ? 1 : 0;
@@ -416,6 +503,7 @@ function handleReturn(pid, status, saved){
 
 /* ───────── 화면 ───────── */
 function render(){
+  viewVersion++;
   store.set();
   document.body.classList.toggle('wide', !!S && S.stage === 'intro');
   window.scrollTo(0, 0);
@@ -464,9 +552,9 @@ function viewId(){
   el.querySelector('#go').onclick = () => {
     const v = el.querySelector('#pidIn').value.trim();
     if (!C.ID_PATTERN.test(v)){ el.querySelector('#pidErr').hidden = false; return; }
-    start(v);
-    S.meta.pid_manual = 1;
-    render();
+    Q.set(C.ID_PARAM, v);
+    Q.delete('panel_id');
+    init();
   };
 }
 
@@ -520,6 +608,25 @@ function viewPage(part){
     form.appendChild(c.el);
     return {b, c};
   });
+  const draftKey = part + ':' + page.id;
+  const fields = () => [...form.querySelectorAll('input,textarea,select')];
+  if (S.draft && S.draft.key === draftKey){
+    fields().forEach((input, k) => {
+      const saved = S.draft.fields[k];
+      if (!saved || saved.type !== input.type || saved.name !== input.name) return;
+      if (['radio','checkbox'].includes(input.type)) input.checked = saved.checked;
+      else input.value = saved.value;
+    });
+    form.querySelectorAll('input.other').forEach(input => {
+      input.disabled = !input.closest('label').querySelector('input[type=radio],input[type=checkbox]').checked;
+    });
+  }
+  const draft = () => {
+    S.draft = {key:draftKey, fields:fields().map(input => ({type:input.type,name:input.name,value:input.value,checked:input.checked}))};
+    store.set();
+  };
+  form.addEventListener('input', draft);
+  form.addEventListener('change', draft);
   // 오류 요약: 맨 위에 빠뜨린 문항 목록 → 누르면 그 문항으로
   const errSum = el.querySelector('#errSum');
   const showErrors = () => {
@@ -568,6 +675,8 @@ function viewPage(part){
       return;
     }
     errSum.hidden = true;
+    next.disabled = true;
+    delete S.draft;
 
     patch['t_' + page.id] = secs(t0);
     if (attFail){ S.att += attFail; patch.attention_fails = S.att; }
@@ -631,6 +740,16 @@ function normOptions(opts){
   return opts.map(o => typeof o === 'string' ? {value: o, label: o} : o);
 }
 function shuffle(a){ a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function stableShuffle(key, items, id){
+  S.orders ||= {};
+  const previous = S.orders[key];
+  if (previous && previous.length === items.length && items.every(it => previous.includes(String(id(it)))))
+    return previous.map(k => items.find(it => String(id(it)) === k));
+  const result = shuffle(items);
+  S.orders[key] = result.map(it => String(id(it)));
+  store.set();
+  return result;
+}
 function isRequired(b){ return b.required !== undefined ? b.required : !['textarea', 'html'].includes(b.type); }
 function qHead(b){ return b.text ? `<div class="q" id="${b.id}_q">${interp(b.text)}</div>` : ''; }
 /* 문항별 오류 문구 */
@@ -651,7 +770,7 @@ const BLOCKS = {
 
   single(b){
     let opts = normOptions(b.options);
-    if (b.randomize) opts = shuffle(opts);
+    if (b.randomize) opts = stableShuffle(b.id, opts, o => o.value);
     const el = div(qHead(b) + `<div class="opts ${b.horizontal ? 'row' : ''}" role="radiogroup" aria-labelledby="${b.id}_q">` + opts.map(o => `
       <label class="opt"><input type="radio" name="${b.id}" value="${esc(o.value)}">
         <span>${interp(o.label)}</span>${o.other ? `<input type="text" class="other" data-for="${esc(o.value)}" disabled>` : ''}</label>`).join('') + '</div>');
@@ -677,7 +796,7 @@ const BLOCKS = {
 
   multi(b){
     let opts = normOptions(b.options);
-    if (b.randomize) opts = shuffle(opts);
+    if (b.randomize) opts = stableShuffle(b.id, opts, o => o.value);
     const el = div(qHead(b) + `<div class="opts" role="group" aria-labelledby="${b.id}_q">` + opts.map(o => `
       <label class="opt"><input type="checkbox" value="${esc(o.value)}">
         <span>${interp(o.label)}</span>${o.other ? `<input type="text" class="other" disabled>` : ''}</label>`).join('') + '</div>');
@@ -705,7 +824,7 @@ const BLOCKS = {
      모든 점은 같은 모양·간격이며 기본 선택은 없습니다. */
   likert(b){
     let items = b.items.slice();
-    if (b.randomize) items = shuffle(items);
+    if (b.randomize) items = stableShuffle(b.id, items, it => it.id);
     const pts = b.points || 7;
     const single = b.items.length === 1 && !b.items[0].text;     // 단일 척도 문항은 열 이름 = id
     const keyOf = it => single ? b.id : b.id + '_' + it.id;
@@ -781,12 +900,13 @@ const BLOCKS = {
 
 /* ───────── 균등 배정 ───────── */
 async function viewAssign(){
+  const version = viewVersion;
   paper('', spinner());
   if (S.cell){ S.stage = 'intro'; return render(); }
   const force = DEBUG ? Q.get('cell') : null;
   let res = null;
   if (C.API_URL){
-    for (let k = 0; k < 3 && !res; k++){
+    for (let k = 0; k < 3 && !res && version === viewVersion; k++){
       try {
         res = await api('assign', {
           pid: S.pid, cells: C.CELLS, quota: C.CELL_QUOTA, inProgressMinutes: C.IN_PROGRESS_MINUTES,
@@ -795,7 +915,18 @@ async function viewAssign(){
       } catch (e){ await new Promise(r => setTimeout(r, 1500 * (k + 1))); }
     }
   }
+  if (version !== viewVersion) return;
   if (res && res.full) return end('full');
+  if (res && ['complete','withdrawn'].includes(res.status)){
+    S.stage = 'done'; return render();
+  }
+  if (!DEBUG && (!res || !res.cell || !C.CELLS.some(c =>
+      c.id === res.cell.id && c.code === res.cell.code && c.group === res.cell.group && c.cong === res.cell.cong))){
+    const el = paper('Unable to continue', '<p>We could not connect to the study. Please check your connection and try again.</p>',
+      '<button id="assignRetry" type="button">Try again</button>');
+    el.querySelector('#assignRetry').onclick = () => render();
+    return;
+  }
   let cell;
   if (res && res.cell){ cell = res.cell; }
   else {
@@ -812,9 +943,14 @@ async function viewAssign(){
 /* ───────── 조건별 설명문 ───────── */
 function stimulusUrl(){
   const u = new URL(C.STIMULUS_URL, location.href);
+  for (const [k, v] of Object.entries(C.STIMULUS_EXTRA || {})) u.searchParams.set(k, v);
   u.searchParams.set('c', S.cell.code);
   u.searchParams.set('panel_id', S.pid);
-  for (const [k, v] of Object.entries(C.STIMULUS_EXTRA || {})) u.searchParams.set(k, v);
+  u.searchParams.set('intro', 'off');
+  u.searchParams.set('v', C.ASSET_VERSION || '2026-11-13-participant-v1');
+  if (!DEBUG){
+    for (const k of ['preview','debug','cong','label','ratio','viewers','seed','source','admin']) u.searchParams.delete(k);
+  }
   // 점검·관리자 모드: 자극물의 연구자 미리보기(구간 이동 버튼, 자극물 DB에 기록 안 함)
   if (DEBUG) u.searchParams.set('preview', '1');
   return u.toString();
@@ -916,7 +1052,7 @@ function viewIntro(){
 
 /* ───────── 자극물 ─────────
    설문 페이지 위에 자극물을 화면 가득 띄우고, 자극물의 종료 화면(#done)이 뜨는지 지켜봅니다.
-   자극물 파일은 바꾸지 않습니다. 읽는 것: #done, #doneTitle, #returnLink, 투표 상태(PS), 조건(cond), 세션 ID(Sink.id). */
+   자극물의 DOM과 저장 상태를 확인합니다. 읽는 것: #done, #doneTitle, #returnLink, 투표 상태(PS), 조건(cond), 세션 ID(Sink.id). */
 function viewStimulus(){
   // 새로고침·재접속으로 다시 온 경우: 방송을 바로 다시 틀지 않고 버튼을 보여 줍니다
   if (!stimOpened){
@@ -935,11 +1071,13 @@ function viewStimulus(){
   wrap.id = 'stimWrap';
   wrap.innerHTML = `<iframe title="Live stream" allow="autoplay; fullscreen; clipboard-write" allowfullscreen></iframe>
     <div id="stimCover" hidden>${spinner(T.stimFinishing)}</div>
-    <button id="stimFallback" hidden>${T.stimFallback}</button>`;
+    <button id="stimFallback" hidden>${T.stimFallback}</button>
+    <div id="stimError" hidden role="alert"><p>Unable to load the stream. Check your connection and try again.</p><button id="stimReload" type="button">Try again</button></div>`;
   document.body.appendChild(wrap);
   const frame = wrap.querySelector('iframe');
   const cover = wrap.querySelector('#stimCover');
   const fallback = wrap.querySelector('#stimFallback');
+  const error = wrap.querySelector('#stimError');
   const stimPath = new URL(stimulusUrl()).pathname;
   let seen = false, hooked = false, doneAt = 0, endKind = '', t1 = null, finished = false, loads = 0, blindTimer = null;
   function readDone(d){
@@ -962,6 +1100,7 @@ function viewStimulus(){
 
   function finish(via){
     if (finished) return;
+    if (!DEBUG && via === 'complete' && (!t1 || !t1.sid || t1.code !== S.cell.code)) return blind();
     finished = true;
     clearInterval(iv); clearTimeout(blindTimer);
     const m = {stim_return_at: iso(), stim_end: via};
@@ -980,15 +1119,18 @@ function viewStimulus(){
       });
     }
     Object.assign(S.meta, m);
-    S.stage = 'post'; S.page = 0;
-    save(Object.assign({status: 'returned'}, m));
     wrap.remove();                                  // 자극물을 닫습니다(남은 로그는 자극물이 닫힐 때 보냄)
     document.body.classList.remove('stim-on');
+    window.__stimFinish = null;
+    if (!DEBUG && via !== 'complete'){ save(m); return end('technical'); }
+    S.stage = 'post'; S.page = 0;
+    save(Object.assign({status: 'returned'}, m));
     render();
   }
   window.__stimFinish = finish;                     // 점검 모드의 "skip stream" 버튼용
 
   function check(){
+    if (finished) return;
     let w, d;
     try {
       w = frame.contentWindow; d = frame.contentDocument;
@@ -996,11 +1138,12 @@ function viewStimulus(){
       void w.location.href;
     } catch (e){
       // 자극물 화면을 읽은 뒤 접근이 막혔다 = 자극물이 다른 주소로 넘어감(종료 후 이동)
-      if (seen) return finish(endKind || 'navigated');
+      if (seen && doneAt) return finish(endKind);
       return blind();
     }
     if (!d.getElementById('watch') || !w.location.pathname.startsWith(stimPath)){
-      if (seen && d.readyState === 'complete' && !w.location.pathname.startsWith(stimPath)) finish(endKind || 'navigated');
+      if (seen && doneAt) return finish(endKind);
+      if (w.location.href !== 'about:blank' && d.readyState === 'complete') blind();
       return;
     }
     seen = true;
@@ -1013,22 +1156,42 @@ function viewStimulus(){
     readDone(d);
     if (doneAt){
       const link = d.getElementById('returnLink');
-      // 자극물이 로그를 다 보낸 뒤 링크를 띄우고 이동합니다. 그 신호나 최대 대기 시간을 기다립니다.
-      if ((link && !link.hidden) || Date.now() - doneAt > C.STIM_FLUSH_WAIT_MS) finish(endKind);
+      // 참가자는 저장 확인 뒤에만 진행합니다. 대기 후에도 미완료면 재시도 버튼을 표시합니다.
+      const saved = d.getElementById('done').dataset.saveState === 'saved';
+      if (saved || (link && !link.hidden) || (DEBUG && Date.now() - doneAt > C.STIM_FLUSH_WAIT_MS)) finish(endKind);
+      else if (Date.now() - doneAt > C.STIM_FLUSH_WAIT_MS && !cover.querySelector('#stimSaveRetry')){
+        cover.innerHTML = '<div style="padding:24px;text-align:center"><p>Your stream responses have not finished saving. Please keep this page open.</p><button id="stimSaveRetry" type="button">Try saving again</button></div>';
+        cover.querySelector('#stimSaveRetry').onclick = async e => {
+          const button = e.currentTarget; button.disabled = true;
+          try {
+            await w.eval('Sink.flush(true)');
+            if (!finished && w.eval('Sink.status().session_pending === 0')) d.getElementById('done').dataset.saveState = 'saved';
+          } catch {}
+          button.disabled = false;
+        };
+      }
     }
   }
   // 자극물 화면을 읽을 수 없는 환경(다른 사이트에 설문을 올렸거나 PC 파일로 연 경우)
   function blind(){
-    if (blindTimer) return;
+    if (blindTimer || finished) return;
     if (!S.meta.stim_embed_blind){ S.meta.stim_embed_blind = 1; save({stim_embed_blind: 1}); }
+    if (!DEBUG){ error.hidden = false; return; }
     console.warn('[stimulus] cannot read the embedded page; end detection is off');
-    // 점검·관리자 모드에서는 바로, 실제 참가자에게는 방송 길이가 지난 뒤에만 보입니다
+    // 연구자 미리보기에서만 수동 건너뛰기를 제공합니다.
     blindTimer = setTimeout(() => { fallback.hidden = false; }, DEBUG ? 0 : 270000);
   }
   fallback.onclick = () => finish('fallback_button');
+  wrap.querySelector('#stimReload').onclick = () => {
+    if (window.__stimStop) window.__stimStop();
+    wrap.remove(); document.body.classList.remove('stim-on');
+    S.meta.stim_reenter = (S.meta.stim_reenter || 0) + 1;
+    save({stim_reenter:S.meta.stim_reenter});
+    render();
+  };
   frame.addEventListener('load', () => { loads++; check(); });
   const iv = setInterval(check, 300);
-  window.__stimStop = () => clearInterval(iv);   // 관리자 모드에서 다른 화면으로 이동할 때
+  window.__stimStop = () => { finished = true; clearInterval(iv); clearTimeout(blindTimer); };
   frame.src = stimulusUrl();
 }
 
@@ -1058,6 +1221,7 @@ function viewDebrief(){
     const fin = iso();
     const startAt = S.meta.consent_at || S.meta.start_at;
     Object.assign(S.meta, {withdraw: withdraw ? 'yes' : 'no', finish_at: fin});
+    if (withdraw){ S.answers = {}; S.pending = {}; delete S.draft; }
     save({
       status: withdraw ? 'withdrawn' : 'complete',
       withdraw: withdraw ? 'yes' : 'no', finish_at: fin, t_debrief: secs(t0),
@@ -1080,8 +1244,11 @@ function redirectTo(url, msg, title){
   return el;
 }
 async function viewDone(){
+  const version = viewVersion;
   paper('', spinner(T.saving));
-  await flushWithin(SAVE_WAIT_MS * 2);
+  const saved = await flushWithin(SAVE_WAIT_MS * 2);
+  if (version !== viewVersion) return;
+  if (!saved || Object.keys(S.pending).length) return saveRetry(viewDone);
   const url = C.REDIRECTS.complete;
   if (url) return redirectTo(url, T.doneRedirect);
   if (!C.COMPLETION_CODE) return doneCard(T.doneTitle, `<p>${T.doneSaved}</p>`, true);
@@ -1105,14 +1272,23 @@ function end(reason){
   render();
 }
 async function viewEnd(){
+  const version = viewVersion;
   const r = S.meta.end_reason;
-  const msg = {screened: T.screenedMsg, attention: T.attentionMsg, full: T.fullMsg, mobile: T.mobileBlocked}[r] || '';
+  const msg = {screened: T.screenedMsg, attention: T.attentionMsg, full: T.fullMsg, mobile: T.mobileBlocked,
+    technical:'The stream could not be played. Please return to the recruitment platform and contact the researcher.'}[r] || '';
   const url = {screened: C.REDIRECTS.screenedOut, attention: C.REDIRECTS.attentionFail, full: C.REDIRECTS.full}[r];
   const title = T.endTitles[r] || '';
   paper('', spinner());
-  await flushWithin(SAVE_WAIT_MS);
+  const saved = await flushWithin(SAVE_WAIT_MS);
+  if (version !== viewVersion) return;
+  if (!saved || Object.keys(S.pending).length) return saveRetry(viewEnd);
   if (url) return redirectTo(url, msg, title || ' ');
   doneCard(title, `<p>${msg}</p>`, false);
+}
+function saveRetry(retry){
+  const el = paper('Please keep this page open', '<p>Your responses have not finished saving. Check your connection and try again.</p>',
+    '<button id="saveRetry" type="button">Try saving again</button>');
+  el.querySelector('#saveRetry').onclick = () => retry();
 }
 function viewLost(){ doneCard(T.lostTitle, `<p>${T.lostMsg}</p>${S && S.pid ? `<p class="note">ID: <span class="code">${esc(S.pid)}</span></p>` : ''}`, false); }
 
@@ -1126,7 +1302,7 @@ function debugPanel(){
   if (!DEBUG) return;
   const d = document.getElementById('dbg'); d.hidden = false;
   const inStim = S.stage === 'intro' || S.stage === 'stimulus';
-  d.innerHTML = `<b>DEBUG</b> · API ${C.API_URL ? 'on' : 'off (local)'}<br>
+  d.innerHTML = `<b>RESEARCHER PREVIEW</b> · Nothing is saved<br>
     pid: ${esc(S.pid || '-')}<br>stage: ${S.stage}${['pre','post'].includes(S.stage) ? ' / page ' + S.page : ''}<br>
     cell: ${S.cell ? S.cell.id + ' (' + S.cell.code + ')' : '-'}<br>
     att fails: ${S.att}<br>
@@ -1206,6 +1382,7 @@ function adminPanel(){
     <label>Waits <select id="admFast"><option value="0"${FAST ? '' : ' selected'}>Real time</option><option value="1"${FAST ? ' selected' : ''}>Fast (3 s)</option></select></label>
     <button type="button" id="admReplay">Replay</button>
     <span class="adm-note">Nothing is saved${S && S.stage === 'stimulus' && stimOpened ? ' · stream in preview mode (not logged)' : ''}</span>
+    <span class="adm-note" title="${esc(deploymentIssues().join(' '))}">Participant setup: ${deploymentIssues().length ? deploymentIssues().length + ' items remaining' : 'ready'}</span>
     <button type="button" id="admHide" class="ghost">Hide</button>`;
   const scr = d.querySelector('#admScreen'), cel = d.querySelector('#admCell');
   const go = () => admGo(scr.value, cel.value);

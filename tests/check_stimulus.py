@@ -60,6 +60,7 @@ STUB_CLOCK = """() => {
     readyState:{get:()=>4,configurable:true}
   });
   v.play=()=>Promise.resolve(); v.pause=()=>{};
+  v.dispatchEvent(new Event('playing'));
   window.qaAdvance = target => {
     while (tick + STEP < target){ window.qaTime=tick+STEP; loop(); }
     window.qaTime=target; loop();
@@ -484,8 +485,8 @@ def main():
             page.close()
         print('PASS: missing confidence, no answer, deadline submission, confidence reset on answer change')
 
-        # The participant's own message uses their ID as the nickname, in the same colour as other viewers.
-        for extra, expected in [('', 'qa001'), ('&panel_id=Pnl_42', 'Pnl_42')]:
+        # Participant IDs stay in records; chat displays the anonymous label You.
+        for extra, expected in [('', 'You'), ('&panel_id=Pnl_42', 'You')]:
             if not extra:
                 page, errors = prepare(browser, base, 'k3')
             else:
@@ -507,9 +508,9 @@ def main():
               const other = document.querySelector('#feed .nm.human, #feed .nm.ai');
               return {name: me.textContent, same: color(me) === color(other)};
             }''')
-            assert mine['name'] == expected and 'You' not in mine['name'], mine
+            assert mine['name'] == expected, mine
             assert mine['same'], 'Participant nickname colour must match other viewers'
-            page.wait_for_timeout(700)   # the on-video overlay mirrors lines after a short delay
+            page.wait_for_timeout(950)   # the on-video overlay mirrors lines after 800 ms
             assert page.evaluate('''() => {
               const me = [...document.querySelectorAll('#ovFeed .nm.me')].pop();
               const other = document.querySelector('#ovFeed .nm.human, #ovFeed .nm.ai');
@@ -517,7 +518,7 @@ def main():
             }'''), 'Overlay nickname colour must match too'
             assert not errors, errors
             page.close()
-        print('PASS: participant messages show the participant ID in the shared nickname colour')
+        print('PASS: participant messages show You without exposing participant IDs')
 
         # Native media end can fire before the next loop tick; it must also hide/log the result.
         page, errors = prepare(browser, base)
