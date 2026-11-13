@@ -54,6 +54,8 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 
 `API_URL`이 비어 있거나 참가자 모집이 닫혀 있으면 일반 참가자는 진행할 수 없습니다. 연구자 미리보기는 `?admin=1` 또는 `?debug=1`을 사용하며 응답을 저장하지 않습니다. 공개 저장소라 주소를 아는 사람은 누구나 볼 수 있어요.
 
+실제 저장 경로까지 확인하려면 [연구자 저장 테스트](STORAGE.md#모집-전-연구자-저장-테스트)의 `?pilot=1&participantId=TEST_...` 링크를 사용합니다. 모집은 닫아 둔 채 테스트 응답을 저장하며, Connect 완료·지급 신호는 보내지 않습니다. 실제 참가자 링크와 구분하세요.
+
 ## 설치
 
 ### 1. Google 시트 + Apps Script

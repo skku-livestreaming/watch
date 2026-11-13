@@ -39,7 +39,7 @@ def fixture(browser, base, initial=None, configured=True, randomized=False, miss
             config = config.replace(token,'QA')
     if randomized:
         config = config.replace("id: 'shared', required: true", "id: 'shared', required: true, randomize: true")
-    if missing=='api':config=config.replace("API_URL: 'https://script.google.com/macros/s/QA/exec'", "API_URL: ''")
+    if missing=='api':config=re.sub(r"API_URL:\s*'[^']*'", "API_URL: ''", config, count=1)
     if missing=='completion':config=config.replace("COMPLETION_CODE: 'QA_COMPLETE'", "COMPLETION_CODE: ''")
     if missing=='consent':config=config.replace('Research Consent','[XXXX] Research Consent')
     if missing=='t1':config=config.replace('READ_T1: true','READ_T1: false')
@@ -54,10 +54,12 @@ def fixture(browser, base, initial=None, configured=True, randomized=False, miss
             if req['action']=='get':
                 if control['get_fail']: return r.fulfill(status=503,body='unavailable')
                 return r.fulfill(json={'ok':True,'found':True,'cell':CELL,
-                                      'assignment_id':control['get_assignment'],'status':control['get_status']})
+                                      'assignment_id':control['get_assignment'],'status':control['get_status'],
+                                      'is_test':req['pid'].startswith('TEST_')})
             if req['action']=='assign':
                 if control['assign_fail']: return r.fulfill(status=503,body='unavailable')
-                return r.fulfill(json={'ok':True,'found':True,'cell':CELL,'assignment_id':ASSIGNMENT_ID,'status':control['assign_status']})
+                return r.fulfill(json={'ok':True,'found':True,'cell':CELL,'assignment_id':ASSIGNMENT_ID,
+                                      'status':control['assign_status'],'is_test':req['pid'].startswith('TEST_')})
             if control['save_fail']: return r.fulfill(status=503,body='unavailable')
             return r.fulfill(json={'ok':True})
         if url.startswith(base + '/?') and control['frame_fail']:

@@ -69,11 +69,13 @@
 
 ## 업데이트와 확인
 
-1. 사이트의 `index.html`, `survey/index.html`, `survey/config.js`를 함께 갱신한다. 설문 캐시 버전은 `2026-11-14-participant-id-v1`이다.
+1. 사이트의 `index.html`, `survey/index.html`, `survey/config.js`를 함께 갱신한다. 설문 캐시 버전은 `2026-11-14-storage-pilot-v1`이다.
 2. Apps Script 프로젝트에서 [Behavior.gs](apps-script/Behavior.gs)를 새 내용으로 교체하고 저장한다. 웹 앱도 **기존 배포 관리 → 수정 → 새 버전**으로 갱신하면 같은 `/exec` URL을 유지할 수 있다. 이번 변경으로 `Code.gs` 수정이나 새 Supabase SQL은 필요하지 않다.
 3. 기존 5분 동기화 트리거는 유지한다. 새 데이터가 있는 다음 동기화에서 필요한 열을 이름으로 찾아 추가한다. 기존 열 순서·과거 행·연구자가 추가한 열은 보존한다. 열 이름은 중복되지 않게 유지한다.
 4. 새 시트의 기본 요약은 기존 40열에 18열을 추가한 **58열**이다. 구버전 로그에 없는 새 측정값은 빈 칸으로 남긴다. 동기화 커서를 지워도 과거에 측정하지 않은 값을 복원할 수는 없다.
 5. 새 `TEST_` ID로 파일럿을 수행해 원본 요약·시트·설문을 세션 ID로 대조한다. 모집은 설정·저장 확인을 마칠 때까지 닫아 둔다. 이번 구현의 모의 검사는 실제 배포된 Apps Script의 버전 교체나 실제 시트 동기화를 대신하지 않는다.
+
+모집 정보가 미정인 단계의 기술 점검은 [연구자 저장 테스트](STORAGE.md#모집-전-연구자-저장-테스트)를 사용한다. `?pilot=1&participantId=TEST_...`는 실제 테스트 데이터를 저장하며, `admin`·`debug` 미리보기와 구분한다. 실제 참가자 모집 링크에는 `pilot`을 넣지 않는다.
 
 로컬 검증: `python tests/check_measures.py`, `node tests/check_behavior.cjs`, 기존 자극물·설문 회귀 검사. 브라우저 검사에서는 외부 저장 요청을 차단한다.
 

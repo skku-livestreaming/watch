@@ -237,6 +237,10 @@
   body.stim-on main,body.stim-on #top{display:none}
   #stimWrap{position:fixed;inset:0;background:#000;z-index:10}
   #stimWrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  #pilotNotice{position:fixed;inset:0 0 auto;height:44px;z-index:70;background:#fff2cc;color:#493600;
+    display:flex;align-items:center;justify-content:center;padding:4px 12px;font-size:12px;text-align:center;box-sizing:border-box}
+  body.pilot-on{padding-top:44px}
+  body.pilot-on #stimWrap{top:44px}
   #stimCover{position:absolute;inset:0;background:var(--page);display:flex;align-items:center;justify-content:center}
   #stimError{position:absolute;inset:0;background:var(--page);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center;z-index:3}
   #stimFallback{position:absolute;left:50%;top:14px;transform:translateX(-50%);z-index:2;box-shadow:0 2px 10px rgba(0,0,0,.35)}
@@ -267,7 +271,7 @@
 <main id="app"></main>
 <div id="net" hidden></div>
 <div id="dbg" hidden></div>
-<script src="config.js?v=2026-11-14-participant-id-v1"></script>
+<script src="config.js?v=2026-11-14-storage-pilot-v1"></script>
 <script>
 (() => {
 'use strict';
@@ -278,12 +282,42 @@ const ASSIGNMENT_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a
 /* 관리자 모드(?admin=1): 아무 화면으로나 바로 이동·조건 전환. 응답은 어디에도 저장하지 않습니다(API 끔). */
 const ADMIN = Q.get('admin') === '1';
 const DEBUG = Q.get('debug') === '1' || ADMIN;
+const PILOT_REQUESTED = !DEBUG && Q.get('pilot') === '1';
+const PILOT_PID = Q.get(C.ID_PARAM) || '';
+const PILOT = PILOT_REQUESTED && /^TEST_[A-Za-z0-9_-]{1,59}$/.test(PILOT_PID);
 const RESEARCH_API_URL = C.API_URL;
 if (DEBUG) C.API_URL = '';
+if (PILOT){
+  // Researcher storage checks use real APIs with reserved test IDs. Never
+  // substitute unfinished recruitment information or send Connect completion.
+  C.REDIRECTS = {complete:'',screenedOut:'',attentionFail:'',full:''};
+  C.COMPLETION_CODE = '';
+  C.CONSENT = {
+    title:'Researcher storage test',
+    lead:'For researchers checking the study before recruitment.',
+    facts:[{label:'Data',value:'Test records are saved'},
+      {label:'Payment',value:'No Connect submission or payment'},
+      {label:'Device',value:'Computer only'}],
+    html:'<p>This test follows the consent, assignment, stream, questionnaire, and saving steps. '+
+      'Recruitment information is still being finalized. This page is a technical test notice.</p>'+
+      '<p>Use test answers. All records use a TEST_ participant ID and are excluded from real assignment counts.</p>',
+    agree:'I am a researcher running a storage test and understand that test records will be saved.',
+    declineNote:'Close this page if you are not running a research-team test.'
+  };
+  C.DEBRIEF = {
+    title:'Finish the storage test',
+    html:'<p>This was a researcher storage test. No Connect completion signal or payment is generated.</p>'+
+      '<p>Keeping the records allows the research team to check survey and behavior storage. '+
+      'Withdrawing removes survey answers and exported behavior summaries; original stimulus logs remain in Supabase.</p>',
+    question:'Keep the test survey responses for storage checks?',
+    keep:'Keep these test responses',withdraw:'Withdraw these test responses'
+  };
+}
 // 대기 시간을 3초로 줄일지: 점검 모드는 항상, 관리자 모드는 패널의 선택을 따름(기본 = 실제 시간)
 let FAST = Q.get('debug') === '1';
 if (ADMIN){ try { FAST = sessionStorage.getItem('lsv_admin_fast') === '1'; } catch (e) {} }
 const BASE_KEY = 'lsv_' + C.STUDY_ID;
+const STATE_SCOPE = BASE_KEY + (PILOT ? '_pilot' : '');
 let KEY = BASE_KEY + (ADMIN ? '_admin' : DEBUG ? '_debug' : '');
 const app = document.getElementById('app');
 const SAVE_WAIT_MS = 6000;      // 페이지를 떠나기 전 저장을 기다리는 최대 시간
@@ -291,7 +325,7 @@ const SAVE_WAIT_MS = 6000;      // 페이지를 떠나기 전 저장을 기다�
 /* ───────── 상태 ───────── */
 let S = null;
 let viewVersion = 0, ownsTab = false;
-function participantKey(pid){ if (!DEBUG) KEY = BASE_KEY + '_pid_' + pid; }
+function participantKey(pid){ if (!DEBUG) KEY = STATE_SCOPE + '_pid_' + pid; }
 const store = {
   get(){ try { return JSON.parse(localStorage.getItem(KEY)); } catch { return null; } },
   set(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} },
@@ -322,6 +356,7 @@ const interp = s => String(s == null ? '' : s).replace(/\{\{(\w+)\}\}/g, (m, k) 
 
 /* ───────── 서버 통신 ───────── */
 async function api(action, body){
+  if (PILOT && body.pid !== PILOT_PID) throw new Error('Test participant ID mismatch.');
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30000);
   try {
@@ -335,6 +370,8 @@ async function api(action, body){
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const j = await r.json();
     if (!j.ok) throw new Error(j.error || 'api error');
+    if (PILOT && ['assign','get'].includes(action) && j.found && j.is_test !== true)
+      throw new Error('The server did not confirm a test assignment.');
     return j;
   } finally { clearTimeout(timeout); }
 }
@@ -342,6 +379,7 @@ async function api(action, body){
 /* 저장: 바뀐 값만 모아 두었다가 보냅니다. 실패하면 브라우저에 남겨 두고 다시 보냅니다. */
 let flushing = null, retryTimer = null, retryDelay = 2000;
 function save(patch){
+  if (PILOT) patch = Object.assign({},patch,{is_test:1,storage_test:1});
   Object.assign(S.pending, patch);
   store.set();
   return flush();
@@ -386,13 +424,13 @@ window.addEventListener('pageshow', e => { if (e.persisted && !DEBUG) location.r
 
 function deploymentIssues(){
   const issues = [];
-  if (C.PARTICIPANT_OPEN !== true) issues.push('Participant recruitment is closed.');
+  if (!PILOT && C.PARTICIPANT_OPEN !== true) issues.push('Participant recruitment is closed.');
   if (C.READ_T1 !== true) issues.push('Enable T1 and session ID reading.');
   const secure = value => { try { return new URL(value).protocol === 'https:'; } catch { return false; } };
   if (!secure(RESEARCH_API_URL)) issues.push('Set the HTTPS survey API URL.');
-  if (!secure(C.REDIRECTS.complete) && !String(C.COMPLETION_CODE || '').trim()) issues.push('Set a completion URL or code.');
-  if (C.REDIRECTS.complete && !secure(C.REDIRECTS.complete)) issues.push('The completion URL must use HTTPS.');
-  if (/\[(?:N|Amount|XXXX|Researcher name|email)\]/.test(JSON.stringify([C.CONSENT,C.DEBRIEF])))
+  if (!PILOT && !secure(C.REDIRECTS.complete) && !String(C.COMPLETION_CODE || '').trim()) issues.push('Set a completion URL or code.');
+  if (!PILOT && C.REDIRECTS.complete && !secure(C.REDIRECTS.complete)) issues.push('The completion URL must use HTTPS.');
+  if (!PILOT && /\[(?:N|Amount|XXXX|Researcher name|email)\]/.test(JSON.stringify([C.CONSENT,C.DEBRIEF])))
     issues.push('Complete the consent and debriefing information.');
   try {
     if (!C.STIMULUS_EMBED || new URL(C.STIMULUS_URL, location.href).origin !== location.origin)
@@ -407,10 +445,12 @@ function unavailable(){
 
 /* ───────── 시작 ───────── */
 function init(){
+  if (PILOT_REQUESTED && (!PILOT || (Q.has('panel_id') && Q.get('panel_id') !== PILOT_PID)))
+    return paper('Invalid storage-test link','<p>Use a participantId beginning with TEST_ and containing only letters, numbers, underscores or hyphens.</p>');
   if (!DEBUG && deploymentIssues().length) return unavailable();
   const incoming = Q.get(C.ID_PARAM) || Q.get('panel_id');
   let lastPid = null;
-  try { lastPid = sessionStorage.getItem(BASE_KEY + '_last_pid'); } catch {}
+  try { lastPid = sessionStorage.getItem(STATE_SCOPE + '_last_pid'); } catch {}
   const selectedPid = incoming || lastPid;
   if (!DEBUG && selectedPid && C.ID_PATTERN.test(selectedPid) && navigator.locks && !ownsTab){
     navigator.locks.request(BASE_KEY + '_' + selectedPid, {ifAvailable:true}, async lock => {
@@ -426,10 +466,10 @@ function init(){
   }
   if (selectedPid && C.ID_PATTERN.test(selectedPid)) participantKey(selectedPid);
   if (!DEBUG && selectedPid && C.ID_PATTERN.test(selectedPid)){
-    try { sessionStorage.setItem(BASE_KEY + '_last_pid', selectedPid); } catch {}
+    try { sessionStorage.setItem(STATE_SCOPE + '_last_pid', selectedPid); } catch {}
   }
   let saved = store.get();
-  if (!DEBUG && selectedPid && !saved){
+  if (!DEBUG && !PILOT && selectedPid && !saved){
     try {
       const legacy = JSON.parse(localStorage.getItem(BASE_KEY));
       if (legacy && legacy.pid === selectedPid && !legacy.meta?.is_test) saved = legacy;
@@ -488,10 +528,11 @@ async function resumeAssignment(saved){
 
 function start(pid){
   participantKey(pid);
-  if (!DEBUG){ try { sessionStorage.setItem(BASE_KEY + '_last_pid', pid); } catch {} }
+  if (!DEBUG){ try { sessionStorage.setItem(STATE_SCOPE + '_last_pid', pid); } catch {} }
   S = newState(pid);
   const m = S.meta;
   m.is_test = (DEBUG || pid.startsWith('TEST_')) ? 1 : 0;
+  if (PILOT) m.storage_test = 1;
   m.start_at = iso();
   for (const p of C.EXTRA_PARAMS) m[keyify(p)] = Q.get(p) || '';
   m.user_agent = navigator.userAgent;
@@ -996,7 +1037,7 @@ function stimulusUrl(){
   u.searchParams.set('panel_id', S.pid);
   if (S.meta.assignment_id) u.searchParams.set('assignment_id', S.meta.assignment_id);
   u.searchParams.set('intro', 'off');
-  u.searchParams.set('v', C.ASSET_VERSION || '2026-11-14-participant-id-v1');
+  u.searchParams.set('v', C.ASSET_VERSION || '2026-11-14-storage-pilot-v1');
   if (!DEBUG){
     for (const k of ['preview','debug','cong','label','ratio','viewers','seed','source','admin']) u.searchParams.delete(k);
   }
@@ -1288,6 +1329,7 @@ function doneCard(title, body, icon){
   return app.firstElementChild;
 }
 function redirectTo(url, msg, title){
+  if (PILOT) return doneCard('Storage test ended',`<p>${esc(msg || '')}</p><p>No Connect completion was sent.</p>`,false);
   const el = doneCard(title || T.doneTitle, `<p>${msg}</p><p class="note"><a href="${esc(url)}">${T.redirectLink}</a></p>`, !title);
   if (!DEBUG) setTimeout(() => location.replace(url), 1200);
   return el;
@@ -1298,6 +1340,12 @@ async function viewDone(){
   const saved = await flushWithin(SAVE_WAIT_MS * 2);
   if (version !== viewVersion) return;
   if (!saved || Object.keys(S.pending).length) return saveRetry(viewDone);
+  if (PILOT) return doneCard('Storage test saved',
+    `<p>The test survey responses have been saved${S.meta.withdraw === 'yes' ? ' as withdrawn' : ''}.</p>
+    <p>No Connect completion was sent. No payment is generated.</p>
+    <p>Test ID: <span class="code">${esc(S.pid)}</span></p>
+    <p>Stimulus session: <span class="code">${esc(S.meta.stim_session_id || 'Not available')}</span></p>
+    <p class="note">Check the responses and behavior sheets using this session ID. Behavior sync runs every five minutes.</p>`,true);
   const url = C.REDIRECTS.complete;
   const withdrawn = S.meta.withdraw === 'yes';
   const savedText = withdrawn ? 'Your data withdrawal has been recorded.' : T.doneSaved;
@@ -1450,6 +1498,12 @@ function adminPanel(){
   d.querySelector('#admHide').onclick = () => { admOpen = false; adminPanel(); };
 }
 
+if (PILOT){
+  document.body.classList.add('pilot-on');
+  const notice = document.createElement('div'); notice.id = 'pilotNotice';
+  notice.textContent = 'RESEARCHER STORAGE TEST · ' + PILOT_PID + ' · Test records saved. No Connect submission or payment.';
+  document.body.prepend(notice);
+}
 init();
 })();
 </script>
