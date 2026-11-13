@@ -152,7 +152,8 @@ window.SURVEY_CONFIG = {
         aiRows: [0, 0, 0, 0]
       },
       mixed: {
-        headline: '<span class="hl">Half</span> of the viewers in this stream are <span class="hl">AI</span>, and <span class="hl">half</span> are <span class="hl">people</span>.',
+        // 비율(반반)은 말하지 않고, AI와 사람이 함께 있는 공간이라고만 안내
+        headline: 'This stream is a space where <span class="hl">AI</span> and <span class="hl">people</span> watch together.',
         sub: 'Messages written by AI are marked with an <span class="aib">AI</span> label.',
         aiRows: [1, 0, 0, 1]
       }
