@@ -267,7 +267,7 @@
 <main id="app"></main>
 <div id="net" hidden></div>
 <div id="dbg" hidden></div>
-<script src="config.js?v=2026-11-14-sheets-v1"></script>
+<script src="config.js?v=2026-11-14-behavior-v1"></script>
 <script>
 (() => {
 'use strict';
@@ -711,6 +711,7 @@ function viewPage(part){
 
     patch['t_' + page.id] = secs(t0);
     if (attFail){ S.att += attFail; patch.attention_fails = S.att; }
+    if (page.id === 'dv_revote') Object.assign(patch, opinionChange(S.meta, patch));
     Object.assign(S.answers, patch);
     if (screened){ save(patch); return end('screened'); }
     if (attFail && C.ATTENTION.action === 'end' && S.att >= C.ATTENTION.maxFails){ save(patch); return end('attention'); }
@@ -744,6 +745,19 @@ function viewSplash(pages, i){
     save(patch);
     S.page = i + 1; render();
   };
+}
+
+/* T1 is the submitted in-stream vote, not a pre-treatment baseline.
+   Missing/incomplete T1 never becomes a zero change score. */
+function opinionChange(meta, answers){
+  const comparable = Number(meta.t1_submitted) === 1 &&
+    ['A', 'B'].includes(meta.t1_vote) && ['A', 'B'].includes(answers.t2_vote);
+  const t1 = Number(meta.t1_conf), t2 = Number(answers.t2_conf);
+  const rated = comparable && Number.isInteger(t1) && t1 >= 1 && t1 <= 7 &&
+    Number.isInteger(t2) && t2 >= 1 && t2 <= 7;
+  return {t1_t2_comparable: comparable ? 1 : 0,
+    t1_t2_vote_changed: comparable ? Number(meta.t1_vote !== answers.t2_vote) : '',
+    t1_t2_conf_delta: rated ? t2 - t1 : ''};
 }
 
 function finishPart(part){
@@ -982,7 +996,7 @@ function stimulusUrl(){
   u.searchParams.set('panel_id', S.pid);
   if (S.meta.assignment_id) u.searchParams.set('assignment_id', S.meta.assignment_id);
   u.searchParams.set('intro', 'off');
-  u.searchParams.set('v', C.ASSET_VERSION || '2026-11-14-sheets-v1');
+  u.searchParams.set('v', C.ASSET_VERSION || '2026-11-14-behavior-v1');
   if (!DEBUG){
     for (const k of ['preview','debug','cong','label','ratio','viewers','seed','source','admin']) u.searchParams.delete(k);
   }

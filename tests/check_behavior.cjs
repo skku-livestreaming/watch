@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const path = require('node:path');
 
 class Sheet {
-  constructor() { this.data = []; this.cols = 26; this.rows = 4; }
+  constructor() { this.data = []; this.cols = 26; this.rows = 4; this.writes = []; }
   getMaxColumns() { return this.cols; }
   getMaxRows() { return this.rows; }
   insertColumnsAfter(_, n) { this.cols += n; }
@@ -37,6 +37,8 @@ class Sheet {
         }};
       },
       setValues(values) {
+        sh.writes.push({r,c,nr,nc});
+        if (sh.failColumn === c){ delete sh.failColumn; throw new Error('range write failed'); }
         assert.equal(values.length, nr);
         values.forEach((row,i) => {
           assert.equal(row.length, nc);
@@ -167,6 +169,61 @@ assert.equal(run("get_({pid:'REAL_RPC'})").assignment_id,assigned.assignment_id)
 run("setStatus_('REAL_RPC','returned')");
 assert.equal(sheets.assignments.data.find(r=>r[0]==='REAL_RPC')[5],'returned');
 console.log('PASS: Apps Script uses trusted database RPCs and mirrors condition/assignment ID without duplicate rows');
+
+// Upgrade an existing 40-column export, including reordered columns and a
+// researcher note. Untouched legacy rows must keep blank new measurements.
+const previous = sheets.behavior;
+const oldHeaders = [...previous.data[0]].slice(0,40);
+const legacyHeaders = ['event_id','research_note', ...oldHeaders.reverse().filter(h=>h!=='event_id')];
+const legacy = new Sheet(); legacy.cols = legacyHeaders.length;
+const oldRecord = sid => {
+  const row = previous.data.find(r=>r[previous.data[0].indexOf('session_id')]===sid);
+  return Object.fromEntries(previous.data[0].map((h,i)=>[h,row[i]]));
+};
+const a = oldRecord(sessions[499].id), b = oldRecord(sessions[498].id);
+legacy.data = [legacyHeaders,
+  legacyHeaders.map(h=>h==='research_note'?'keep A':a[h]),
+  legacyHeaders.map(h=>h==='research_note'?'keep B':b[h])];
+sheets.behavior = legacy;
+events.push({id:504,session_id:sessions[499].id,data:{via:'end_button',
+  behavior_version:'2026-11-14-v1',visible_watch_sec:0,hidden_playback_sec:3,
+  visible_postpoll_sec:0,visible_after_end_sec:1.2,next_video_selected:true,
+  first_next_video_index:0,first_next_video_latency_ms:3000,
+  first_next_video_visible_latency_ms:1000,seen_supported:true,
+  seen_by_identity:{ai:{congruent:1,incongruent:0,congruent_ms:1800,incongruent_ms:0},
+    human:{congruent:0,incongruent:1,congruent_ms:0,incongruent_ms:1800}}}});
+run('syncBehaviorMeasures()');
+const upgraded = legacy.data[0];
+const migratedRow = sid => legacy.data.find(r=>r[upgraded.indexOf('session_id')]===sid);
+const upgradedField = (sid,name) => migratedRow(sid)[upgraded.indexOf(name)];
+assert.equal(upgraded.length,59); // 58 measured columns + preserved researcher note.
+assert.deepEqual(upgraded.slice(0,41),legacyHeaders.slice(0,41));
+assert.equal(upgradedField(sessions[499].id,'research_note'),'keep A');
+assert.equal(upgradedField(sessions[499].id,'visible_watch_sec'),0);
+assert.equal(upgradedField(sessions[499].id,'first_next_video_index'),0);
+assert.equal(upgradedField(sessions[499].id,'next_video_selected'),1);
+assert.equal(upgradedField(sessions[499].id,'seen_ai_congruent'),1);
+assert.equal(upgradedField(sessions[499].id,'seen_ai_incongruent'),0);
+assert.equal(upgradedField(sessions[499].id,'visible_ms_human_incongruent'),1800);
+assert.equal(upgradedField(sessions[498].id,'research_note'),'keep B');
+assert.equal(upgradedField(sessions[498].id,'visible_watch_sec'),'');
+assert.equal(upgradedField(sessions[498].id,'seen_supported'),'');
+assert(legacy.writes.every(w=>w.c>2 || w.c+w.nc<=2), 'Researcher column must never be rewritten, including formula cells');
+events.push({...events[events.length-1],id:505,data:{...events[events.length-1].data,visible_watch_sec:12}});
+legacy.failColumn=3;
+assert.throws(()=>run('syncBehaviorMeasures()'),/range write failed/);
+assert.equal(props.get('BEHAVIOR_EVENT_CURSOR'),'504');
+assert.equal(upgradedField(sessions[499].id,'event_id'),505);
+assert.equal(upgradedField(sessions[499].id,'visible_watch_sec'),0);
+run('syncBehaviorMeasures()');
+assert.equal(upgradedField(sessions[499].id,'visible_watch_sec'),12);
+assert.equal(upgradedField(sessions[499].id,'research_note'),'keep A');
+assert.equal(props.get('BEHAVIOR_EVENT_CURSOR'),'505');
+run("purgeBehavior_('P499')");
+assert(!legacy.data.some(r=>r[upgraded.indexOf('pid')]==='P499'));
+assert.equal(upgradedField(sessions[498].id,'research_note'),'keep B');
+console.log('PASS: legacy sheet upgrades by name to 58 measures, preserves custom columns, retains zero vs missing values, repairs partial column writes and purges the correct PID');
+
 props.delete('SPREADSHEET_ID');
 assert.throws(()=>run("sheet_('responses',['pid'])"),/Configure SPREADSHEET_ID/);
 console.log('PASS: explicit spreadsheet ID works without an active spreadsheet and missing configuration fails clearly');

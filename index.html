@@ -1126,7 +1126,7 @@ const ConditionRouter = (() => {
        안내 페이지를 건너뛰고, 로그를 서버로 보내지 않고, 속도·일시정지·앞으로 건너뛰기를 허용합니다. */
     c.preview = q.get('preview') === '1';
     if (c.preview){ c.intro = 'off'; if (!c.panel_id) c.pid = 'preview'; }
-    c.stimulus_version = '2026-11-balanced-result-burst-survey';
+    c.stimulus_version = '2026-11-behavior-visible-exposure-v1';
     c.language = 'en';
     c.poll_count = 1;
     return c;
@@ -2443,7 +2443,7 @@ const Renderer = {
     if (msgObserver){
       /* 한 줄의 노출 기록 하나를 채팅창(since)과 플로팅(sinceO)이 나눠 씁니다.
          둘 중 어디서든 보이는 시간을 한 번만 셉니다 — 두 곳에 동시에 떠 있어도 두 배가 되지 않습니다. */
-      rec = {ms: 0, since: false, sinceO: false, start: 0, was: {}, stance: c.stance || null,
+      rec = {ms: 0, since: false, sinceO: false, start: null, stance: c.stance || null,
              poll: c.poll ?? null,
              kind: c.kind, el, ov: null};
       el.__seen = rec; el.__sk = 'since';
@@ -2522,7 +2522,7 @@ function initChatScroll(){
 
    한계: 화면에 있었다 ≠ 읽었다. 시선 추적 없이는 그 이상 불가.
          논문에는 '읽은 메시지'가 아니라 '화면 노출 시간'으로 기술. */
-const SEEN_MIN_MS = 1000;        // 이 시간 이상 떠 있어야 '봤다'로 셉니다
+const SEEN_MIN_MS = 1000;        // 누적 화면 노출 기준. 읽었거나 연속 1초 노출됐다는 뜻은 아닙니다.
 const seen = {msgs: [], offscreen: 0};
 let msgObserver = null, ovObserver = null;
 const SEEN_KEYS = ['since', 'sinceO'];     // 채팅창, 플로팅
@@ -2532,16 +2532,15 @@ function nowVisible(){ return document.visibilityState === 'visible'; }
 /* 자리별 보임 표시. 둘 중 하나라도 보이기 시작하면 시계를 켜고,
    둘 다 안 보이게 되면 그때까지를 적립합니다. */
 function seenOn(rec, k){
-  if (rec[k]) return;
   rec[k] = true;
-  if (!rec.start) rec.start = performance.now();
+  if (nowVisible() && !left && rec.start === null) rec.start = performance.now();
 }
 function flushSeen(rec, k){
   if (!rec[k]) return;
   rec[k] = false;
-  if (rec.since || rec.sinceO || !rec.start) return;
-  if (nowVisible()) rec.ms += performance.now() - rec.start;
-  rec.start = 0;
+  if (rec.since || rec.sinceO || rec.start === null) return;
+  rec.ms += performance.now() - rec.start;
+  rec.start = null;
 }
 
 function initSeen(){
@@ -2550,7 +2549,7 @@ function initSeen(){
     for (const e of entries){
       const rec = e.target.__seen, k = e.target.__sk;
       if (!rec || !k) continue;
-      if (e.isIntersecting) seenOn(rec, k);
+      if (e.isIntersecting && e.intersectionRatio >= 0.6) seenOn(rec, k);
       else flushSeen(rec, k);
     }
   }, {root, threshold: 0.6});                       // 줄의 60% 이상 보여야 인정
@@ -2558,19 +2557,18 @@ function initSeen(){
   ovObserver = make(ovFeed);
 }
 
-/* 탭을 가리면 그 순간까지만 적립하고 멈춥니다. 돌아오면 Restart합니다. */
+/* Geometry remains current while hidden; only the visibility clock is paused.
+   Messages arriving in a background tab must never start an exposure clock. */
 function pauseSeen(stop){
   const now = performance.now();
   for (const r of seen.msgs){
-    if (stop){
-      if (r.start){ r.ms += now - r.start; r.start = 0; }
-      for (const k of SEEN_KEYS){ r.was[k] = r[k]; r[k] = false; }
-    } else {
+    if (r.start !== null){ r.ms += now - r.start; r.start = null; }
+    if (!stop && !left){
       for (const k of SEEN_KEYS){
         const node = k === 'since' ? r.el : r.ov;
-        if (r.was[k] && node && node.isConnected) seenOn(r, k);
-        r.was[k] = false;
+        if (!node || !node.isConnected) r[k] = false;
       }
+      if (r.since || r.sinceO) r.start = now;
     }
   }
 }
@@ -2579,21 +2577,39 @@ function pauseSeen(stop){
 function seenSummary(){
   const now = performance.now();
   const vis = nowVisible();
+  const supported = msgObserver !== null;
+  const validVote = i => PS[i] && PS[i].voteLocked && ['A', 'B'].includes(PS[i].vote);
+  const comparable = PS.some((p, i) => validVote(i));
+  const byIdentity = Object.fromEntries(['ai', 'human'].map(k => [k, {
+    congruent: 0, incongruent: 0, congruent_ms: 0, incongruent_ms: 0
+  }]));
   let n = 0, cong = 0, incong = 0, msCong = 0, msIncong = 0, off = 0, msAll = 0;
-  const byPoll = POLLS.map((d, i) => ({poll: i + 1, congruent: 0, incongruent: 0}));
+  const byPoll = POLLS.map((d, i) => ({poll: i + 1,
+    congruent: validVote(i) ? 0 : null, incongruent: validVote(i) ? 0 : null}));
   for (const r of seen.msgs){
     let ms = r.ms;
-    if (r.start && vis) ms += now - r.start;          // 아직 화면에 있는 것도 반영
+    if (r.start !== null && vis) ms += now - r.start; // 아직 화면에 있는 것도 반영
     msAll += ms;
     if (ms < SEEN_MIN_MS){ if (ms === 0) off++; continue; }
     n++;
     /* 입장 발화는 그 줄이 말하는 투표(r.poll)에서 참가자가 고른 쪽과 비교합니다. */
-    if (r.stance && r.poll != null){
-      if (r.stance === PS[r.poll].vote){ cong++; msCong += ms; byPoll[r.poll].congruent++; }
-      else { incong++; msIncong += ms; byPoll[r.poll].incongruent++; }
+    if (r.stance && r.poll != null && validVote(r.poll)){
+      const side = r.stance === PS[r.poll].vote ? 'congruent' : 'incongruent';
+      if (side === 'congruent'){ cong++; msCong += ms; }
+      else { incong++; msIncong += ms; }
+      byPoll[r.poll][side]++;
+      if (byIdentity[r.kind]){
+        byIdentity[r.kind][side]++;
+        byIdentity[r.kind][side + '_ms'] += ms;
+      }
     }
   }
   const tot = cong + incong;
+  for (const k of ['ai', 'human'])
+    for (const side of ['congruent_ms', 'incongruent_ms'])
+      byIdentity[k][side] = Math.round(byIdentity[k][side]);
+  const measured = value => supported ? value : null;
+  const classified = value => supported && comparable ? value : null;
   /* shown_* 과 lines_* 는 세는 대상이 다릅니다.
      shown_*  타임라인 발화만 (백로그·예고 반응·참가자 본인 글 제외)
      lines_*  채팅창에 들어온 모든 줄
@@ -2603,19 +2619,51 @@ function seenSummary(){
      779,000ms가 나오는 것이 정상입니다. 체류 시간과 직접 비교하지 마십시오.
      한 줄이 평균 몇 초나 떠 있었는지는 visible_ms_per_line으로 봅니다. */
   return {
-    lines_total: seen.msgs.length,                     // 피드에 들어온 모든 줄
-    lines_seen: n,                                     // 그중 1초 이상 화면에 있던 줄
-    lines_offscreen: off,                              // 한 번도 화면에 안 뜬 줄
-    visible_ms_total: Math.round(msAll),               // 줄 × 노출시간의 합 (체류시간 아님)
-    visible_ms_per_line: seen.msgs.length ? Math.round(msAll / seen.msgs.length) : null,
-    seen_congruent: cong,
-    seen_incongruent: incong,
-    seen_congruence_ratio: tot ? +(cong / tot * 100).toFixed(1) : null,
-    visible_ms_congruent: Math.round(msCong),
-    visible_ms_incongruent: Math.round(msIncong),
-    seen_by_poll: byPoll,                              // 위 seen_congruent/incongruent를 투표별로 나눈 값
-    threshold_ms: SEEN_MIN_MS
+    seen_supported: supported,
+    lines_total: measured(seen.msgs.length),             // 피드에 들어온 모든 줄
+    lines_seen: measured(n),                            // 누적 1초 이상 화면 노출된 줄
+    lines_offscreen: measured(off),
+    visible_ms_total: measured(Math.round(msAll)),       // 줄 × 노출시간의 합 (체류시간 아님)
+    visible_ms_per_line: measured(seen.msgs.length ? Math.round(msAll / seen.msgs.length) : null),
+    seen_congruent: classified(cong),
+    seen_incongruent: classified(incong),
+    seen_congruence_ratio: classified(tot ? +(cong / tot * 100).toFixed(1) : null),
+    visible_ms_congruent: classified(Math.round(msCong)),
+    visible_ms_incongruent: classified(Math.round(msIncong)),
+    seen_by_identity: classified(byIdentity),
+    seen_by_poll: measured(byPoll),
+    threshold_ms: SEEN_MIN_MS,
+    threshold_ratio: 0.6
   };
+}
+
+/* Wall-clock opportunity to view, not gaze or psychological immersion.
+   Accumulate at existing lifecycle boundaries; no extra outbound events. */
+const behaviorTime = {at: null, active: false, visible: false, playing: false,
+  after: false, postpoll: false, watch: 0, hidden: 0, postchat: 0, postend: 0};
+function syncBehaviorTime(playing){
+  const now = performance.now(), t = behaviorTime;
+  if (t.at !== null && t.active){
+    const ms = Math.max(0, now - t.at);
+    if (t.after){ if (t.visible) t.postend += ms; }
+    else if (t.playing){
+      if (t.visible){ t.watch += ms; if (t.postpoll) t.postchat += ms; }
+      else t.hidden += ms;
+    }
+  }
+  t.at = now;
+  if (playing !== undefined) t.playing = playing;
+  t.active = entered && !left;
+  t.visible = nowVisible();
+  t.after = ended;
+  t.postpoll = chatOpen && PS.some(p => p.unlockAt !== null);
+}
+function behaviorTimeSummary(){
+  syncBehaviorTime();
+  const sec = n => +(n / 1000).toFixed(2);
+  return {behavior_version: '2026-11-14-v1', visible_watch_sec: sec(behaviorTime.watch),
+    hidden_playback_sec: sec(behaviorTime.hidden), visible_postpoll_sec: sec(behaviorTime.postchat),
+    visible_after_end_sec: ended ? sec(behaviorTime.postend) : null};
 }
 
 /* 채팅 텍스트를 드래그해서 읽는 행동. 복사하려는 것일 수도, 한 줄을 짚어가며
@@ -2865,7 +2913,8 @@ const Logger = {
 
 /* 5초마다, 그리고 창을 닫거나 탭을 가릴 때 전송합니다. */
 setInterval(() => Sink.flush(false), 5000);
-addEventListener('visibilitychange', () => {
+document.addEventListener('visibilitychange', () => {
+  syncBehaviorTime();
   pauseSeen(document.visibilityState !== 'visible');
   Logger.add('visibility', {state: document.visibilityState});
   if (document.visibilityState === 'hidden') Sink.flush(true);
@@ -3139,12 +3188,20 @@ $('streamVideo').addEventListener('error', videoFailure);
 let bufferTimer = 0;
 $('streamVideo').addEventListener('playing', () => {
   if (ended || left) return;
+  syncBehaviorTime(true);
   $('ov').hidden = false;                  // 영상 위 채팅은 영상이 실제로 나온 뒤부터 보입니다
   $('buffer').hidden = true;
   $('buffer').classList.remove('first');
 });
 $('streamVideo').addEventListener('waiting', () => {
+  syncBehaviorTime(false);
   if (entered && !ended && !left) $('buffer').hidden = false;
+});
+for (const type of ['pause', 'seeking'])
+  $('streamVideo').addEventListener(type, () => syncBehaviorTime(false));
+$('streamVideo').addEventListener('seeked', () => {
+  const v = $('streamVideo');
+  syncBehaviorTime(!v.paused && !v.ended && v.readyState >= 3);
 });
 $('streamVideo').addEventListener('ended', () => {
   if (entered && !ended){ tick = $('streamVideo').currentTime; endStream(); }
@@ -3219,6 +3276,7 @@ const fmt = n => n.toLocaleString('en-US');
 function enter(){
   if (entered) return;
   entered = true;
+  syncBehaviorTime(false);
   Logger.add('watch_start');
   watch.classList.add('on');
   const isAI = cond.label === 'mixed';
@@ -3311,6 +3369,7 @@ const END_VIDEOS = [
   {t: 'a quiet night in',   v: '87K', ago: '5 days ago', d: '1:58:22'},
   {t: 'weekend recap & chill',    v: '310K',  ago: '9 days ago', d: '3:07:14'}
 ];
+const nextVideoChoice = {index: null, latency_ms: null, visible_latency_ms: null};
 function renderEndCard(){
   const g = $('ecGrid'); g.innerHTML = '';
   END_VIDEOS.forEach((v, i) => {
@@ -3325,8 +3384,17 @@ function renderEndCard(){
       <span class="ec-t">${v.t}</span>
       <span class="ec-v">${v.v} views · ${v.ago}</span>${aiTag}`;
     el.addEventListener('click', () => {
+      syncBehaviorTime();
+      const first = nextVideoChoice.index === null;
+      const latency = Math.round(Math.max(0, performance.now() - endedAt));
+      if (first){
+        nextVideoChoice.index = i;
+        nextVideoChoice.latency_ms = latency;
+        nextVideoChoice.visible_latency_ms = Math.round(behaviorTime.postend);
+      }
       el.style.outline = '2px solid var(--accent)';
-      Logger.add('next_video_click', {index: i, title: v.t, at_sec: +tick.toFixed(2)});
+      Logger.add('next_video_click', {index: i, title: v.t, first, latency_ms: latency,
+        at_sec: +tick.toFixed(2)});
       /* 눌러도 아무 반응이 없으면 고장으로 알고 연타합니다. 짧게 알려 줍니다. */
       const n = $('ecNote');
       n.textContent = 'This video is currently unavailable.';
@@ -3372,6 +3440,7 @@ function endStream(){
   $('videoOut').hidden = true;
   ended = true;
   endedAt = performance.now();
+  syncBehaviorTime(false);
   clearInterval(timer);
   PS.forEach((p, i) => { if (p.resultShown && !p.resultHidden) hideResult(i); });
   Logger.add('stream_ended', {at_sec: +tick.toFixed(2)});
@@ -3613,6 +3682,7 @@ function lockChat(i){
   p.lockedAt = +tick.toFixed(2);
   pushDivider('Chat paused');
   chatOpen = false;
+  syncBehaviorTime();
   showFeed(false);
   setLockMsg('Chat will reopen after the poll');
   $('inputRow').hidden = true;
@@ -3623,6 +3693,7 @@ function lockChat(i){
 /* 입장 시점의 열린 상태. unlockChat()은 투표 뒤의 해제이고 로그가 다릅니다. */
 function openChat(){
   chatOpen = true;
+  syncBehaviorTime();
   showFeed(true);
   const off = cond.input === 'off';
   $('inputRow').hidden = off;
@@ -3636,6 +3707,7 @@ function unlockChat(i){
   showResult(i);
   chatOpen = true;
   p.unlockAt = +tick.toFixed(2);
+  syncBehaviorTime();
   showFeed(true);
   pushDivider('Chat resumed');
   Renderer.push({kind: 'sys', text: 'Poll results are in. Chat is open again.'});
@@ -3944,6 +4016,7 @@ function toggleSub(where){
 let left = false;
 function leaveSummary(via){
   return {
+    ...behaviorTimeSummary(),
     via,
     dwell_sec: +Math.max(0, tick - VIDEO_TRIM).toFixed(2),   // 영상 시각에서 잘라낸 앞부분을 뺀 시청 시간
     // 방송 종료 화면에서 머문 시간. dwell_sec는 영상 시계라 종료 뒤로는 늘지 않습니다.
@@ -3953,6 +4026,10 @@ function leaveSummary(via){
     user_card_opens: Logger.ev.filter(e => e.type === 'user_card_open').length,
     user_card_clicks: Logger.ev.filter(e => e.type === 'user_card_open' && e.how === 'click').length,
     next_video_clicks: Logger.ev.filter(e => e.type === 'next_video_click').length,
+    next_video_selected: ended ? nextVideoChoice.index !== null : null,
+    first_next_video_index: nextVideoChoice.index,
+    first_next_video_latency_ms: nextVideoChoice.latency_ms,
+    first_next_video_visible_latency_ms: nextVideoChoice.visible_latency_ms,
     // 체류 중 실제로 노출된 메시지 기준 AI 비율 — 분석에 쓸 값
     shown_messages: shownTotal,
     shown_ai: shownAI,
@@ -4032,6 +4109,8 @@ const RETURN_WAIT_MS = 4000;
 function leave(via){
   if (left) return;
   left = true;
+  syncBehaviorTime(false);
+  pauseSeen(true);
   via = typeof via === 'string' ? via : 'end_button';
   $('streamVideo').pause();
   $('videoRetry').hidden = true;

@@ -32,11 +32,15 @@ def main():
         assert page.locator('#poll').is_hidden() and page.locator('#ov').is_hidden()
         assert page.locator('#buffer').is_hidden()
         assert page.evaluate("ended && !Sink.enabled() && Logger.ev.some(e=>e.type==='stream_ended')")
+        measured=page.evaluate('leaveSummary("qa")')
+        assert 0 < measured['visible_watch_sec'] < measured['dwell_sec'],measured
+        assert 0 < measured['visible_postpoll_sec'] <= measured['visible_watch_sec'],measured
+        assert measured['visible_after_end_sec'] >= 0
         assert not errors,errors
         page.locator('#leave').click()
         assert page.locator('#done').is_visible()
         browser.close()
-        print('PASS: real media end hides chat/results/loading and permits finishing',flush=True)
+        print('PASS: native playback accumulates visible wall time separately from video progress; media end hides chat/results/loading and permits finishing',flush=True)
     server.shutdown()
 
 

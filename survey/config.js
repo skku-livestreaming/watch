@@ -11,7 +11,7 @@ window.SURVEY_CONFIG = {
   API_URL: 'https://script.google.com/macros/s/AKfycbxGM2u9Di-sO1XJtU0hk-tn68JNAXz9CtF_5jn3yThhVYNGMmDZqPZTldr2Y4lpNFDWrQ/exec',
   // 실제 저장·완료 주소와 연구 안내를 채우고 파일럿을 확인한 뒤 true로 변경합니다.
   PARTICIPANT_OPEN: false,
-  ASSET_VERSION: '2026-11-14-sheets-v1',
+  ASSET_VERSION: '2026-11-14-behavior-v1',
 
   // 자극물 주소. 끝에 ?c=셀코드&panel_id=참가자ID 가 자동으로 붙습니다.
   // 현재 설문과 같은 사이트의 상위 폴더에서 방송을 띄웁니다. 로컬 확인도 같은 경로를 사용합니다.
@@ -375,7 +375,12 @@ window.SURVEY_CONFIG = {
         blocks: [
           { type: 'single', id: 'mc_author', required: true,
             text: 'Who wrote the chat messages?',
-            options: [{ value: '1', label: 'Humans' }, { value: '2', label: 'AI' }] },
+            options: [
+              { value: '1', label: 'Humans only' },
+              { value: '2', label: 'AI only' },
+              { value: '3', label: 'Both humans and AI' },
+              { value: '4', label: 'Not sure' }
+            ] },
           { type: 'single', id: 'mc_match', required: true,
             text: 'How closely do you think the result you voted for matches the result chosen by {{viewers}}?',
             options: [

@@ -1,6 +1,6 @@
 # 라이브 스트리밍 자극물
 
-행동 원본은 Supabase에 저장하고, Google 시트용 행동 요약 동기화 코드를 제공합니다. 실제 시트·웹 앱 배포는 아직 설정하지 않았습니다. [저장 연결 절차와 500명 검토](survey/STORAGE.md).
+행동 원본은 Supabase에 저장하고, 배포된 설문 API를 설정에 연결했습니다. Google 시트용 행동 요약 동기화 코드를 제공합니다. [저장 연결 절차와 500명 검토](survey/STORAGE.md), [화면 노출·행동 지표 정의와 업데이트](survey/MEASURES.md).
 
 ---
 
@@ -235,7 +235,7 @@ Submit vote 전에는 답과 확신도를 바꿀 수 있고, 답을 바꾸면 �
 
 `leave.polls[]`에는 투표 **1개**만 들어갑니다. `vote`와 `confidence`는 요약용 사본이고 `vote2`는 생성하지 않습니다.
 완료된 투표는 `vote` 이벤트의 `confidence` 및 `vote_confidence.value`에 1–7 값이 저장됩니다.
-세션 조건의 `stimulus_version = 2026-11-balanced-result-burst-survey`와 `language = en`으로 이전 버전과 구분할 수 있습니다. 정체성별 출력 대본을 통일하기 전 버전은 `2026-11-en-youth-violence-poll-human-reaction`입니다. 유사 문장 두 개를 배정했던 버전은 `2026-11-en-youth-violence-poll-paired-reaction`이며, 그 전 새 영상 버전은 `2026-11-en-youth-violence-poll-synced`입니다.
+세션 조건의 `stimulus_version = 2026-11-behavior-visible-exposure-v1`와 `language = en`으로 이전 버전과 구분할 수 있습니다. 직전 댓글·설문 연결 버전은 `2026-11-balanced-result-burst-survey`입니다. 정체성별 출력 대본을 통일하기 전 버전은 `2026-11-en-youth-violence-poll-human-reaction`입니다. 유사 문장 두 개를 배정했던 버전은 `2026-11-en-youth-violence-poll-paired-reaction`이며, 그 전 새 영상 버전은 `2026-11-en-youth-violence-poll-synced`입니다.
 이전 고릴라/100명 영상의 결과 애니메이션 버전은 `2026-11-en-single-poll-result-motion`입니다.
 결과 화면이 바뀌기 전(`all` 100%·`none` 1명, 총 투표 수 비공개, 움직임 없음) 세션은 `2026-11-en-single-poll-contextual-chat`입니다.
 
@@ -299,9 +299,11 @@ Submit vote 전에는 답과 확신도를 바꿀 수 있고, 답을 바꾸면 �
 | 기준 | 필드 | 뜻 |
 |---|---|---|
 | 렌더 | `shown_congruent` / `shown_incongruent` / `shown_congruence_ratio` | 피드에 붙은 개수 |
-| 화면 체류 | `seen_congruent` / `seen_incongruent` / `seen_congruence_ratio` | 채팅창 안에 1초 이상 떠 있던 개수 |
+| 화면 체류 | `seen_congruent` / `seen_incongruent` / `seen_congruence_ratio` | 댓글 창·영상 위 댓글 중 한 곳 이상에서 누적 1초 이상 화면 노출된 의견 수 |
 | | `visible_ms_congruent` / `visible_ms_incongruent` | 입장별 누적 화면 체류 시간(ms) |
-| | `lines_total` / `lines_seen` / `lines_offscreen` | 피드에 들어온 전체 줄 / 1초 이상 본 줄 / 한 번도 안 뜬 줄 |
+| | `lines_total` / `lines_seen` / `lines_offscreen` | 피드에 들어온 전체 줄 / 누적 1초 이상 화면 노출된 줄 / 한 번도 안 뜬 줄 |
+
+AI·사람 × 일치·불일치 노출, 보이는 상태의 재생 시간, 종료 후 첫 추천 선택, T1/T2 파생값은 [행동 지표 정의](survey/MEASURES.md)를 따릅니다. 화면 노출은 줄 면적 60% 이상·누적 1초 기준이며, 연속 1초나 읽기 완료를 뜻하지 않습니다. 미지원·미제출은 null로 구분합니다.
 
 **두 기준의 차이 자체가 보고할 값입니다.** 이전 영상의 파일럿 예시 — 같은 조건에서
 
@@ -311,7 +313,7 @@ Submit vote 전에는 답과 확신도를 바꿀 수 있고, 답을 바꾸면 �
 | 위로 올려놓고 방치 | 31건 | 43.3% → **66.7%** |
 | 탭 가림 | 31건 | 43.3% → **66.7%** |
 
-조건 효과는 설정값으로 묶되, 처치강도에는 체류 기준을 쓰십시오.
+조건 효과의 주분석은 무작위 배정 기준으로 두고, 화면 노출은 보조 분석에서 구분합니다. 처치 후 노출량이나 행동량을 주분석의 통제변수로 자동 추가하지 않습니다.
 
 `shown_*`과 `lines_*`은 **세는 대상이 다릅니다.** `shown_*`은 타임라인 발화만,
 `lines_*`은 백로그·예고 반응·참가자 본인 글까지 포함한 모든 줄입니다. 두 수를 직접 빼지 마십시오.
@@ -319,8 +321,7 @@ Submit vote 전에는 답과 확신도를 바꿀 수 있고, 답을 바꾸면 �
 한계 — **화면에 있었다 ≠ 읽었다.** 시선 추적 없이는 그 이상 불가. 논문에는 "읽은 메시지"가 아니라
 "화면 노출 시간"으로 기술하십시오.
 
-분석에 쓸 때 주의할 점은 `claude/behavior-measures-flow.md`와
-`claude/behavioral-measures-refs.md`에 정리돼 있습니다.
+분석에 쓸 때 주의할 점과 참고 연구는 [행동 지표 정의](survey/MEASURES.md)에 정리돼 있습니다.
 특히 **카드를 연 것을 '정보를 찾아본 행동'으로 읽지 말 것** — 호버는 비용이 0이라 그 해석이 성립하지 않습니다(Kang et al. 2009). 클릭은 비용이 있어 로그에서 구분해 둡니다.
 
 ---
