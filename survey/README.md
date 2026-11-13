@@ -1,6 +1,6 @@
 # 라이브 스트리밍 실험 웹설문
 
-CloudResearch Connect → 설문(동의·사전) → 셀 균등 배정 → 조건별 설명문 → 자극물(투표 T1) → 설문(재투표 T2·사후) → 디브리핑 → CloudResearch 완료
+CloudResearch Connect → 설문(동의·사전) → 셀 균등 배정 → 조건별 설명문 → 자극물(투표 T1) → 설문(사후) → 디브리핑 → CloudResearch 완료
 
 이 폴더(`survey/`)는 자극물 저장소(`skku-livestreaming/watch`) 안에 있지만 **자극물 파일은 하나도 수정하지 않습니다.** 설문이 자극물을 자기 화면 안에 띄워서 쓰기만 합니다.
 
@@ -17,13 +17,13 @@ CloudResearch Connect → 설문(동의·사전) → 셀 균등 배정 → 조�
 ```
 CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?participantId=…&assignmentId=…&projectId=…
   ① 동의서 (체크해야 Next 활성화)
-  ② 사전 문항 (선정 기준 탈락 → 종료)
+  ② 사전 문항 (지금은 없음. 선정 기준 탈락도 없음)
   ③ 셀 배정 (서버에서 인원이 가장 적은 셀)
   ④ 조건별 설명문 (ai / human / mixed), 15초 뒤 입장 버튼 활성화
   ⑤ 자극물을 설문 화면 안에 띄움  …/watch/?c=셀코드&panel_id=참가자ID
        투표 + 확신도(T1)는 자극물이 자체 DB(Supabase)에 저장
        [Finish participation] → 설문이 감지해 자극물을 닫고 ⑥으로
-  ⑥ 사후 문항 (첫 페이지 = 재투표 + 확신도(T2))
+  ⑥ 사후 문항 (「라이브 스트리밍 설문지」 PDF 순서: Part 1 → 조작점검 → Part 2 → Part 3)
   ⑦ 디브리핑 + 데이터 사용 동의/철회
   ⑧ CloudResearch 완료 주소로 이동
 ```
@@ -120,7 +120,7 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 | `likert` | 척도 표 (문항 = 행, 점수 = 열). 항목이 1개이고 문구가 없으면 단일 척도 | `id_항목id` (단일이면 `id`) |
 | `single` | 하나 선택 | `id`, 기타 입력 시 `id_other` |
 | `multi` | 여러 개 선택 | `id_값` = 1/0, `id` = 고른 값 목록 |
-| `number` | 숫자 (min/max 검사) | `id` |
+| `number` | 숫자. 키보드로만 입력(화살표 버튼·마우스 휠 없음), 숫자 외 글자는 자동으로 지움, min/max 검사 | `id` |
 | `textarea` | 주관식 (기본 선택 응답) | `id` |
 | `select` | 드롭다운 | `id` |
 | `html` | 안내문 | 없음 |
@@ -130,8 +130,8 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 - `screen: { allowed: ['yes'] }` → 다른 답이면 선정 기준 탈락으로 종료.
 - `attention: { correct: '2' }` → 틀린 횟수가 `attention_fails`에 쌓이고, `ATTENTION.action`이 `'end'`면 `maxFails`에서 종료.
 - 문구 안에 `{{topic_q}}`, `{{topic_A}}`, `{{topic_B}}`를 쓰면 주제 문구가 들어가요.
+- 문구 안에 `{{viewers}}`를 쓰면 조건별 시청자 표현(`VIEWER_WORDS`, 예: AI 조건 = the AI viewers)이 들어가요.
 - 문구에 `<span class="alert">…</span>`를 쓰면 빨간 굵은 글씨로 강조돼요.
-- 사후 첫 페이지(`dv_revote`)는 종속변수라 맨 앞에 두는 게 좋아요. 조작점검을 먼저 물으면 답에 영향을 줄 수 있어요.
 - 화면 디자인: 데스크톱 전용(`BLOCK_MOBILE: true`). 문항마다 흰 카드 한 장, 선택지는 넓은 카드형, 척도는 1~N 같은 너비 버튼. 모든 선택지가 같은 모양·너비이고 기본 선택이 없으며, 색은 응답자가 고른 칸에만 들어가요.
 - 미응답이 있으면 맨 위에 오류 요약(누르면 해당 문항으로 이동)과 문항별 이유 문구가 나와요. 문구는 `TEXT.msg`에서 바꿔요.
 - 강조색은 `index.html` 맨 위 CSS의 `--accent` 한 곳만 바꾸면 돼요.
@@ -167,7 +167,6 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 | `t1_submitted` | 투표 제출 여부 (0이면 일치도 조작이 성립하지 않음 → 분석 제외 후보) |
 | `t1_first_choice`, `t1_clicks`, `t1_unsubmitted_choice` | 처음 고른 답, 선택 클릭 수, 제출하지 못한 선택 |
 | `t1_read` | 자극물에서 T1을 읽었는지 |
-| `t2_vote`, `t2_conf` | 사후 재투표(A/B)와 확신도 |
 | `stim_session_id` | 자극물 DB(Supabase)의 세션 ID → 자극물 데이터와 정확히 합칠 때 사용 |
 | `stim_code_seen` | 자극물이 실제로 받은 조건 코드 (`stim_code`와 같아야 정상) |
 | `stim_end` | complete(정상 종료) / video_failed / navigated / debug_skip / fallback_button |
@@ -179,7 +178,7 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 | `withdraw` | yes면 응답 열이 자동으로 지워져 있음 |
 | `assignmentid`, `projectid`, `user_agent`, `viewport`, `is_mobile` | 참고용 |
 
-T1(`t1_vote`)과 T2(`t2_vote`)가 같은 A/B 코드라서 한 시트에서 바로 변경 여부를 계산할 수 있어요. 채팅 작성·시청 행동 등 자세한 로그는 자극물 DB에 있고, `stim_session_id`(또는 `pid`)로 합치면 돼요.
+채팅 작성·시청 행동 등 자세한 로그는 자극물 DB에 있고, `stim_session_id`(또는 `pid`)로 합치면 돼요.
 
 ### 분석 제외 기준 (예시, 계획서 문구와 맞출 것)
 
@@ -201,5 +200,5 @@ T1(`t1_vote`)과 T2(`t2_vote`)가 같은 A/B 코드라서 한 시트에서 바�
 - 온라인 체크박스 동의 방식, 비동의 시 창을 닫으면 된다는 안내를 동의서·계획서에 명시
 - 수집 정보에 CloudResearch ID, 응답 시각, 브라우저 정보(user agent, 화면 크기)가 포함됨 → 의뢰서·동의서 개인정보 항목과 일치시키기
 - 주의 점검 처리(`ATTENTION.action`)를 계획서 문구와 같게
-- 선정 기준 문항(`scr_live3m` 예시)과 탈락 처리 명시
+- 선정 기준 문항은 지금 설문에 없음(스크린아웃 없음). 계획서와 맞출 것
 - 참가자에게 보이는 전체 흐름은 `?debug=1`로 화면을 캡처해 제출 자료로 쓸 수 있어요
