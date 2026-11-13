@@ -1,6 +1,6 @@
 # 라이브 스트리밍 실험 웹설문
 
-CloudResearch Connect → 설문(동의·사전) → 셀 균등 배정 → 조건별 설명문 → 자극물(투표 T1) → 설문(사후) → 디브리핑 → CloudResearch 완료
+CloudResearch Connect → 설문(동의·사전) → 셀 균등 배정 → 조건별 설명문 → 자극물(투표 T1) → 설문(재투표 T2·사후) → 디브리핑 → CloudResearch 완료
 
 이 폴더(`survey/`)는 자극물 저장소(`skku-livestreaming/watch`) 안에 있지만 **자극물 파일은 하나도 수정하지 않습니다.** 설문이 자극물을 자기 화면 안에 띄워서 쓰기만 합니다.
 
@@ -23,7 +23,7 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
   ⑤ 자극물을 설문 화면 안에 띄움  …/watch/?c=셀코드&panel_id=참가자ID
        투표 + 확신도(T1)는 자극물이 자체 DB(Supabase)에 저장
        [Finish participation] → 설문이 감지해 자극물을 닫고 ⑥으로
-  ⑥ 사후 문항 (「라이브 스트리밍 설문지」 PDF 순서: Part 1 → 조작점검 → Part 2 → Part 3)
+  ⑥ 사후 문항 (첫 페이지 = 재투표 + 확신도(T2), 그다음 「라이브 스트리밍 설문지」 PDF 순서: Part 1 → 조작점검 → Part 2 → Part 3)
   ⑦ 디브리핑 + 데이터 사용 동의/철회
   ⑧ CloudResearch 완료 주소로 이동
 ```
@@ -132,6 +132,7 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 - 문구 안에 `{{topic_q}}`, `{{topic_A}}`, `{{topic_B}}`를 쓰면 주제 문구가 들어가요.
 - 문구 안에 `{{viewers}}`를 쓰면 조건별 시청자 표현(`VIEWER_WORDS`, 예: AI 조건 = the AI viewers)이 들어가요.
 - 문구에 `<span class="alert">…</span>`를 쓰면 빨간 굵은 글씨로 강조돼요.
+- 사후 첫 페이지(`dv_revote`)는 종속변수라 맨 앞에 두는 게 좋아요. 조작점검을 먼저 물으면 답에 영향을 줄 수 있어요.
 - 화면 디자인: 데스크톱 전용(`BLOCK_MOBILE: true`). 문항마다 흰 카드 한 장, 선택지는 넓은 카드형, 척도는 1~N 같은 너비 버튼. 모든 선택지가 같은 모양·너비이고 기본 선택이 없으며, 색은 응답자가 고른 칸에만 들어가요.
 - 미응답이 있으면 맨 위에 오류 요약(누르면 해당 문항으로 이동)과 문항별 이유 문구가 나와요. 문구는 `TEXT.msg`에서 바꿔요.
 - 강조색은 `index.html` 맨 위 CSS의 `--accent` 한 곳만 바꾸면 돼요.
@@ -167,6 +168,7 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 | `t1_submitted` | 투표 제출 여부 (0이면 일치도 조작이 성립하지 않음 → 분석 제외 후보) |
 | `t1_first_choice`, `t1_clicks`, `t1_unsubmitted_choice` | 처음 고른 답, 선택 클릭 수, 제출하지 못한 선택 |
 | `t1_read` | 자극물에서 T1을 읽었는지 |
+| `t2_vote`, `t2_conf` | 사후 재투표(A/B)와 확신도 |
 | `stim_session_id` | 자극물 DB(Supabase)의 세션 ID → 자극물 데이터와 정확히 합칠 때 사용 |
 | `stim_code_seen` | 자극물이 실제로 받은 조건 코드 (`stim_code`와 같아야 정상) |
 | `stim_end` | complete(정상 종료) / video_failed / navigated / debug_skip / fallback_button |
@@ -178,7 +180,7 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 | `withdraw` | yes면 응답 열이 자동으로 지워져 있음 |
 | `assignmentid`, `projectid`, `user_agent`, `viewport`, `is_mobile` | 참고용 |
 
-채팅 작성·시청 행동 등 자세한 로그는 자극물 DB에 있고, `stim_session_id`(또는 `pid`)로 합치면 돼요.
+T1(`t1_vote`)과 T2(`t2_vote`)가 같은 A/B 코드라서 한 시트에서 바로 변경 여부를 계산할 수 있어요. 채팅 작성·시청 행동 등 자세한 로그는 자극물 DB에 있고, `stim_session_id`(또는 `pid`)로 합치면 돼요.
 
 ### 분석 제외 기준 (예시, 계획서 문구와 맞출 것)
 

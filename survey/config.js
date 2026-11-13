@@ -213,6 +213,20 @@ window.SURVEY_CONFIG = {
     pre: [],
 
     post: [
+      {
+        // 종속변수(T2)는 반드시 사후 설문 맨 앞
+        id: 'dv_revote',
+        blocks: [
+          { type: 'single', id: 't2_vote', required: true,
+            text: 'If the poll from the stream were held again right now, which would you choose?<br><i>{{topic_q}}</i>',
+            options: 'TOPIC' },     // 'TOPIC' = 3번 주제의 A/B를 자극물과 같은 순서로
+          { type: 'likert', id: 't2_conf', required: true,
+            text: 'How confident are you in this choice?',
+            points: 7, labels: { 1: 'Not at all confident', 7: 'Extremely confident' },
+            items: [{ id: 'x', text: '' }] }
+        ]
+      },
+
       /* ── Part 1. 방송 시청 후 ── */
       {
         // 1. 의견 공유
