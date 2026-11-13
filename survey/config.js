@@ -204,6 +204,7 @@ window.SURVEY_CONFIG = {
      options: ['문구', …] 또는 [{value:'코드', label:'문구', other:true(기타 입력칸)}]
      screen   : { allowed:['값', …] }  → 그 외를 고르면 선정 기준 탈락으로 종료
      attention: { correct:'값' }       → 틀리면 ATTENTION 규칙 적용
+     splash   : 문항 없는 단계 안내 화면 { steps, current, kicker, title, body, pagesFmt, button } (main_start 참고)
      showIf   : ctx => 조건. ctx.group('ai'|'human'|'mixed'), ctx.cong, ctx.answers 사용 가능
      문구 안 {{viewers}} = 조건별 시청자 표현 (VIEWER_WORDS)
      저장되는 열 이름: single/number/textarea = id, likert = id_항목id, multi = id_값(1/0) */
@@ -214,11 +215,18 @@ window.SURVEY_CONFIG = {
 
     post: [
       {
-        // 방송 끝난 직후 안내 (문항 없음). 다음 쪽부터 본조사
+        // 방송 끝난 직후 본조사 시작 안내 (문항 없음). 쪽 수는 이 뒤로 남은 쪽을 세서 자동으로 넣음
         id: 'main_start',
-        blocks: [
-          { type: 'html', html: '<p style="font-size:22px;font-weight:700;margin:0">The main survey begins now!</p>' }
-        ]
+        splash: {
+          steps: ['Consent', 'Live stream', 'Questionnaire', 'Finish'],
+          current: 2,                                   // 0부터 셈. 2 = Questionnaire
+          kicker: 'The live stream is over',
+          title: 'Now, the main questionnaire',
+          body: 'Please answer the following questions about the live stream you just watched. There are no right or wrong answers.',
+          pagesFmt: n => `About ${n} pages`,
+          button: 'Start the questionnaire'
+        },
+        blocks: []
       },
       {
         // 종속변수(T2)는 안내 바로 다음, 문항 중 맨 앞

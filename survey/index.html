@@ -109,6 +109,26 @@
   .err{color:var(--bad);font-weight:600;font-size:15px}
 
   /* 하단 버튼 줄 */
+  /* 단계 안내 화면 (예: 방송 끝 → 본조사 시작). config의 page.splash */
+  .card.splash{border-top:6px solid var(--accent);padding:48px 56px 56px;align-items:center;text-align:center;gap:18px}
+  .sp-steps{list-style:none;margin:0 0 18px;padding:0;display:flex;align-items:center;gap:10px;width:100%;max-width:620px}
+  .sp-step{display:flex;flex-direction:column;align-items:center;gap:6px;width:96px;flex:none}
+  .sp-dot{width:32px;height:32px;border-radius:50%;border:2px solid var(--ctl);color:var(--muted);background:var(--paper);
+    font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .sp-dot svg{width:16px;height:16px}
+  .sp-lbl{font-size:13px;color:var(--muted);white-space:nowrap}
+  .sp-step.done .sp-dot{background:var(--accent);border-color:var(--accent);color:#fff}
+  .sp-step.cur .sp-dot{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 5px var(--accent-soft)}
+  .sp-step.cur .sp-lbl{color:var(--accent);font-weight:700}
+  .sp-line{flex:1;height:2px;background:var(--accent);opacity:.35;margin-bottom:24px}
+  .sp-icon{width:72px;height:72px;border-radius:20px;background:var(--accent);display:flex;align-items:center;justify-content:center}
+  .sp-icon svg{width:36px;height:36px}
+  .sp-kicker{margin:6px 0 0;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+  .card > h1.sp-title{margin:0;font-size:38px;line-height:1.2}
+  .sp-body{margin:0;max-width:560px;font-size:18px;color:var(--ink2)}
+  .sp-pill{background:var(--page);border-radius:999px;padding:6px 14px;font-size:14px;color:var(--ink2)}
+  button.sp-btn{margin-top:14px;font-size:18px;min-height:56px;padding:0 40px}
+
   .actions{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
   .actions .right{display:flex;align-items:center;gap:14px;margin-left:auto}
   .note{color:var(--muted);font-size:14px}
@@ -469,6 +489,7 @@ function viewPage(part){
   if (i >= pages.length) return finishPart(part);
   S.page = i; store.set();
   const page = pages[i];
+  if (page.splash) return viewSplash(pages, i);
   const t0 = Date.now();
   app.innerHTML = `<div class="page">
     ${page.title ? `<div class="page-head"><h1>${interp(page.title)}</h1></div>` : ''}
@@ -545,6 +566,33 @@ function viewPage(part){
     Object.assign(S.answers, patch);
     if (screened){ save(patch); return end('screened'); }
     if (attFail && C.ATTENTION.action === 'end' && S.att >= C.ATTENTION.maxFails){ save(patch); return end('attention'); }
+    save(patch);
+    S.page = i + 1; render();
+  };
+}
+
+/* 단계 안내 화면: 단계 표시 + 아이콘 + 제목 + 남은 쪽 수 + 시작 버튼 (문항 없음) */
+const SP_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
+const SP_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v2h6V3"/><path d="M9 11h6M9 15h4"/></svg>';
+function viewSplash(pages, i){
+  const page = pages[i], sp = page.splash, t0 = Date.now();
+  const left = pages.slice(i + 1).filter(p => !p.splash && (!p.showIf || p.showIf(ctx()))).length;
+  const steps = sp.steps || [], cur = sp.current || 0;
+  const stepHtml = steps.map((s, k) => `${k ? '<li class="sp-line" aria-hidden="true"></li>' : ''}
+    <li class="sp-step${k < cur ? ' done' : k === cur ? ' cur' : ''}"${k === cur ? ' aria-current="step"' : ''}>
+      <span class="sp-dot">${k < cur ? SP_CHECK : k + 1}</span><span class="sp-lbl">${esc(s)}</span></li>`).join('');
+  app.innerHTML = `<div class="page"><section class="card splash">
+    ${steps.length ? `<ol class="sp-steps" aria-label="Progress">${stepHtml}</ol>` : ''}
+    <div class="sp-icon" aria-hidden="true">${SP_ICON}</div>
+    ${sp.kicker ? `<p class="sp-kicker">${interp(sp.kicker)}</p>` : ''}
+    <h1 class="sp-title">${interp(sp.title)}</h1>
+    ${sp.body ? `<p class="sp-body">${interp(sp.body)}</p>` : ''}
+    ${sp.pagesFmt && left ? `<span class="sp-pill">${esc(sp.pagesFmt(left))}</span>` : ''}
+    <button type="button" id="next" class="sp-btn">${esc(sp.button || T.next)}</button>
+  </section></div>`;
+  app.querySelector('#next').onclick = () => {
+    const patch = {['t_' + page.id]: secs(t0)};
+    Object.assign(S.answers, patch);
     save(patch);
     S.page = i + 1; render();
   };
