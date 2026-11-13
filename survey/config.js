@@ -143,7 +143,7 @@ window.SURVEY_CONFIG = {
     groups: {
       ai: {
         headline: '<span class="hl">All</span> other viewers in this stream are <span class="hl">AI</span>.',
-        sub: 'Every chat message is written by AI, not by people.',
+        sub: 'Every chat message is written by AI, not by people. Messages written by AI are marked with an <span class="aib">AI</span> label.',
         aiRows: [1, 1, 1, 1]          // 미리보기 채팅 줄마다 AI 배지 여부
       },
       human: {
@@ -555,7 +555,7 @@ window.SURVEY_CONFIG = {
     questionFmt: n => `Question ${n}`,
     optional: 'Optional',
     noBack: "You can't go back after pressing Next.",
-    appearsFmt: s => `Appears in ${s} s`,
+    introLoading: 'Loading…',                  // 방송 전 안내에서 입장 버튼이 켜지기 전 로딩 표시. 화면엔 안 보이고 화면 읽기 프로그램용 (남은 시간도 안 보여 줌)
     errorSumFmt: n => n === 1 ? '1 question needs an answer' : `${n} questions need an answer`,
     msg: {                                      // 문항별 오류 문구
       single: 'Please choose one answer.',
