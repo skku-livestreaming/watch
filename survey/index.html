@@ -267,13 +267,14 @@
 <main id="app"></main>
 <div id="net" hidden></div>
 <div id="dbg" hidden></div>
-<script src="config.js?v=2026-11-13-participant-v1"></script>
+<script src="config.js?v=2026-11-13-assignment-v2"></script>
 <script>
 (() => {
 'use strict';
 const C = window.SURVEY_CONFIG;
 const T = C.TEXT;
 const Q = new URLSearchParams(location.search);
+const ASSIGNMENT_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /* 관리자 모드(?admin=1): 아무 화면으로나 바로 이동·조건 전환. 응답은 어디에도 저장하지 않습니다(API 끔). */
 const ADMIN = Q.get('admin') === '1';
 const DEBUG = Q.get('debug') === '1' || ADMIN;
@@ -450,9 +451,39 @@ function init(){
 
   let pid = incoming || lastPid;
   if (!pid && DEBUG) pid = (saved && saved.pid && saved.pid.startsWith('TEST_')) ? saved.pid : 'TEST_' + rand(6);
-  if (saved && saved.pid && (!pid || saved.pid === pid)){ S = saved; return render(); }
+  if (saved && saved.pid && (!pid || saved.pid === pid)){
+    if (!DEBUG && ['intro','stimulus','post','debrief','done'].includes(saved.stage)) return resumeAssignment(saved);
+    S = saved; return render();
+  }
   if (!pid || !C.ID_PATTERN.test(pid)){ S = newState(null); S.stage = 'id'; return render(); }
   start(pid);
+}
+
+async function resumeAssignment(saved){
+  const version = ++viewVersion;
+  paper('', spinner());
+  try {
+    const result = await api('get',{pid:saved.pid});
+    if (version !== viewVersion) return;
+    S = saved;
+    const same = result.found && ASSIGNMENT_ID_RE.test(result.assignment_id || '') && result.cell && S.cell &&
+      ['id','code','group','cong'].every(k => result.cell[k] === S.cell[k]);
+    if (!same || (S.meta.assignment_id && S.meta.assignment_id !== result.assignment_id)){
+      S.stage='lost'; return render();
+    }
+    S.meta.assignment_id = result.assignment_id;
+    if (result.status === 'withdrawn'){
+      S.answers={};S.pending={};delete S.draft;S.meta.withdraw='yes';S.stage='done';
+    } else if (result.status === 'complete' && S.stage !== 'done'){
+      S.pending={};delete S.draft;S.stage='done';
+    }
+    render();
+  } catch(e){
+    if (version !== viewVersion) return;
+    const el = paper('Unable to reconnect','<p>Check your connection and try again. Your progress is still saved in this browser.</p>',
+      '<button id="resumeRetry" type="button">Try again</button>');
+    el.querySelector('#resumeRetry').onclick=()=>resumeAssignment(saved);
+  }
 }
 
 function start(pid){
@@ -493,7 +524,7 @@ function handleReturn(pid, status, saved){
   if (!C.API_URL){ S.stage = 'lost'; clean(); return render(); }
   api('get', {pid}).then(j => {
     if (j.found && j.cell){
-      S.cell = j.cell; S.meta.is_test = j.is_test ? 1 : 0;
+      S.cell = j.cell; S.meta.is_test = j.is_test ? 1 : 0; S.meta.assignment_id = j.assignment_id || '';
       S.stage = j.status === 'complete' || j.status === 'withdrawn' ? 'done' : 'stimulus';
       S.meta.resumed_from_server = 1;
       resume();
@@ -902,7 +933,7 @@ const BLOCKS = {
 async function viewAssign(){
   const version = viewVersion;
   paper('', spinner());
-  if (S.cell){ S.stage = 'intro'; return render(); }
+  if (S.cell && (DEBUG || ASSIGNMENT_ID_RE.test(S.meta.assignment_id || ''))){ S.stage = 'intro'; return render(); }
   const force = DEBUG ? Q.get('cell') : null;
   let res = null;
   if (C.API_URL){
@@ -917,10 +948,7 @@ async function viewAssign(){
   }
   if (version !== viewVersion) return;
   if (res && res.full) return end('full');
-  if (res && ['complete','withdrawn'].includes(res.status)){
-    S.stage = 'done'; return render();
-  }
-  if (!DEBUG && (!res || !res.cell || !C.CELLS.some(c =>
+  if (!DEBUG && (!res || !res.cell || !ASSIGNMENT_ID_RE.test(res.assignment_id || '') || !C.CELLS.some(c =>
       c.id === res.cell.id && c.code === res.cell.code && c.group === res.cell.group && c.cong === res.cell.cong))){
     const el = paper('Unable to continue', '<p>We could not connect to the study. Please check your connection and try again.</p>',
       '<button id="assignRetry" type="button">Try again</button>');
@@ -935,7 +963,13 @@ async function viewAssign(){
     S.meta.assign_fallback = C.API_URL ? 1 : 0;
   }
   S.cell = cell;
-  Object.assign(S.meta, {cell: cell.id, group: cell.group, cong: cell.cong, stim_code: cell.code, assign_at: iso()});
+  Object.assign(S.meta, {cell: cell.id, group: cell.group, cong: cell.cong, stim_code: cell.code,
+    assignment_id:res?.assignment_id || '', assign_at:res?.assigned_at || iso()});
+  if (res && ['complete','withdrawn'].includes(res.status)){
+    S.pending={};S.answers={};delete S.draft;
+    S.meta.withdraw=res.status==='withdrawn' ? 'yes' : 'no';
+    S.stage='done';return render();
+  }
   save(Object.assign({status: 'assigned'}, S.meta));
   S.stage = 'intro'; render();
 }
@@ -946,8 +980,9 @@ function stimulusUrl(){
   for (const [k, v] of Object.entries(C.STIMULUS_EXTRA || {})) u.searchParams.set(k, v);
   u.searchParams.set('c', S.cell.code);
   u.searchParams.set('panel_id', S.pid);
+  if (S.meta.assignment_id) u.searchParams.set('assignment_id', S.meta.assignment_id);
   u.searchParams.set('intro', 'off');
-  u.searchParams.set('v', C.ASSET_VERSION || '2026-11-13-participant-v1');
+  u.searchParams.set('v', C.ASSET_VERSION || '2026-11-13-assignment-v2');
   if (!DEBUG){
     for (const k of ['preview','debug','cong','label','ratio','viewers','seed','source','admin']) u.searchParams.delete(k);
   }
@@ -1250,9 +1285,11 @@ async function viewDone(){
   if (version !== viewVersion) return;
   if (!saved || Object.keys(S.pending).length) return saveRetry(viewDone);
   const url = C.REDIRECTS.complete;
-  if (url) return redirectTo(url, T.doneRedirect);
-  if (!C.COMPLETION_CODE) return doneCard(T.doneTitle, `<p>${T.doneSaved}</p>`, true);
-  const el = doneCard(T.doneTitle, `<p>${T.doneCodeLead}</p>
+  const withdrawn = S.meta.withdraw === 'yes';
+  const savedText = withdrawn ? 'Your data withdrawal has been recorded.' : T.doneSaved;
+  if (url) return redirectTo(url, withdrawn ? savedText + ' Redirecting you to CloudResearch…' : T.doneRedirect);
+  if (!C.COMPLETION_CODE) return doneCard(T.doneTitle, `<p>${savedText}</p>`, true);
+  const el = doneCard(T.doneTitle, `<p>${withdrawn ? savedText + ' Enter this completion code on CloudResearch.' : T.doneCodeLead}</p>
     <div class="codebox"><span class="code" id="code">${esc(C.COMPLETION_CODE)}</span><button id="copy" type="button">${T.copy}</button></div>
     <p class="note" id="copied" aria-live="polite"></p>`, true);
   el.querySelector('#copy').onclick = async () => {

@@ -385,3 +385,5 @@ python tests/check_stimulus.py
 참가자 배포 추가 검사: `python tests/check_participant.py`, `python tests/check_sink.py`. 저장·배정 실패, 입력 초안 복구, 연구자 기록 격리, 중복 탭, 영상 로드 실패, 로그 전송 중단·큰 묶음·저장소 제한을 모의 환경에서 검증합니다.
 
 실제 영상 확인: `python tests/check_media.py`로 로컬 MP4의 디코딩·재생 시작 및 네이티브 종료 처리를 검사할 수 있습니다. 미리보기 8배속을 사용하고 외부 요청은 차단합니다.
+
+자동 조건 배정은 Supabase `assign_condition` 함수로 구현했습니다. `supabase_assignment.sql` 설치와 모집·정원 설정은 [survey/ASSIGNMENT.md](survey/ASSIGNMENT.md)를 따릅니다. 배정 원본은 DB에 유지하고 Google 시트에 가벼운 배정 정보를 복제합니다.

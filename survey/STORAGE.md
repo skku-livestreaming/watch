@@ -4,6 +4,8 @@
 
 ## 데이터 흐름
 
+- 조건 배정: 설문 → Apps Script → Supabase `assign_condition` → 배정 원본 저장, 시트 `assignments`에 복제. [설치·규칙](ASSIGNMENT.md).
+
 - 설문 응답: `survey/index.html` → Apps Script `Code.gs` → `responses` (참가자당 1행).
 - 자극물 원본 행동 이벤트: `index.html` → Supabase `sessions`, `events` (기존 저장 경로 유지).
 - 분석용 행동 요약: `Behavior.gs` → Supabase의 `leave` 이벤트를 읽어 Google 시트 `behavior`에 세션당 1행 저장.
@@ -13,12 +15,13 @@
 
 ## 설치
 
+0. Supabase에서 `supabase_assignment.sql`을 실행해 배정 함수를 설치합니다. 기존 시트 배정이 있다면 먼저 이관합니다. [자동 배정 안내](ASSIGNMENT.md).
 1. 연구자 계정으로 Google 스프레드시트를 만들고 **확장 프로그램 → Apps Script**를 엽니다.
 2. 저장소의 `apps-script/Code.gs`와 `apps-script/Behavior.gs`를 같은 프로젝트의 두 파일로 추가합니다.
 3. **프로젝트 설정 → 스크립트 속성**에 다음을 설정합니다.
    - `SUPABASE_URL`: 현재 자극물과 같은 프로젝트 URL.
    - `SUPABASE_SERVICE_ROLE_KEY`: 서버에서 조회할 수 있는 service role 또는 secret 키. 공개 HTML·`config.js`·Git 저장소에는 넣지 않습니다. 자극물의 publishable 키로는 읽을 수 없습니다.
-   - 선택: `CELL_QUOTA` (셀당 정원, 기본 0 = 제한 없음), `IN_PROGRESS_MINUTES` (기본 60분). 실제 배정은 서버의 `STUDY_CELLS`와 이 속성들을 기준으로 하며, 요청 본문의 임의 셀·정원·강제 조건 값은 따르지 않습니다. 조건을 바꾸면 `Code.gs`의 `STUDY_CELLS`와 `config.js`의 `CELLS`를 같이 갱신합니다. `TEST_`로 시작하는 테스트 ID에만 강제 조건을 허용합니다.
+   - 선택: `ASSIGNMENT_STUDY_ID` (기본 `livestream-ai-chat-2026`). 정원·모집 상태는 Supabase `study_assignment_settings`에서 설정합니다. [자동 배정 설치](ASSIGNMENT.md)를 먼저 완료합니다.
 4. 편집기에서 `syncBehaviorMeasures`를 한 번 실행하고 권한을 승인합니다. `behavior` 시트가 만들어지고, 종료 로그가 있으면 최대 100건을 가져옵니다.
 5. `installBehaviorSync`를 한 번 실행하면 **5분마다** 동기화합니다. 미처리 종료 이벤트가 100건 이상이면 다음 실행에서 이어서 가져옵니다. 수동 실행을 반복해도 됩니다.
 6. Apps Script를 **웹 앱**, 실행 계정 **나**, 접근 **모든 사용자**로 배포하고 `…/exec` 주소를 `survey/config.js`의 `API_URL`에 넣습니다. 이후 코드 변경은 새 버전으로 다시 배포합니다.
@@ -26,7 +29,7 @@
 
 8. 연구자 화면(`/survey/?admin=1`)의 **Participant setup** 항목을 확인합니다. 필수 설정과 실제 파일럿을 확인한 후 `PARTICIPANT_OPEN: true`로 바꿔 배포합니다. 현재는 false이므로 일반 참가자에게 모집 중지 안내가 나오며, 저장되지 않는 상태로 설문을 진행하지 않습니다.
 
-참가자 배포 링크는 `/survey/?v=2026-11-13-participant-v1&participantId=[ID]`를 기준으로 설정합니다. 관리자·debug 파라미터는 참가자 링크에 포함하지 않습니다. 새 배포에서 파일 구성이 바뀌면 `ASSET_VERSION`과 HTML의 config.js 버전도 함께 갱신합니다.
+참가자 배포 링크는 `/survey/?v=2026-11-13-assignment-v2&participantId=[ID]`를 기준으로 설정합니다. 관리자·debug 파라미터는 참가자 링크에 포함하지 않습니다. 새 배포에서 파일 구성이 바뀌면 `ASSET_VERSION`과 HTML의 config.js 버전도 함께 갱신합니다.
 
 시트의 행·열 수가 부족하면 코드가 자동으로 확장합니다. `BEHAVIOR_EVENT_CURSOR` 속성은 성공한 마지막 종료 이벤트 ID입니다. 전체 재동기화가 필요하면 이 속성만 지우고 다시 실행합니다. 세션 ID로 갱신하므로 중복 행을 만들지 않으며, 단순 창 닫기 기록이 완료 기록을 덮어쓰지 않습니다. 시트 쓰기 실패 시 커서를 진행시키지 않아 다음 실행에서 재시도합니다.
 

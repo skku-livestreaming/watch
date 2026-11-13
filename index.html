@@ -1120,6 +1120,8 @@ const ConditionRouter = (() => {
     const panel = (q.get('panel_id') || '').trim();
     c.panel_id = /^[A-Za-z0-9_-]{1,64}$/.test(panel) ? panel : null;
     if (c.panel_id) c.pid = c.panel_id;
+    const assignment = q.get('assignment_id') || '';
+    c.assignment_id = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(assignment) ? assignment : null;
     /* 연구자 미리보기(?preview=1). 참가자 링크에는 쓰지 않습니다.
        안내 페이지를 건너뛰고, 로그를 서버로 보내지 않고, 속도·일시정지·앞으로 건너뛰기를 허용합니다. */
     c.preview = q.get('preview') === '1';

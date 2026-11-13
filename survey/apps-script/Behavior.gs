@@ -32,17 +32,7 @@ function behaviorRow_(event, session) {
 }
 
 function supabaseRead_(path) {
-  const props = PropertiesService.getScriptProperties();
-  const base = (props.getProperty('SUPABASE_URL') || '').replace(/\/$/, '');
-  const key = props.getProperty('SUPABASE_SERVICE_ROLE_KEY') || '';
-  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(base) || !key || key.startsWith('sb_publishable_'))
-    throw new Error('Set server-side SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in Script Properties.');
-  const headers = {apikey:key};
-  if (key.startsWith('eyJ')) headers.Authorization = 'Bearer ' + key;
-  const response = UrlFetchApp.fetch(base + '/rest/v1/' + path, {headers:headers, muteHttpExceptions:true});
-  if (response.getResponseCode() !== 200)
-    throw new Error('Supabase read failed (HTTP ' + response.getResponseCode() + ').');
-  return JSON.parse(response.getContentText());
+  return supabaseRequest_(path,'get');
 }
 
 function syncBehaviorMeasures() {

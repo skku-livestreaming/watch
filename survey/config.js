@@ -11,7 +11,7 @@ window.SURVEY_CONFIG = {
   API_URL: '',
   // 실제 저장·완료 주소와 연구 안내를 채우고 파일럿을 확인한 뒤 true로 변경합니다.
   PARTICIPANT_OPEN: false,
-  ASSET_VERSION: '2026-11-13-participant-v1',
+  ASSET_VERSION: '2026-11-13-assignment-v2',
 
   // 자극물 주소. 끝에 ?c=셀코드&panel_id=참가자ID 가 자동으로 붙습니다.
   // 현재 설문과 같은 사이트의 상위 폴더에서 방송을 띄웁니다. 로컬 확인도 같은 경로를 사용합니다.
@@ -54,8 +54,8 @@ window.SURVEY_CONFIG = {
     { id: 'MIXED_50',  group: 'mixed', cong: 'half', code: 't8' },
     { id: 'MIXED_0',   group: 'mixed', cong: 'none', code: 'f1' }
   ],
-  CELL_QUOTA: 0,               // 표시용 기본값. 실제 정원은 서버 스크립트 속성 CELL_QUOTA에서 설정 (0 = 제한 없음)
-  IN_PROGRESS_MINUTES: 60,     // 서버 스크립트 속성 IN_PROGRESS_MINUTES의 기본값 (진행 중 자리 유지 시간)
+  CELL_QUOTA: 0,               // 표시용 기본값. 실제 정원은 Supabase study_assignment_settings.cell_quota에서 설정 (0 = 제한 없음)
+  IN_PROGRESS_MINUTES: 60,     // Supabase in_progress_minutes의 기본값 (진행 중 자리 유지 시간)
 
   /* ── 3. 투표 주제 ─────────────────────────────────────────────
      자극물의 투표와 같은 질문·선택지로 맞춥니다. A/B 값은 자극물 로그의 choice(A/B)와 같아야

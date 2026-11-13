@@ -51,6 +51,7 @@ class Sheet {
 
 const sheets = {};
 const props = new Map([['SUPABASE_URL','https://example.supabase.co'], ['SUPABASE_SERVICE_ROLE_KEY','server-test-key']]);
+const rpcCalls=[], mockAssignments=new Map();
 let failCursor = false, failNetwork = false, lockReleased = 0;
 const sessions = Array.from({length:500}, (_,i) => ({
   id:`00000000-0000-4000-8000-${String(i).padStart(12,'0')}`, pid:`P${i}`,
@@ -72,9 +73,24 @@ const ctx = vm.createContext({
     }
   })},
   LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock:()=>lockReleased++})},
-  UrlFetchApp:{fetch:url=>{
+  UrlFetchApp:{fetch:(url,options={})=>{
     if (failNetwork) throw new Error('offline');
     const u = new URL(url);
+    if(u.pathname.includes('/rpc/')){
+      const body=JSON.parse(options.payload);rpcCalls.push({name:u.pathname.split('/').pop(),body});
+      let result=mockAssignments.get(body.p_pid) || {ok:true,found:false};
+      if(u.pathname.endsWith('/assign_condition')){
+        if(!result.found){
+          result={ok:true,found:true,existing:false,assignment_id:'00000000-0000-4000-8000-000000000001',
+            cell:{id:'MIXED_50',group:'mixed',cong:'half',code:'t8'},status:'assigned',is_test:body.p_pid.startsWith('TEST_'),
+            assigned_at:'2026-11-13T00:00:00Z',updated_at:'2026-11-13T00:00:00Z'};
+          mockAssignments.set(body.p_pid,result);
+        }else result={...result,existing:true};
+      }else if(u.pathname.endsWith('/set_condition_status') && result.found){
+        result={...result,status:body.p_status};mockAssignments.set(body.p_pid,result);
+      }
+      return {getResponseCode:()=>200,getContentText:()=>JSON.stringify(result)};
+    }
     const result = u.pathname.endsWith('/events')
       ? events.filter(e => e.id > Number(u.searchParams.get('id').slice(3))).slice(0,100)
       : sessions.filter(s=>u.searchParams.get('id').includes(s.id));
@@ -123,6 +139,7 @@ assert(lockReleased >= 10);
 assert.equal(run("cell_('=SUM(A1:A2)')"),"'=SUM(A1:A2)");
 props.set('SUPABASE_SERVICE_ROLE_KEY','sb_publishable_test');
 assert.throws(()=>run("supabaseRead_('sessions?select=id')"),/server-side/);
+props.set('SUPABASE_SERVICE_ROLE_KEY','server-test-key');failNetwork=false;
 console.log('PASS: 500 mocked participants, grid expansion, paged sync, deduplication, completion precedence, retry after partial failure, withdrawal, formula escaping, server-key validation');
 run("save_({pid:'P1',data:{status:'complete',answer:'retained'}})");
 run("save_({pid:'P1',data:{status:'assigned'}})");
@@ -136,12 +153,16 @@ assert.equal(resultField('status'),'withdrawn');
 assert.equal(resultField('answer'),'');
 assert(!sheets.behavior.data.some(r=>r[1]==='P1'));
 console.log('PASS: late saves cannot roll back completion or resurrect withdrawn answers/behavior');
-props.set('CELL_QUOTA','1');
-const assigned=[];
-for(let i=0;i<9;i++)assigned.push(run(`assign_({pid:'REAL_${i}',cells:[{id:'tampered',code:'bad'}],quota:0,is_test:1,forceCell:'AI_100'})`).cell.id);
-assert.equal(new Set(assigned).size,9);
-assert(run("assign_({pid:'REAL_OVER',quota:0})").full);
-const again=run("assign_({pid:'REAL_0'})");
-assert(again.existing && again.cell.id===assigned[0]);
-assert.equal(run("assign_({pid:'TEST_NODE',is_test:1,forceCell:'MIXED_50'})").cell.id,'MIXED_50');
-console.log('PASS: server-owned conditions, quotas, stable reassignment, test-only forced conditions');
+const assigned=run("assign_({pid:'REAL_RPC',cells:[{id:'tampered',code:'bad'}],study:'tampered',forceCell:'AI_100'})");
+assert.equal(assigned.cell.id,'MIXED_50');
+const request=rpcCalls.find(r=>r.name==='assign_condition').body;
+assert.equal(request.p_study,'livestream-ai-chat-2026');
+assert.equal(request.p_force_cell,null);
+assert(!('cells' in request));
+const again=run("assign_({pid:'REAL_RPC'})");
+assert(again.existing && again.assignment_id===assigned.assignment_id);
+assert.equal(sheets.assignments.data.filter(r=>r[0]==='REAL_RPC').length,1);
+assert.equal(run("get_({pid:'REAL_RPC'})").assignment_id,assigned.assignment_id);
+run("setStatus_('REAL_RPC','returned')");
+assert.equal(sheets.assignments.data.find(r=>r[0]==='REAL_RPC')[5],'returned');
+console.log('PASS: Apps Script uses trusted database RPCs and mirrors condition/assignment ID without duplicate rows');

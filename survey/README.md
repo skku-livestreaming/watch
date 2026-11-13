@@ -142,9 +142,9 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 ## 균등 배정 규칙
 
 - 배정 시점에 9개 셀 중 **인원이 가장 적은 셀**로 넣고, 동률이면 그중 무작위.
-- 인원으로 세는 것: 완료(`complete`), 방송을 마친 사람(`returned`), 배정 후 `IN_PROGRESS_MINUTES`(60분) 안에 있는 진행 중인 사람.
+- 인원으로 세는 것: 완료(`complete`), 방송을 마친 사람(`returned`), 마지막 상태 갱신 후 `in_progress_minutes`(기본 60분) 안에 있는 진행 중인 사람.
 - 세지 않는 것: 점검 기록, 철회, 탈락, 60분이 지나도 방송을 마치지 않은 사람 (자리를 다음 사람에게 넘김).
-- 서버 스크립트 속성 `CELL_QUOTA`를 정하면 모든 셀이 차는 순간 "모집 마감" 화면이 나와요.
+- Supabase 설정의 `cell_quota`를 정하면 모든 셀이 차는 순간 "모집 마감" 화면이 나와요.
 - 동의 후에 배정하므로 동의하지 않고 나간 사람은 셀을 차지하지 않아요.
 - 현황은 Apps Script 편집기에서 `showCounts` 함수를 실행하면 볼 수 있어요.
 
@@ -213,4 +213,4 @@ T1(`t1_vote`)과 T2(`t2_vote`)가 같은 A/B 코드라서 한 시트에서 바�
 
 참가자 배포 차단·연구자 모드 격리·저장 실패 재시도·중복 탭·입력 초안 복구의 검증 범위는 [STORAGE.md](STORAGE.md)에 정리했습니다.
 
-배정 조건은 서버 `STUDY_CELLS`가 기준입니다. 조건 정의를 바꿀 때에는 `config.js`의 `CELLS`와 함께 갱신하며, 실제 정원과 진행 중 자리 유지 시간은 Apps Script 속성 `CELL_QUOTA`·`IN_PROGRESS_MINUTES`에서 설정합니다.
+자동 배정은 Supabase `assign_condition` 함수가 담당합니다. 실제 정원과 진행 중 자리 유지 시간은 DB `study_assignment_settings`에서 설정합니다. 조건 정의와 서버·설문 설정은 함께 맞춥니다. [자동 배정 규칙·설치·검증](ASSIGNMENT.md).

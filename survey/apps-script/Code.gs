@@ -9,7 +9,7 @@
 const SH_ASSIGN = 'assignments';
 const SH_RESP = 'responses';
 const SH_LOG = 'log';
-const ASSIGN_HEADERS = ['pid', 'cell', 'group', 'cong', 'code', 'status', 'assigned_at', 'updated_at', 'is_test'];
+const ASSIGN_HEADERS = ['pid', 'cell', 'group', 'cong', 'code', 'status', 'assigned_at', 'updated_at', 'is_test', 'assignment_id'];
 const PID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 // Server-owned conditions: participant requests cannot change the study cells.
 const STUDY_CELLS = [
@@ -23,10 +23,6 @@ const STUDY_CELLS = [
   {id:'MIXED_50',group:'mixed',cong:'half',code:'t8'},
   {id:'MIXED_0',group:'mixed',cong:'none',code:'f1'}
 ];
-
-// 셀 인원으로 세는 상태. 진행 중(assigned/stimulus)은 IN_PROGRESS_MINUTES 안일 때만 셉니다.
-const COUNT_DONE = ['returned', 'complete'];
-const COUNT_ACTIVE = ['assigned', 'consented', 'stimulus'];
 
 // 철회 시 남기는 열(지급 처리·중복 참여 확인용). 나머지 응답은 지웁니다.
 const KEEP_ON_WITHDRAW = ['pid', 'created_at', 'updated_at', 'status', 'withdraw', 'finish_at',
@@ -58,64 +54,61 @@ function doPost(e) {
 }
 
 /* ───────── 균등 배정 ───────── */
-function assign_(req) {
-  const sh = sheet_(SH_ASSIGN, ASSIGN_HEADERS);
-  const rows = sh.getDataRange().getValues();
-  const H = index_(rows[0]);
-  const pid = String(req.pid);
-
-  // 이미 배정된 사람은 같은 셀 (새로고침·재접속해도 바뀌지 않음)
-  for (let r = 1; r < rows.length; r++) {
-    if (String(rows[r][H.pid]) === pid) {
-      return { ok: true, existing: true, cell: cellOf_(rows[r], H), status: rows[r][H.status] };
-    }
-  }
-
-  const cells = STUDY_CELLS;
-  const isTest = pid.startsWith('TEST_');
-  const settings = PropertiesService.getScriptProperties();
-
-  let cell = null;
-  if (isTest && req.forceCell) cell = cells.find(c => c.id === req.forceCell) || null;
-
-  const counts = {};
-  cells.forEach(c => { counts[c.id] = 0; });
-  const now = Date.now();
-  const windowMs = Math.max(1, Number(settings.getProperty('IN_PROGRESS_MINUTES')) || 60) * 60000;
-  for (let r = 1; r < rows.length; r++) {
-    const row = rows[r];
-    if (Number(row[H.is_test]) === 1) continue;           // 점검용 기록은 세지 않음
-    const id = row[H.cell];
-    if (!(id in counts)) continue;
-    const st = String(row[H.status]);
-    const recent = now - new Date(row[H.assigned_at]).getTime() < windowMs;
-    if (COUNT_DONE.indexOf(st) >= 0 || (COUNT_ACTIVE.indexOf(st) >= 0 && recent)) counts[id]++;
-  }
-
-  if (!cell) {
-    const quota = Math.max(0, Number(settings.getProperty('CELL_QUOTA')) || 0);
-    const open = cells.filter(c => !quota || counts[c.id] < quota);
-    if (!open.length) return { ok: true, full: true, counts: counts };
-    const min = Math.min.apply(null, open.map(c => counts[c.id]));
-    const tied = open.filter(c => counts[c.id] === min);
-    cell = tied[Math.floor(Math.random() * tied.length)];   // 동률이면 무작위
-  }
-
-  const t = new Date().toISOString();
-  sh.appendRow([pid, cell.id, cell.group, cell.cong, cell.code, 'assigned', t, t, isTest ? 1 : 0]);
-  return { ok: true, cell: { id: cell.id, group: cell.group, cong: cell.cong, code: cell.code }, counts: counts };
+function supabaseRequest_(path, method, body) {
+  const props = PropertiesService.getScriptProperties();
+  const base = (props.getProperty('SUPABASE_URL') || '').replace(/\/$/, '');
+  const key = props.getProperty('SUPABASE_SERVICE_ROLE_KEY') || '';
+  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(base) || !key || key.startsWith('sb_publishable_'))
+    throw new Error('Configure server-side Supabase URL and service role key.');
+  const headers = {apikey:key};
+  if (key.startsWith('eyJ')) headers.Authorization = 'Bearer ' + key;
+  const options = {method:method || 'get',headers:headers,muteHttpExceptions:true};
+  if (body !== undefined){ options.contentType='application/json'; options.payload=JSON.stringify(body); }
+  const r = UrlFetchApp.fetch(base + '/rest/v1/' + path, options);
+  if (r.getResponseCode() < 200 || r.getResponseCode() >= 300)
+    throw new Error('Supabase request failed (HTTP ' + r.getResponseCode() + ').');
+  const result = JSON.parse(r.getContentText());
+  if (result && result.ok === false) throw new Error('Supabase assignment request failed.');
+  return result;
 }
-
-function get_(req) {
+function assignmentRpc_(name, body) {
+  const study = PropertiesService.getScriptProperties().getProperty('ASSIGNMENT_STUDY_ID') || 'livestream-ai-chat-2026';
+  return supabaseRequest_('rpc/' + name, 'post', Object.assign({},body,{p_study:study}));
+}
+function mirrorAssignment_(pid, result) {
+  if (!result.found || !result.cell) return;
+  const c = result.cell;
+  if (!STUDY_CELLS.some(k => k.id===c.id && k.code===c.code && k.group===c.group && k.cong===c.cong))
+    throw new Error('Database and survey condition definitions do not match.');
   const sh = sheet_(SH_ASSIGN, ASSIGN_HEADERS);
-  const rows = sh.getDataRange().getValues();
-  const H = index_(rows[0]);
-  for (let r = 1; r < rows.length; r++) {
-    if (String(rows[r][H.pid]) === String(req.pid)) {
-      return { ok: true, found: true, cell: cellOf_(rows[r], H), status: rows[r][H.status], is_test: rows[r][H.is_test] };
-    }
+  let headers = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0].map(String);
+  const fresh = ASSIGN_HEADERS.filter(h => headers.indexOf(h)<0);
+  if (fresh.length){
+    ensureSize_(sh,1,headers.length+fresh.length);
+    sh.getRange(1,headers.length+1,1,fresh.length).setValues([fresh]);
+    headers=headers.concat(fresh);
   }
-  return { ok: true, found: false };
+  const found = findRow_(sh,pid), r = found<0 ? sh.getLastRow()+1 : found;
+  const previous = found<0 ? [] : sh.getRange(r,1,1,headers.length).getValues()[0];
+  const record = {pid:pid,cell:c.id,group:c.group,cong:c.cong,code:c.code,status:result.status,
+    assigned_at:result.assigned_at,updated_at:result.updated_at,is_test:result.is_test?1:0,
+    assignment_id:result.assignment_id};
+  ensureSize_(sh,r,headers.length);
+  sh.getRange(r,1,1,headers.length).setValues([headers.map((h,i)=>
+    Object.prototype.hasOwnProperty.call(record,h) ? cell_(record[h]) : (previous[i] ?? ''))]);
+}
+function assign_(req) {
+  const result = assignmentRpc_('assign_condition', {p_pid:String(req.pid),
+    p_force_cell:String(req.pid).startsWith('TEST_') ? (req.forceCell || null) : null});
+  if (!result.full && (!result.found || !result.cell || !result.assignment_id))
+    throw new Error('Invalid assignment response.');
+  mirrorAssignment_(String(req.pid),result);
+  return result;
+}
+function get_(req) {
+  const result = assignmentRpc_('get_condition_assignment',{p_pid:String(req.pid)});
+  mirrorAssignment_(String(req.pid),result);
+  return result;
 }
 
 /* ───────── 응답 저장 (참가자당 1행) ───────── */
@@ -180,12 +173,8 @@ function save_(req) {
 }
 
 function setStatus_(pid, status) {
-  const sh = sheet_(SH_ASSIGN, ASSIGN_HEADERS);
-  const r = findRow_(sh, pid);
-  if (r < 0) return;
-  const H = index_(sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0]);
-  sh.getRange(r, H.status + 1).setValue(status);
-  sh.getRange(r, H.updated_at + 1).setValue(new Date().toISOString());
+  const result = assignmentRpc_('set_condition_status',{p_pid:String(pid),p_status:status});
+  mirrorAssignment_(String(pid),result);
 }
 
 /* ───────── 원본 기록 (백업) ───────── */

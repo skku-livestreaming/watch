@@ -12,17 +12,19 @@ from check_stimulus import ROOT, QuietHandler, STUB_CLOCK, advance
 PID = 'QA_PARTICIPANT'
 KEY = 'lsv_livestream-ai-chat-2026_pid_' + PID
 CELL = {'id':'MIXED_50','group':'mixed','cong':'half','code':'t8'}
+ASSIGNMENT_ID = '00000000-0000-4000-8000-000000000001'
 
 
 def state(stage='consent', page=0):
     return {'pid':PID,'stage':stage,'page':page,'cell':CELL if stage != 'consent' else None,
-            'meta':{'is_test':0},'answers':{},'pending':{},'att':0}
+            'meta':{'is_test':0,'assignment_id':ASSIGNMENT_ID},'answers':{},'pending':{},'att':0}
 
 
 def fixture(browser, base, initial=None, configured=True, randomized=False, missing=None):
     context = browser.new_context(viewport={'width':1440,'height':1000})
     page = context.new_page()
-    control = {'save_fail':False,'assign_fail':False,'frame_fail':False,'requests':[]}
+    control = {'save_fail':False,'assign_fail':False,'frame_fail':False,'requests':[],
+               'get_fail':False,'get_assignment':ASSIGNMENT_ID,'get_status':'assigned','assign_status':'assigned'}
     errors = []
     page.on('pageerror', lambda e:errors.append(str(e)))
     config = (ROOT / 'survey/config.js').read_text(encoding='utf-8')
@@ -47,9 +49,13 @@ def fixture(browser, base, initial=None, configured=True, randomized=False, miss
         if url.startswith('https://script.google.com/'):
             req = json.loads(r.request.post_data)
             control['requests'].append(req)
+            if req['action']=='get':
+                if control['get_fail']: return r.fulfill(status=503,body='unavailable')
+                return r.fulfill(json={'ok':True,'found':True,'cell':CELL,
+                                      'assignment_id':control['get_assignment'],'status':control['get_status']})
             if req['action']=='assign':
                 if control['assign_fail']: return r.fulfill(status=503,body='unavailable')
-                return r.fulfill(json={'ok':True,'cell':CELL})
+                return r.fulfill(json={'ok':True,'found':True,'cell':CELL,'assignment_id':ASSIGNMENT_ID,'status':control['assign_status']})
             if control['save_fail']: return r.fulfill(status=503,body='unavailable')
             return r.fulfill(json={'ok':True})
         if url.startswith(base + '/?') and control['frame_fail']:
@@ -113,6 +119,34 @@ def main():
         assert not errors,errors
         ctx.close()
         print('PASS: corrupt cached participant progress recovers without a script error')
+        ctx,p,c,errors=fixture(browser,base,state('post',1))
+        c['get_fail']=True;start(p,base)
+        p.locator('#resumeRetry').wait_for()
+        assert not any(r['action']=='assign' for r in c['requests'])
+        c['get_fail']=False;p.locator('#resumeRetry').click()
+        p.locator('form').wait_for()
+        assert stored(p)['meta']['assignment_id']==ASSIGNMENT_ID and not errors,errors
+        ctx.close()
+        ctx,p,c,errors=fixture(browser,base,state('post',1))
+        c['get_assignment']='00000000-0000-4000-8000-000000000002';start(p,base)
+        p.get_by_text('Session not found',exact=True).wait_for()
+        assert not any(r['action']=='assign' for r in c['requests']) and not errors,errors
+        ctx.close()
+        ctx,p,c,errors=fixture(browser,base,state('post',1))
+        c['get_status']='withdrawn';start(p,base)
+        p.get_by_text('Your data withdrawal has been recorded. Enter this completion code on CloudResearch.',exact=True).wait_for()
+        assert stored(p)['stage']=='done' and stored(p)['answers']=={} and not errors,errors
+        ctx.close()
+        print('PASS: server assignment recovery, mismatch rejection and withdrawn status prevent silent reassignment')
+        initial=state('assign');initial['cell']=None
+        ctx,p,c,errors=fixture(browser,base,initial)
+        c['assign_status']='complete';start(p,base)
+        p.locator('#code').wait_for()
+        assert stored(p)['cell']==CELL and stored(p)['meta']['assignment_id']==ASSIGNMENT_ID
+        c['get_status']='complete';p.reload();p.locator('#code').wait_for()
+        assert not errors,errors
+        ctx.close()
+        print('PASS: already-completed server assignment retains its identity across a fresh browser resume')
 
         ctx,p,c,errors = fixture(browser,base)
         p.goto(base+'/survey/?debug=1&participantId='+PID)
@@ -191,6 +225,7 @@ def main():
         child.locator('#watch.on').wait_for()
         assert child.locator('#previewBar').count()==0 and not child.locator('#intro').is_visible()
         assert child.evaluate("cond.label==='mixed' && cond.ratio===50 && !cond.preview")
+        assert child.evaluate('cond.assignment_id')==ASSIGNMENT_ID
         assert not errors,errors
         ctx.close()
         print('PASS: missing iframe can be retried, cannot bypass the stream, and participant parameters stay locked')
