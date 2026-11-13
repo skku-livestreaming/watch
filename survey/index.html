@@ -59,7 +59,7 @@
   .block{display:flex;flex-direction:column;gap:16px;scroll-margin-top:24px}
   .block.missing{box-shadow:inset 4px 0 0 var(--bad)}
   .q-num{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-bottom:-10px}
-  .q{font-size:22px;line-height:1.45;font-weight:600}
+  .q{font-size:19px;line-height:1.45;font-weight:600}
   .q i{font-weight:500;color:var(--ink2)}
   .msg{display:none;color:var(--bad);font-weight:600;font-size:15px;margin-top:-6px}
   .block.missing > .msg{display:block}
@@ -86,7 +86,7 @@
   .lk-item{padding:18px 0;border-top:1px solid #ECEEF2}
   .lk-item:first-child{border-top:0;padding-top:0}
   .lk-item:last-child{padding-bottom:0}
-  .lk-text{font-size:18px;font-weight:500;margin-bottom:12px}
+  .lk-text{font-size:16px;font-weight:500;margin-bottom:12px}
   .lk-item.missing .lk-text{color:var(--bad)}
   /* 척도: 원래 형태 — 문항 → 바로 밑에 1~N 동그라미, 양 끝 옆에 작은 방향 라벨. 모든 점은 같은 모양·간격, 기본 선택 없음 */
   .lk-row{display:grid;grid-template-columns:130px minmax(0,560px) 130px;align-items:center;gap:12px}
@@ -162,7 +162,20 @@
   .ir{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:28px;display:grid;
     grid-template-columns:repeat(2,minmax(0,1fr));gap:32px;align-items:center;animation:rowIn .7s ease-out both;scroll-margin:24px}
   .ir-txt{display:flex;flex-direction:column;gap:12px}
-  .ir-head{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+  .ir-head{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;
+    background:none;border:0;border-radius:0;padding:0;min-height:0;width:100%;text-align:left;cursor:default}
+  .ir-head:hover{background:none}
+  /* 접기/펴기: 새 항목이 나오면 앞 항목(.tog)은 머리만 남기고 접힘(.col). 머리를 누르면 다시 펼침 */
+  .ir.tog .ir-head{cursor:pointer}
+  .ir-chev{display:none;margin-left:auto;width:10px;height:10px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);
+    transform:rotate(-135deg);margin-top:4px}
+  .ir.tog .ir-chev{display:block}
+  .ir.tog.col .ir-chev{transform:rotate(45deg);margin-top:-4px}
+  .ir.col{grid-template-columns:1fr;padding:16px 28px;animation:none}
+  .ir.col .ir-main,.ir.col .ir-sub,.ir.col figure{display:none}
+  .ir.col .ir-head:hover .ir-h{color:var(--ink)}
+  .ld{display:inline-flex;align-items:center;gap:10px;color:var(--muted);font-size:15px;min-height:48px;padding:0 8px}
+  .ld-spin{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
   .ir-n{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:14px;font-weight:700;letter-spacing:0;
     display:inline-flex;align-items:center;justify-content:center;flex:none}
   .ir-main{margin:0;font-size:22px;line-height:1.45;font-weight:600}
@@ -170,10 +183,6 @@
   .hl{color:var(--accent)}             /* ① 핵심 단어 강조 (세 조건 같은 색) */
   .ir figure{margin:0;display:flex;flex-direction:column;gap:8px}
   .ir figcaption{font-size:13px;color:var(--muted)}
-  .ir-wait{border:2px dashed var(--ctl);border-radius:var(--radius);padding:22px 28px;display:flex;align-items:center;
-    justify-content:space-between;gap:16px;color:var(--muted);animation:rowIn .5s ease-out both}
-  .ir-wait .ir-n{background:transparent;border:2px solid #C9CDD5;color:var(--muted)}
-  .ir-wait > span{display:flex;align-items:center;gap:10px}
   .dk{background:#1E1F22;border-radius:12px;overflow:hidden;color:#E8E9EC;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
   .cp-top{color:#8B8F98;font-size:12px;padding:8px 14px;border-bottom:1px solid #2C2E33;display:flex;align-items:center;gap:6px}
   .cp-top:before{content:'';width:7px;height:7px;border-radius:50%;background:#E5332A}
@@ -200,10 +209,7 @@
   .endm-btn{background:#E5332A;color:#fff;font-weight:700;border-radius:6px;padding:8px 18px;animation:btnPress 4s ease-out 1.8s infinite}
   .endm svg{position:absolute;left:58%;top:58%;width:26px;height:26px;animation:cursorMove 4s ease-in-out 1.8s infinite both}
   .enter-bar{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px 16px 24px;margin-top:4px}
-  .fillbtn{position:relative;overflow:hidden;min-width:260px}
-  .fillbtn:disabled{background:#8C96C9;color:#fff}
-  .fillbtn .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--accent);transition:width .3s linear}
-  .fillbtn .lbl{position:relative}
+  #enter{min-width:260px}
   @media (prefers-reduced-motion:reduce){ *{animation:none !important;transition:none !important} .ctl-in span{width:auto;border:0} }
 
   /* 완료·종료 화면 */
@@ -818,11 +824,13 @@ const ICONS = {
   cursor: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 8-6 2-3 6z" fill="#fff" stroke="#141517" stroke-width="1.5" stroke-linejoin="round"/></svg>'
 };
 /* 세 조건이 같은 구성: 항목 3개(시청자 / 할 수 있는 것 / 종료 버튼)가 대기 시간을 3등분해 하나씩 나타납니다.
+   다음 항목 자리는 미리 보여 주지 않고, 새 항목이 나오면 앞 항목은 접힘(머리를 누르면 펼침).
+   기다리는 동안 입장 버튼 자리에는 남은 시간 없이 로딩 표시만 나옵니다.
    조건마다 다른 것은 ①의 문장과 미리보기 채팅의 AI 배지뿐입니다. */
 function viewIntro(){
   const I = C.INTRO, G = I.groups[S.cell.group];
   const chat = I.chatPreview.map((m, k) => `<div class="cp-msg" style="--d:${(0.8 + k * 0.7).toFixed(1)}s">${G.aiRows[k] ? '<span class="aib">AI</span>' : ''}<span class="cp-nm">${esc(m.name)}</span>${esc(m.text)}</div>`).join('');
-  const head = (n, h) => `<div class="ir-head"><span class="ir-n">${n}</span>${interp(h)}</div>`;
+  const head = (n, h) => `<button type="button" class="ir-head" aria-expanded="true"><span class="ir-n">${n}</span><span class="ir-h">${interp(h)}</span><span class="ir-chev" aria-hidden="true"></span></button>`;
   const rows = [
     `<section class="ir" id="ir1">
       <div class="ir-txt">${head(1, I.viewers.heading)}
@@ -847,16 +855,28 @@ function viewIntro(){
         <figcaption>${esc(I.finish.caption)}</figcaption></figure>
     </section>`
   ];
-  const heads = [I.viewers.heading, I.actions.heading, I.finish.heading];
   app.innerHTML = `<div class="page" style="gap:16px">
     <div class="page-head" style="margin-bottom:8px"><h1>${interp(I.title)}</h1><p class="lead">${interp(I.lead)}</p></div>
     <div id="irList" class="page" style="gap:16px"></div>
     <div class="actions enter-bar"><span class="note">${interp(I.enterNote)}</span>
-      <span class="right"><button id="enter" class="fillbtn" disabled><span class="fill"></span><span class="lbl"></span></button></span></div>
+      <span class="right"><span class="ld" id="ld" role="status"><span class="ld-spin" aria-hidden="true"></span>${esc(T.introLoading)}</span>
+        <button id="enter" hidden><span class="lbl">${esc(C.ENTER_BUTTON)}</span></button></span></div>
     <p class="vh" id="wait" aria-live="polite"></p></div>`;
   const el = app.firstElementChild;
   const list = el.querySelector('#irList');
-  const btn = el.querySelector('#enter'), lbl = btn.querySelector('.lbl'), fill = btn.querySelector('.fill');
+  const btn = el.querySelector('#enter'), lbl = btn.querySelector('.lbl'), ld = el.querySelector('#ld');
+  // 항목 머리를 누르면 접기/펴기. 새 항목이 나오면 앞 항목은 자동으로 접힘
+  const setOpen = (sec, open) => {
+    sec.classList.toggle('col', !open);
+    sec.querySelector('.ir-head').setAttribute('aria-expanded', open ? 'true' : 'false');
+  };
+  list.addEventListener('click', e => {
+    const h = e.target.closest('.ir-head');
+    if (!h) return;
+    const sec = h.closest('.ir');
+    if (sec === list.lastElementChild) return;           // 지금 나와 있는 마지막 항목은 접지 않음
+    setOpen(sec, sec.classList.contains('col'));
+  });
   const t0 = Date.now();
   let wait = C.INTRO_MIN_SECONDS;
   if (FAST && wait > 3) wait = 3;
@@ -867,30 +887,16 @@ function viewIntro(){
     const t = (Date.now() - t0) / 1000;
     const want = Math.min(3, 1 + Math.floor(t / per + 1e-6));
     while (shown < want){
-      const holder = list.querySelector('.ir-wait');
-      if (holder) holder.remove();
+      list.querySelectorAll('.ir').forEach(s => { s.classList.add('tog'); setOpen(s, false); });
       list.insertAdjacentHTML('beforeend', rows[shown]);
       shown++;
       if (shown > 1) list.lastElementChild.scrollIntoView({behavior: 'smooth', block: 'nearest'});
     }
-    // 아직 안 나온 다음 항목 자리: 점선 칸 + 남은 시간
-    let holder = list.querySelector('.ir-wait');
-    if (shown < 3){
-      const left = Math.max(1, Math.ceil(shown * per - t));
-      if (!holder){
-        list.insertAdjacentHTML('beforeend', `<div class="ir-wait"><span><span class="ir-n">${shown + 1}</span>${interp(heads[shown])}</span><span class="note"></span></div>`);
-        holder = list.querySelector('.ir-wait');
-      }
-      holder.lastElementChild.textContent = T.appearsFmt(left);
-    }
-    const left = Math.ceil(wait - t);
-    fill.style.width = Math.min(100, (t / wait) * 100) + '%';
-    if (left <= 0){
-      btn.disabled = false; lbl.textContent = C.ENTER_BUTTON; fill.style.width = '0';
+    if (t >= wait){
+      ld.hidden = true; btn.hidden = false;
       el.querySelector('#wait').textContent = C.ENTER_BUTTON;
       return;
     }
-    lbl.textContent = T.waitFmt(left);
     timer = setTimeout(tick, 200);
   };
   tick();

@@ -555,7 +555,7 @@ window.SURVEY_CONFIG = {
     questionFmt: n => `Question ${n}`,
     optional: 'Optional',
     noBack: "You can't go back after pressing Next.",
-    appearsFmt: s => `Appears in ${s} s`,
+    introLoading: 'Loading…',                  // 방송 전 안내에서 입장 버튼이 켜지기 전 로딩 표시 (남은 시간은 안 보여 줌)
     errorSumFmt: n => n === 1 ? '1 question needs an answer' : `${n} questions need an answer`,
     msg: {                                      // 문항별 오류 문구
       single: 'Please choose one answer.',
