@@ -485,8 +485,8 @@ def main():
             page.close()
         print('PASS: missing confidence, no answer, deadline submission, confidence reset on answer change')
 
-        # Participant IDs stay in records; chat displays the anonymous label You.
-        for extra, expected in [('', 'You'), ('&panel_id=Pnl_42', 'You')]:
+        # Linked participant IDs retain case in both chat surfaces.
+        for extra, expected in [('', 'qa001'), ('&panel_id=Pnl_42', 'Pnl_42')]:
             if not extra:
                 page, errors = prepare(browser, base, 'k3')
             else:
@@ -514,11 +514,12 @@ def main():
             assert page.evaluate('''() => {
               const me = [...document.querySelectorAll('#ovFeed .nm.me')].pop();
               const other = document.querySelector('#ovFeed .nm.human, #ovFeed .nm.ai');
-              return !!me && getComputedStyle(me).color === getComputedStyle(other).color;
+              return !!me && me.textContent === document.querySelector('#feed .nm.me').textContent &&
+                getComputedStyle(me).color === getComputedStyle(other).color;
             }'''), 'Overlay nickname colour must match too'
             assert not errors, errors
             page.close()
-        print('PASS: participant messages show You without exposing participant IDs')
+        print('PASS: participant IDs display consistently in chat and on-video chat, with linked-ID case preserved')
 
         # Native media end can fire before the next loop tick; it must also hide/log the result.
         page, errors = prepare(browser, base)

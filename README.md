@@ -161,7 +161,7 @@ AI 화자는 전체 채팅 발화량과 단일 투표의 입장 발화량이 목
 
 참여 링크는 `https://skku-livestreaming.github.io/watch/survey/?participantId=[ID]`입니다.
 설문에서 같은 사이트의 자극물을 `?c=조건코드&panel_id=[ID]&intro=off`로 띄웁니다.
-`panel_id`는 대소문자를 유지해 `pid`에 저장하지만, 참가자가 쓴 채팅의 닉네임은 **You**로 표시합니다.
+`panel_id`는 대소문자를 유지해 `pid`에 저장하며, 참가자가 쓴 채팅의 닉네임에도 같은 ID를 표시합니다. 설문 안내 화면의 본인 채팅 예시에도 연동된 ID를 표시합니다.
 
 `RETURN_URL = null`로 예전 엠브레인 주소로의 이동을 해제했습니다.
 [Finish participation]를 누른 뒤 설문은 종료 화면과 `data-save-state`를 확인해 사후 문항으로 돌아갑니다.
@@ -235,7 +235,7 @@ Submit vote 전에는 답과 확신도를 바꿀 수 있고, 답을 바꾸면 �
 
 `leave.polls[]`에는 투표 **1개**만 들어갑니다. `vote`와 `confidence`는 요약용 사본이고 `vote2`는 생성하지 않습니다.
 완료된 투표는 `vote` 이벤트의 `confidence` 및 `vote_confidence.value`에 1–7 값이 저장됩니다.
-세션 조건의 `stimulus_version = 2026-11-behavior-visible-exposure-v1`와 `language = en`으로 이전 버전과 구분할 수 있습니다. 직전 댓글·설문 연결 버전은 `2026-11-balanced-result-burst-survey`입니다. 정체성별 출력 대본을 통일하기 전 버전은 `2026-11-en-youth-violence-poll-human-reaction`입니다. 유사 문장 두 개를 배정했던 버전은 `2026-11-en-youth-violence-poll-paired-reaction`이며, 그 전 새 영상 버전은 `2026-11-en-youth-violence-poll-synced`입니다.
+세션 조건의 `stimulus_version = 2026-11-behavior-visible-exposure-v2`와 `language = en`으로 이전 버전과 구분할 수 있습니다. v2는 본인 채팅에 연동된 ID를 표시하며, 행동 측정 정의는 v1과 같습니다. 직전 댓글·설문 연결 버전은 `2026-11-balanced-result-burst-survey`입니다. 정체성별 출력 대본을 통일하기 전 버전은 `2026-11-en-youth-violence-poll-human-reaction`입니다. 유사 문장 두 개를 배정했던 버전은 `2026-11-en-youth-violence-poll-paired-reaction`이며, 그 전 새 영상 버전은 `2026-11-en-youth-violence-poll-synced`입니다.
 이전 고릴라/100명 영상의 결과 애니메이션 버전은 `2026-11-en-single-poll-result-motion`입니다.
 결과 화면이 바뀌기 전(`all` 100%·`none` 1명, 총 투표 수 비공개, 움직임 없음) 세션은 `2026-11-en-single-poll-contextual-chat`입니다.
 

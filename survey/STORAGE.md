@@ -32,7 +32,7 @@ Google 시트와 Apps Script 웹 앱 배포 주소가 준비되어 `config.js`�
 
 8. 연구자 화면(`/survey/?admin=1`)의 **Participant setup** 항목을 확인합니다. 필수 설정과 실제 파일럿을 확인한 후 `PARTICIPANT_OPEN: true`로 바꿔 배포합니다. 현재는 false이므로 일반 참가자에게 모집 중지 안내가 나오며, 저장되지 않는 상태로 설문을 진행하지 않습니다.
 
-참가자 배포 링크는 `/survey/?v=2026-11-14-behavior-v1&participantId=[ID]`를 기준으로 설정합니다. 관리자·debug 파라미터는 참가자 링크에 포함하지 않습니다. 새 배포에서 파일 구성이 바뀌면 `ASSET_VERSION`과 HTML의 config.js 버전도 함께 갱신합니다.
+참가자 배포 링크는 `/survey/?v=2026-11-14-participant-id-v1&participantId=[ID]`를 기준으로 설정합니다. 관리자·debug 파라미터는 참가자 링크에 포함하지 않습니다. 새 배포에서 파일 구성이 바뀌면 `ASSET_VERSION`과 HTML의 config.js 버전도 함께 갱신합니다.
 
 시트의 행·열 수가 부족하면 코드가 자동으로 확장합니다. `BEHAVIOR_EVENT_CURSOR` 속성은 성공한 마지막 종료 이벤트 ID입니다. 전체 재동기화가 필요하면 이 속성만 지우고 다시 실행합니다. 세션 ID로 갱신하므로 중복 행을 만들지 않으며, 단순 창 닫기 기록이 완료 기록을 덮어쓰지 않습니다. 시트 쓰기 실패 시 커서를 진행시키지 않아 다음 실행에서 재시도합니다.
 

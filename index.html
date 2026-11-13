@@ -1126,7 +1126,7 @@ const ConditionRouter = (() => {
        안내 페이지를 건너뛰고, 로그를 서버로 보내지 않고, 속도·일시정지·앞으로 건너뛰기를 허용합니다. */
     c.preview = q.get('preview') === '1';
     if (c.preview){ c.intro = 'off'; if (!c.panel_id) c.pid = 'preview'; }
-    c.stimulus_version = '2026-11-behavior-visible-exposure-v1';
+    c.stimulus_version = '2026-11-behavior-visible-exposure-v2';
     c.language = 'en';
     c.poll_count = 1;
     return c;
@@ -4168,7 +4168,8 @@ function send(){
   const el = $('say');
   const v = el.value.trim().slice(0, 1000);
   if (!v) return;
-  Renderer.push({kind: 'me', name: 'You', text: v});
+  // Keep the linked participant ID's case; manual email entry displays its local part.
+  Renderer.push({kind: 'me', name: String(cond.panel_id || cond.pid).split('@')[0], text: v});
   Logger.add('user_comment', {text: v});
   ctx.lastUserMessage = v;
   el.value = '';
