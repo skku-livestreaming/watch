@@ -19,6 +19,7 @@
 1. 연구자 계정으로 Google 스프레드시트를 만들고 **확장 프로그램 → Apps Script**를 엽니다.
 2. 저장소의 `apps-script/Code.gs`와 `apps-script/Behavior.gs`를 같은 프로젝트의 두 파일로 추가합니다.
 3. **프로젝트 설정 → 스크립트 속성**에 다음을 설정합니다.
+   - `SPREADSHEET_ID`: 연결할 Google 스프레드시트 ID. 코드가 `openById`로 명시적으로 열므로 웹 앱에서도 같은 시트에 기록합니다.
    - `SUPABASE_URL`: 현재 자극물과 같은 프로젝트 URL.
    - `SUPABASE_SERVICE_ROLE_KEY`: 서버에서 조회할 수 있는 service role 또는 secret 키. 공개 HTML·`config.js`·Git 저장소에는 넣지 않습니다. 자극물의 publishable 키로는 읽을 수 없습니다.
    - 선택: `ASSIGNMENT_STUDY_ID` (기본 `livestream-ai-chat-2026`). 정원·모집 상태는 Supabase `study_assignment_settings`에서 설정합니다. [자동 배정 설치](ASSIGNMENT.md)를 먼저 완료합니다.

@@ -50,7 +50,7 @@ class Sheet {
 }
 
 const sheets = {};
-const props = new Map([['SUPABASE_URL','https://example.supabase.co'], ['SUPABASE_SERVICE_ROLE_KEY','server-test-key']]);
+const props = new Map([['SUPABASE_URL','https://example.supabase.co'], ['SUPABASE_SERVICE_ROLE_KEY','server-test-key'], ['SPREADSHEET_ID','test-sheet-id']]);
 const rpcCalls=[], mockAssignments=new Map();
 let failCursor = false, failNetwork = false, lockReleased = 0;
 const sessions = Array.from({length:500}, (_,i) => ({
@@ -63,9 +63,10 @@ const events = sessions.map((s,i) => ({id:i+1,session_id:s.id,data:{
 }}));
 const ctx = vm.createContext({
   console,
-  SpreadsheetApp:{getActiveSpreadsheet:()=>({
-    getSheetByName:n=>sheets[n], insertSheet:n=>(sheets[n]=new Sheet())
-  })},
+  SpreadsheetApp:{openById:id=>{
+    assert.equal(id,'test-sheet-id');
+    return {getSheetByName:n=>sheets[n],insertSheet:n=>(sheets[n]=new Sheet())};
+  }},
   PropertiesService:{getScriptProperties:()=>({
     getProperty:k=>props.get(k), setProperty:(k,v)=>{
       if (failCursor) { failCursor=false; throw new Error('cursor failed'); }
@@ -166,3 +167,6 @@ assert.equal(run("get_({pid:'REAL_RPC'})").assignment_id,assigned.assignment_id)
 run("setStatus_('REAL_RPC','returned')");
 assert.equal(sheets.assignments.data.find(r=>r[0]==='REAL_RPC')[5],'returned');
 console.log('PASS: Apps Script uses trusted database RPCs and mirrors condition/assignment ID without duplicate rows');
+props.delete('SPREADSHEET_ID');
+assert.throws(()=>run("sheet_('responses',['pid'])"),/Configure SPREADSHEET_ID/);
+console.log('PASS: explicit spreadsheet ID works without an active spreadsheet and missing configuration fails clearly');

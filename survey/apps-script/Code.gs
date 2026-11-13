@@ -191,7 +191,9 @@ function purgeLog_(pid) {
 
 /* ───────── 도우미 ───────── */
 function sheet_(name, headers) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const spreadsheetId = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
+  if (!spreadsheetId || !spreadsheetId.trim()) throw new Error('Configure SPREADSHEET_ID in Script Properties.');
+  const ss = SpreadsheetApp.openById(spreadsheetId.trim());
   let sh = ss.getSheetByName(name);
   if (!sh) {
     sh = ss.insertSheet(name);
