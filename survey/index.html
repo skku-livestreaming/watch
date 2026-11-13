@@ -267,7 +267,7 @@
 <main id="app"></main>
 <div id="net" hidden></div>
 <div id="dbg" hidden></div>
-<script src="config.js?v=2026-11-13-assignment-v2"></script>
+<script src="config.js?v=2026-11-14-sheets-v1"></script>
 <script>
 (() => {
 'use strict';
@@ -982,7 +982,7 @@ function stimulusUrl(){
   u.searchParams.set('panel_id', S.pid);
   if (S.meta.assignment_id) u.searchParams.set('assignment_id', S.meta.assignment_id);
   u.searchParams.set('intro', 'off');
-  u.searchParams.set('v', C.ASSET_VERSION || '2026-11-13-assignment-v2');
+  u.searchParams.set('v', C.ASSET_VERSION || '2026-11-14-sheets-v1');
   if (!DEBUG){
     for (const k of ['preview','debug','cong','label','ratio','viewers','seed','source','admin']) u.searchParams.delete(k);
   }

@@ -1,6 +1,6 @@
 # 응답·행동 지표 저장 연결
 
-현재 실제 Google 시트와 Apps Script 배포 주소는 아직 없습니다. `config.js`의 `API_URL`은 빈 값으로 유지했습니다. 아래 코드는 로컬 검증까지 완료했으며, 서버 배포·실제 데이터 저장·실제 부하 검증은 별도로 해야 합니다.
+Google 시트와 Apps Script 웹 앱 배포 주소가 준비되어 `config.js`의 `API_URL`에 연결했습니다. 2026-11-14에 로그인 없는 GET 요청에서 HTTP 200과 `{"ok":true,"msg":"survey backend is running"}`을 확인했습니다. 이는 웹 앱 접근 확인이며, 실제 조건 배정·응답 저장·행동 동기화·부하 검증은 별도로 해야 합니다. `PARTICIPANT_OPEN`은 검증 전까지 false로 유지합니다.
 
 ## 데이터 흐름
 
@@ -23,14 +23,14 @@
    - `SUPABASE_URL`: 현재 자극물과 같은 프로젝트 URL.
    - `SUPABASE_SERVICE_ROLE_KEY`: 서버에서 조회할 수 있는 service role 또는 secret 키. 공개 HTML·`config.js`·Git 저장소에는 넣지 않습니다. 자극물의 publishable 키로는 읽을 수 없습니다.
    - 선택: `ASSIGNMENT_STUDY_ID` (기본 `livestream-ai-chat-2026`). 정원·모집 상태는 Supabase `study_assignment_settings`에서 설정합니다. [자동 배정 설치](ASSIGNMENT.md)를 먼저 완료합니다.
-4. 편집기에서 `syncBehaviorMeasures`를 한 번 실행하고 권한을 승인합니다. `behavior` 시트가 만들어지고, 종료 로그가 있으면 최대 100건을 가져옵니다.
+4. 편집기에서 `syncBehaviorMeasures`를 한 번 실행하고 권한을 승인합니다. 처리할 종료 로그가 있으면 `behavior` 시트를 만들고 최대 100건을 가져옵니다. 처리할 로그가 없으면 탭이 아직 생기지 않을 수 있습니다.
 5. `installBehaviorSync`를 한 번 실행하면 **5분마다** 동기화합니다. 미처리 종료 이벤트가 100건 이상이면 다음 실행에서 이어서 가져옵니다. 수동 실행을 반복해도 됩니다.
 6. Apps Script를 **웹 앱**, 실행 계정 **나**, 접근 **모든 사용자**로 배포하고 `…/exec` 주소를 `survey/config.js`의 `API_URL`에 넣습니다. 이후 코드 변경은 새 버전으로 다시 배포합니다.
 7. CloudResearch의 완료 주소 또는 코드를 `REDIRECTS.complete` / `COMPLETION_CODE`에 설정합니다. 동의서·디브리핑의 기존 자리표시자도 실제 연구 정보로 채웁니다.
 
 8. 연구자 화면(`/survey/?admin=1`)의 **Participant setup** 항목을 확인합니다. 필수 설정과 실제 파일럿을 확인한 후 `PARTICIPANT_OPEN: true`로 바꿔 배포합니다. 현재는 false이므로 일반 참가자에게 모집 중지 안내가 나오며, 저장되지 않는 상태로 설문을 진행하지 않습니다.
 
-참가자 배포 링크는 `/survey/?v=2026-11-13-assignment-v2&participantId=[ID]`를 기준으로 설정합니다. 관리자·debug 파라미터는 참가자 링크에 포함하지 않습니다. 새 배포에서 파일 구성이 바뀌면 `ASSET_VERSION`과 HTML의 config.js 버전도 함께 갱신합니다.
+참가자 배포 링크는 `/survey/?v=2026-11-14-sheets-v1&participantId=[ID]`를 기준으로 설정합니다. 관리자·debug 파라미터는 참가자 링크에 포함하지 않습니다. 새 배포에서 파일 구성이 바뀌면 `ASSET_VERSION`과 HTML의 config.js 버전도 함께 갱신합니다.
 
 시트의 행·열 수가 부족하면 코드가 자동으로 확장합니다. `BEHAVIOR_EVENT_CURSOR` 속성은 성공한 마지막 종료 이벤트 ID입니다. 전체 재동기화가 필요하면 이 속성만 지우고 다시 실행합니다. 세션 ID로 갱신하므로 중복 행을 만들지 않으며, 단순 창 닫기 기록이 완료 기록을 덮어쓰지 않습니다. 시트 쓰기 실패 시 커서를 진행시키지 않아 다음 실행에서 재시도합니다.
 

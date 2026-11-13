@@ -3,6 +3,7 @@ All API and media requests are mocked; no research data leaves this test.
 """
 import json
 import os
+import re
 import threading
 from functools import partial
 from http.server import ThreadingHTTPServer
@@ -29,7 +30,8 @@ def fixture(browser, base, initial=None, configured=True, randomized=False, miss
     page.on('pageerror', lambda e:errors.append(str(e)))
     config = (ROOT / 'survey/config.js').read_text(encoding='utf-8')
     if configured:
-        config = config.replace("API_URL: ''", "API_URL: 'https://script.google.com/macros/s/QA/exec'")
+        config, replacements = re.subn(r"API_URL:\s*'[^']*'", "API_URL: 'https://script.google.com/macros/s/QA/exec'", config, count=1)
+        assert replacements == 1, 'API fixture must replace the configured endpoint'
         config = config.replace('PARTICIPANT_OPEN: false', 'PARTICIPANT_OPEN: true')
         config = config.replace("COMPLETION_CODE: ''", "COMPLETION_CODE: 'QA_COMPLETE'")
         config = config.replace("STIMULUS_EXTRA: {intro: 'off'}", "STIMULUS_EXTRA: {intro:'off',preview:'1',label:'human',ratio:'0'}")
