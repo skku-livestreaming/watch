@@ -143,7 +143,7 @@ window.SURVEY_CONFIG = {
     groups: {
       ai: {
         headline: '<span class="hl">All</span> other viewers in this stream are <span class="hl">AI</span>.',
-        sub: 'Every chat message is written by AI, not by people.',
+        sub: 'Every chat message is written by AI, not by people. Messages written by AI are marked with an <span class="aib">AI</span> label.',
         aiRows: [1, 1, 1, 1]          // 미리보기 채팅 줄마다 AI 배지 여부
       },
       human: {
