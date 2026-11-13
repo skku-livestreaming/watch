@@ -1,0 +1,1167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<!-- 설문 안에 띄운 자극물이 이 설문·자극물 사이트 밖으로 이동하지 못하게 막습니다.
+     (자극물의 옛 복귀 주소로 참가자 ID가 전송되는 것을 차단) -->
+<meta http-equiv="Content-Security-Policy" content="frame-src 'self' https://skku-livestreaming.github.io">
+
+<title>Research Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  /* 데스크톱 전용 웹 설문.
+     원칙: 모든 선택지는 같은 모양·너비, 기본 선택 없음, 특정 선택지에 색 없음.
+     색은 강조색(--accent) 하나만 쓰고, 응답자가 고른 칸과 버튼에만 들어갑니다. 빨간색(--bad)은 오류에만 씁니다. */
+  :root{
+    --page:#F4F5F7; --paper:#FFFFFF; --ink:#16181D; --ink2:#3D424D; --muted:#5B616E;
+    --line:#E3E5EA; --ctl:#D5D8DF; --field:#B9BDC7; --hover:#F7F8FA;
+    --accent:#2B45C9; --accent-dark:#1E3399; --accent-soft:#F1F3FD;
+    --bad:#B42318; --radius:16px; --radius-sm:12px;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none !important}
+  html,body{margin:0;background:var(--page);color:var(--ink);
+    font:17px/1.6 Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  a{color:var(--accent)} a:hover{color:var(--accent-dark)}
+  :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+  .vh{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+  /* 상단 바: 연구 이름 + 단계 + 진행 막대 */
+  #top{background:var(--paper);border-bottom:1px solid var(--line)}
+  .top-in{max-width:880px;margin:0 auto;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+  body.wide .top-in{max-width:1040px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px}
+  .brand-mark{width:28px;height:28px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center}
+  .brand-mark svg{width:16px;height:16px}
+  .top-step{font-size:14px;color:var(--muted)}
+  .top-bar{height:4px;background:#E9EBF0}
+  .top-bar span{display:block;height:4px;background:var(--accent);transition:width .5s ease}
+
+  main{max-width:880px;margin:0 auto;padding:48px 24px 96px}
+  body.wide main{max-width:1040px}
+  .page{display:flex;flex-direction:column;gap:20px}
+  .page-head{display:flex;flex-direction:column;gap:6px}
+  h1{font-size:30px;font-weight:700;margin:0;line-height:1.3}
+  .lead{margin:0;color:var(--muted)}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:40px 44px;display:flex;flex-direction:column;gap:22px}
+  .card > h1{margin-bottom:-4px}
+  .prose p{margin:0 0 14px;max-width:720px}
+  .prose p:last-child{margin-bottom:0}
+  .prose .callout{background:#FFF7E6;border:1px solid #F0D7A1;border-radius:var(--radius-sm);padding:18px 20px;margin:4px 0 18px;max-width:none}
+  .prose .callout p{margin:0 0 8px}
+  .prose .callout p:last-child{margin:0}
+  .alert{color:var(--bad);font-weight:700}
+
+  /* 문항 카드 */
+  .block{display:flex;flex-direction:column;gap:16px;scroll-margin-top:24px}
+  .block.missing{box-shadow:inset 4px 0 0 var(--bad)}
+  .q-num{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-bottom:-10px}
+  .q{font-size:22px;line-height:1.45;font-weight:600}
+  .q i{font-weight:500;color:var(--ink2)}
+  .msg{display:none;color:var(--bad);font-weight:600;font-size:15px;margin-top:-6px}
+  .block.missing > .msg{display:block}
+
+  /* 선택지: 넓은 카드형, 모두 같은 모양 */
+  .opts{display:flex;flex-direction:column;gap:10px}
+  .opts.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+  .opt{display:flex;align-items:center;gap:14px;min-height:56px;padding:10px 18px;border:1px solid var(--ctl);
+    border-radius:var(--radius-sm);background:var(--paper);cursor:pointer;transition:border-color .15s,background .15s}
+  .opt:hover{background:var(--hover)}
+  .opt:has(input:checked){border:2px solid var(--accent);padding:9px 17px;background:var(--accent-soft)}
+  .opt input[type=radio],.opt input[type=checkbox]{accent-color:var(--accent);width:20px;height:20px;margin:0;flex:none;cursor:pointer}
+  .opt input.other{margin-left:6px;flex:1;min-width:140px;max-width:320px}
+  input[type=text],input[type=number],textarea,select{font:inherit;padding:0 14px;height:52px;border:1px solid var(--field);
+    border-radius:var(--radius-sm);background:#fff;color:inherit}
+  .opt input.other{height:40px}
+  textarea{width:100%;height:auto;min-height:120px;padding:12px 14px;resize:vertical}
+  input[type=number]{width:160px}
+  select{min-width:240px}
+  .block.missing input[type=text],.block.missing input[type=number],.block.missing textarea,.block.missing select{border:2px solid var(--bad)}
+
+  /* 척도: 1~N을 같은 너비 버튼으로. 양 끝 라벨은 아래에 */
+  .lk{display:flex;flex-direction:column}
+  .lk-item{padding:18px 0;border-top:1px solid #ECEEF2}
+  .lk-item:first-child{border-top:0;padding-top:0}
+  .lk-item:last-child{padding-bottom:0}
+  .lk-text{font-size:18px;font-weight:500;margin-bottom:12px}
+  .lk-item.missing .lk-text{color:var(--bad)}
+  /* 척도: 원래 형태 — 문항 → 바로 밑에 1~N 동그라미, 양 끝 옆에 작은 방향 라벨. 모든 점은 같은 모양·간격, 기본 선택 없음 */
+  .lk-row{display:grid;grid-template-columns:130px minmax(0,560px) 130px;align-items:center;gap:12px}
+  .lk-pts{display:flex;justify-content:space-between}
+  .lk-pts label{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;min-width:48px;padding:8px 0;border-radius:8px}
+  .lk-pts label:hover{background:var(--hover)}
+  .lk-pts input{width:22px;height:22px;margin:0;accent-color:var(--accent);cursor:pointer}
+  .lk-pts .n{font-size:15px}
+  .lk-pts .mid{font-size:12px;line-height:1.2;color:var(--muted);text-align:center;max-width:84px}
+  .lk-end{font-size:14px;color:var(--muted);line-height:1.3}
+  .lk-end.l{text-align:right}
+
+  /* 오류 요약 */
+  .err-sum{background:var(--paper);border:2px solid var(--bad);border-radius:var(--radius);padding:20px 24px;display:flex;gap:14px;align-items:flex-start}
+  .err-sum svg{flex:none;width:22px;height:22px;margin-top:2px}
+  .err-sum h2{margin:0 0 6px;font-size:17px;font-weight:600}
+  .err-sum ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}
+  .err-sum a{color:var(--bad);font-weight:500}
+  .err-sum:focus{outline:none}
+  .err{color:var(--bad);font-weight:600;font-size:15px}
+
+  /* 하단 버튼 줄 */
+  .actions{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+  .actions .right{display:flex;align-items:center;gap:14px;margin-left:auto}
+  .note{color:var(--muted);font-size:14px}
+  button{font:inherit;font-weight:600;border:0;border-radius:var(--radius-sm);min-height:48px;padding:0 32px;cursor:pointer;
+    background:var(--accent);color:#fff;transition:background .15s}
+  button:hover{background:var(--accent-dark)}
+  button:disabled{background:#C9CDD5;cursor:not-allowed}
+
+  /* 동의서 */
+  .facts{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:12px}
+  .fact{background:var(--page);border-radius:var(--radius-sm);padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+  .fact span{font-size:13px;color:var(--muted)}
+  .fact b{font-weight:600}
+  .consent-check{display:flex;gap:14px;align-items:flex-start;padding:18px;border:1px solid var(--ctl);border-radius:var(--radius-sm);cursor:pointer;font-weight:500}
+  .consent-check:has(input:checked){border:2px solid var(--accent);padding:17px;background:var(--accent-soft)}
+  .consent-check input{accent-color:var(--accent);width:20px;height:20px;margin:2px 0 0;flex:none}
+
+  /* 방송 입장 전 안내: 항목이 하나씩 나타납니다 */
+  @keyframes rowIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  @keyframes chatIn{0%,4%{opacity:0;transform:translateY(8px)}12%,90%{opacity:1;transform:none}100%{opacity:0}}
+  /* ② 채팅 예시: 입력 → Chat 버튼 누름 → 입력칸 비우고 위에 내 메시지 표시 → Like (7초 반복) */
+  @keyframes typing{0%{width:0}35%,47%{width:13ch}48%,100%{width:0}}
+  @keyframes sendPress{0%,43%{transform:none;background:#3A3D44}46%{transform:scale(.92);background:#4B5BB8}50%,100%{transform:none;background:#3A3D44}}
+  @keyframes sentIn{0%,48%{opacity:0;transform:translateY(6px)}54%,92%{opacity:1;transform:none}100%{opacity:0}}
+  /* ① AI 배지 강조: 메시지가 다 나온 뒤 배지에 고리가 두 번 퍼짐 */
+  @keyframes aiPulse{0%,40%{box-shadow:0 0 0 0 rgba(87,195,166,0)}46%{box-shadow:0 0 0 0 rgba(87,195,166,.8)}58%{box-shadow:0 0 0 7px rgba(87,195,166,0)}64%{box-shadow:0 0 0 0 rgba(87,195,166,.8)}76%,100%{box-shadow:0 0 0 7px rgba(87,195,166,0)}}
+  @keyframes caret{50%{border-color:transparent}}
+  @keyframes likePop{0%,64%{transform:scale(1);background:#2B2D31}70%{transform:scale(1.15);background:#3E4F9E}78%,94%{transform:scale(1);background:#3E4F9E}100%{background:#2B2D31}}
+  @keyframes cursorMove{0%{transform:translate(90px,60px);opacity:0}15%{opacity:1}45%,100%{transform:translate(0,0);opacity:1}}
+  @keyframes btnPress{0%,48%{transform:scale(1);box-shadow:0 0 0 0 rgba(229,51,42,.45)}54%{transform:scale(.94)}62%{transform:scale(1);box-shadow:0 0 0 0 rgba(229,51,42,.45)}90%,100%{box-shadow:0 0 0 14px rgba(229,51,42,0)}}
+  .ir{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:28px;display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));gap:32px;align-items:center;animation:rowIn .7s ease-out both;scroll-margin:24px}
+  .ir-txt{display:flex;flex-direction:column;gap:12px}
+  .ir-head{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+  .ir-n{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:14px;font-weight:700;letter-spacing:0;
+    display:inline-flex;align-items:center;justify-content:center;flex:none}
+  .ir-main{margin:0;font-size:22px;line-height:1.45;font-weight:600}
+  .ir-sub{margin:0;color:var(--ink2)}
+  .hl{color:var(--accent)}             /* ① 핵심 단어 강조 (세 조건 같은 색) */
+  .ir figure{margin:0;display:flex;flex-direction:column;gap:8px}
+  .ir figcaption{font-size:13px;color:var(--muted)}
+  .ir-wait{border:2px dashed var(--ctl);border-radius:var(--radius);padding:22px 28px;display:flex;align-items:center;
+    justify-content:space-between;gap:16px;color:var(--muted);animation:rowIn .5s ease-out both}
+  .ir-wait .ir-n{background:transparent;border:2px solid #C9CDD5;color:var(--muted)}
+  .ir-wait > span{display:flex;align-items:center;gap:10px}
+  .dk{background:#1E1F22;border-radius:12px;overflow:hidden;color:#E8E9EC;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .cp-top{color:#8B8F98;font-size:12px;padding:8px 14px;border-bottom:1px solid #2C2E33;display:flex;align-items:center;gap:6px}
+  .cp-top:before{content:'';width:7px;height:7px;border-radius:50%;background:#E5332A}
+  .cp-feed{padding:10px 8px 14px;display:flex;flex-direction:column;gap:4px;font-size:14px;min-height:128px}
+  .cp-msg{padding:2px 8px;animation:chatIn 8s ease-out infinite both;animation-delay:var(--d)}
+  .cp-nm{color:#B7C0D0;font-weight:700;margin-right:5px}
+  .cp-nm:after{content:':';color:#6F737C;font-weight:400;margin-left:1px}
+  .aib{display:inline-block;vertical-align:1px;margin-right:6px;background:rgba(87,195,166,.18);color:#57C3A6;
+    border:1px solid rgba(87,195,166,.45);border-radius:3px;padding:0 4px;font-size:10px;font-weight:800;letter-spacing:.03em;line-height:1.5}
+  .ir-sub .aib,.ir-main .aib{vertical-align:2px;background:rgba(11,122,98,.12);color:#0B7A62;border-color:rgba(11,122,98,.4);font-size:11px}
+  .ctl{padding:14px;display:flex;flex-direction:column;gap:12px}
+  .ctl-row{display:flex;gap:8px}
+  .ctl-in{flex:1;background:#2B2D31;border-radius:8px;padding:10px 12px;font-size:14px;display:flex;align-items:center;min-width:0}
+  .ctl-in span{display:inline-block;overflow:hidden;white-space:nowrap;border-right:2px solid #E8E9EC;width:0;
+    animation:typing 7s steps(13) 1s infinite,caret .8s step-end infinite}
+  .ctl-send{background:#3A3D44;border-radius:8px;padding:10px 14px;font-size:14px;font-weight:600;animation:sendPress 7s ease-out 1s infinite}
+  .ctl-feed{min-height:30px;display:flex;align-items:flex-end;font-size:14px;padding:0 4px}
+  .ctl-feed .sent{animation:sentIn 7s ease-out 1s infinite both}
+  .pill{display:inline-flex;align-items:center;gap:6px;background:#2B2D31;border-radius:999px;padding:8px 14px;font-size:14px}
+  .pill svg{width:16px;height:16px}
+  .pill.like{animation:likePop 7s ease-out 1s infinite}
+  .cp-feed .aib{animation:aiPulse 8s ease-out infinite}
+  .endm{background:#141517;height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;position:relative;font-size:15px}
+  .endm-btn{background:#E5332A;color:#fff;font-weight:700;border-radius:6px;padding:8px 18px;animation:btnPress 4s ease-out 1.8s infinite}
+  .endm svg{position:absolute;left:58%;top:58%;width:26px;height:26px;animation:cursorMove 4s ease-in-out 1.8s infinite both}
+  .enter-bar{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px 16px 24px;margin-top:4px}
+  .fillbtn{position:relative;overflow:hidden;min-width:260px}
+  .fillbtn:disabled{background:#8C96C9;color:#fff}
+  .fillbtn .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--accent);transition:width .3s linear}
+  .fillbtn .lbl{position:relative}
+  @media (prefers-reduced-motion:reduce){ *{animation:none !important;transition:none !important} .ctl-in span{width:auto;border:0} }
+
+  /* 완료·종료 화면 */
+  .center{text-align:center;padding:40px 0}
+  .done{align-items:center;text-align:center;padding:48px 40px}
+  .done-ic{width:56px;height:56px;border-radius:50%;background:#E8F5EE;display:flex;align-items:center;justify-content:center}
+  .done-ic svg{width:28px;height:28px}
+  .done p{margin:0;color:var(--ink2);max-width:480px}
+  .codebox{display:flex;align-items:center;gap:8px;border:1px solid var(--ctl);border-radius:var(--radius-sm);padding:6px 6px 6px 20px}
+  .codebox .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:22px;font-weight:600;letter-spacing:.08em;background:none;border:0;padding:0}
+  .codebox button{min-height:44px;padding:0 18px;font-size:15px;border-radius:8px}
+  .code{font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--page);padding:1px 6px;border:1px solid var(--line);border-radius:4px}
+  .spinner{width:26px;height:26px;border:3px solid var(--line);border-top-color:var(--muted);border-radius:50%;
+    animation:spin 1s linear infinite;margin:0 auto 14px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #net{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:var(--ink);color:#fff;
+    padding:10px 16px;border-radius:10px;font-size:14px;z-index:30}
+  #net:before{content:'';width:12px;height:12px;border-radius:50%;border:2px solid #5B616E;border-top-color:#fff;animation:spin 1s linear infinite}
+
+  /* 자극물 (설문 안에 화면 가득) */
+  body.stim-on{overflow:hidden}
+  body.stim-on main,body.stim-on #top{display:none}
+  #stimWrap{position:fixed;inset:0;background:#000;z-index:10}
+  #stimWrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  #stimCover{position:absolute;inset:0;background:var(--page);display:flex;align-items:center;justify-content:center}
+  #stimFallback{position:absolute;left:50%;top:14px;transform:translateX(-50%);z-index:2;box-shadow:0 2px 10px rgba(0,0,0,.35)}
+
+  #dbg{position:fixed;right:12px;bottom:12px;background:#111;color:#e8e8e8;font:12px/1.5 Consolas,Menlo,monospace;
+    padding:10px 12px;border-radius:6px;max-width:320px;z-index:50;opacity:.92;pointer-events:none}
+  #dbg button{font-size:11px;font-weight:400;min-height:0;padding:3px 8px;margin:4px 4px 0 0;background:#444;border-radius:3px;pointer-events:auto}
+
+  /* 관리자 모드 막대 (?admin=1) */
+  body.adm-on{padding-bottom:72px}
+  #adm{position:fixed;left:0;right:0;bottom:0;z-index:60;background:#16181D;color:#E8E9EC;font-size:13px;
+    display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;padding:10px 16px;box-shadow:0 -4px 16px rgba(0,0,0,.18)}
+  #adm.min{left:auto;right:16px;bottom:16px;padding:0;background:none;box-shadow:none}
+  #adm label{display:flex;align-items:center;gap:6px;color:#AEB3BD}
+  #adm select{height:34px;min-width:0;padding:0 8px;border-radius:8px;border:1px solid #3A3D44;background:#24262B;color:#fff;font-size:13px}
+  #adm #admScreen{max-width:300px}
+  #adm button{min-height:34px;padding:0 12px;font-size:13px;border-radius:8px;background:#2F3239}
+  #adm button:hover{background:#3E424B}
+  #adm .min button,#adm #admShow{background:#16181D;padding:0 16px}
+  #adm .ghost{background:none;color:#AEB3BD;margin-left:auto}
+  #adm .adm-tag{background:#E5A50A;color:#16181D;font-weight:800;font-size:11px;letter-spacing:.06em;padding:3px 8px;border-radius:4px}
+  #adm .adm-note{color:#8B8F98}
+  body.stim-on #adm{z-index:60}
+</style>
+</head>
+<body>
+<header id="top" hidden></header>
+<main id="app"></main>
+<div id="net" hidden></div>
+<div id="dbg" hidden></div>
+<script src="config.js"></script>
+<script>
+(() => {
+'use strict';
+const C = window.SURVEY_CONFIG;
+const T = C.TEXT;
+const Q = new URLSearchParams(location.search);
+/* 관리자 모드(?admin=1): 아무 화면으로나 바로 이동·조건 전환. 응답은 어디에도 저장하지 않습니다(API 끔). */
+const ADMIN = Q.get('admin') === '1';
+const DEBUG = Q.get('debug') === '1' || ADMIN;
+if (ADMIN) C.API_URL = '';
+// 대기 시간을 3초로 줄일지: 점검 모드는 항상, 관리자 모드는 패널의 선택을 따름(기본 = 실제 시간)
+let FAST = Q.get('debug') === '1';
+if (ADMIN){ try { FAST = sessionStorage.getItem('lsv_admin_fast') === '1'; } catch (e) {} }
+const KEY = 'lsv_' + C.STUDY_ID + (ADMIN ? '_admin' : '');
+const app = document.getElementById('app');
+const SAVE_WAIT_MS = 6000;      // 페이지를 떠나기 전 저장을 기다리는 최대 시간
+
+/* ───────── 상태 ───────── */
+let S = null;
+const store = {
+  get(){ try { return JSON.parse(localStorage.getItem(KEY)); } catch { return null; } },
+  set(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} },
+  clear(){ try { localStorage.removeItem(KEY); } catch {} }
+};
+const iso = () => new Date().toISOString();
+const rand = n => Math.random().toString(36).slice(2, 2 + n).toUpperCase();
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const keyify = v => String(v).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+const secs = t0 => Math.round((Date.now() - t0) / 100) / 10;
+
+function newState(pid){
+  return { pid, stage: 'consent', page: 0, answers: {}, meta: {}, cell: null, pending: {}, att: 0 };
+}
+
+function ctx(){
+  const c = S && S.cell;
+  return {
+    group: c ? c.group : null, cong: c ? c.cong : null, cell: c ? c.id : null,
+    answers: S ? S.answers : {}, pid: S ? S.pid : null,
+    topic_q: C.TOPIC.q, topic_A: C.TOPIC.A, topic_B: C.TOPIC.B
+  };
+}
+const interp = s => String(s == null ? '' : s).replace(/\{\{(\w+)\}\}/g, (m, k) => {
+  const v = ctx()[k]; return v == null ? m : v;
+});
+
+/* ───────── 서버 통신 ───────── */
+async function api(action, body){
+  const r = await fetch(C.API_URL, {
+    method: 'POST',
+    // text/plain으로 보내야 브라우저의 사전 요청(CORS preflight) 없이 Apps Script에 닿습니다
+    headers: {'Content-Type': 'text/plain;charset=utf-8'},
+    body: JSON.stringify(Object.assign({action, study: C.STUDY_ID}, body))
+  });
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error || 'api error');
+  return j;
+}
+
+/* 저장: 바뀐 값만 모아 두었다가 보냅니다. 실패하면 브라우저에 남겨 두고 다시 보냅니다. */
+let flushing = null, retryTimer = null, retryDelay = 2000;
+function save(patch){
+  Object.assign(S.pending, patch);
+  store.set();
+  return flush();
+}
+function flush(){
+  if (!C.API_URL){
+    if (Object.keys(S.pending).length) console.log('[save:local]', S.pending);
+    S.pending = {}; store.set();
+    return Promise.resolve(true);
+  }
+  if (flushing) return flushing.then(() => Object.keys(S.pending).length ? flush() : true);
+  const batch = Object.assign({}, S.pending);
+  if (!Object.keys(batch).length) return Promise.resolve(true);
+  flushing = api('save', {pid: S.pid, data: batch}).then(() => {
+    for (const k of Object.keys(batch)) if (S.pending[k] === batch[k]) delete S.pending[k];
+    store.set(); net(false); retryDelay = 2000; return true;
+  }).catch(e => {
+    console.warn('save failed', e); net(T.errorSave);
+    clearTimeout(retryTimer);
+    retryTimer = setTimeout(flush, retryDelay); retryDelay = Math.min(retryDelay * 2, 30000);
+    return false;
+  }).finally(() => { flushing = null; });
+  return flushing;
+}
+const flushWithin = ms => Promise.race([flush(), new Promise(r => setTimeout(() => r(false), ms))]);
+function net(msg){ const el = document.getElementById('net'); el.hidden = !msg; if (msg) el.textContent = msg; }
+window.addEventListener('online', () => flush());
+
+/* ───────── 시작 ───────── */
+function init(){
+  const saved = store.get();
+  const retPid = Q.get('panel_id');
+  if (retPid !== null) return handleReturn(retPid, Q.get('status'), saved);
+
+  let pid = Q.get(C.ID_PARAM);
+  if (!pid && DEBUG) pid = (saved && saved.pid && saved.pid.startsWith('TEST_')) ? saved.pid : 'TEST_' + rand(6);
+  if (saved && saved.pid && (!pid || saved.pid === pid)){ S = saved; return render(); }
+  if (!pid || !C.ID_PATTERN.test(pid)){ S = newState(null); S.stage = 'id'; return render(); }
+  start(pid);
+}
+
+function start(pid){
+  S = newState(pid);
+  const m = S.meta;
+  m.is_test = (DEBUG || pid.startsWith('TEST_')) ? 1 : 0;
+  m.start_at = iso();
+  for (const p of C.EXTRA_PARAMS) m[keyify(p)] = Q.get(p) || '';
+  m.user_agent = navigator.userAgent;
+  m.viewport = innerWidth + 'x' + innerHeight;
+  // 휴대폰·태블릿 판정: 기기 종류와 화면 크기로만 봅니다(PC에서 창을 좁힌 것은 막지 않음). iPad는 Mac처럼 보여서 터치로 구분.
+  const ipad = /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1;
+  const mobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || ipad || Math.min(screen.width, screen.height) < 600;
+  m.is_mobile = mobile ? 1 : 0;
+  if (C.BLOCK_MOBILE && mobile){ return end('mobile'); }
+  store.set();
+  render();
+}
+
+/* 자극물이 복귀 주소로 돌려보낸 경우(STIMULUS_EMBED = false일 때): ?panel_id=…&status=… */
+function handleReturn(pid, status, saved){
+  const clean = () => history.replaceState(null, '', location.pathname + (DEBUG ? '?debug=1' : ''));
+  const resume = () => {
+    if (S.stage === 'intro' || S.stage === 'stimulus'){
+      const m = {stim_return_at: iso(), stim_end: 'return_url', stim_status: status || ''};
+      Object.assign(S.meta, m);
+      S.stage = 'post'; S.page = 0;
+      save(Object.assign({status: 'returned'}, m));
+    }
+    clean(); render();
+  };
+  if (saved && saved.pid === pid){ S = saved; return resume(); }
+
+  // 브라우저 저장소가 비어 있음(다른 창·시크릿 모드 등) → 서버에서 배정 기록을 찾습니다
+  S = newState(pid); S.stage = 'loading'; render();
+  if (!C.API_URL){ S.stage = 'lost'; clean(); return render(); }
+  api('get', {pid}).then(j => {
+    if (j.found && j.cell){
+      S.cell = j.cell; S.meta.is_test = j.is_test ? 1 : 0;
+      S.stage = j.status === 'complete' || j.status === 'withdrawn' ? 'done' : 'stimulus';
+      S.meta.resumed_from_server = 1;
+      resume();
+    } else { S.stage = 'lost'; clean(); render(); }
+  }).catch(() => { S.stage = 'lost'; clean(); render(); });
+}
+
+/* ───────── 화면 ───────── */
+function render(){
+  store.set();
+  document.body.classList.toggle('wide', !!S && S.stage === 'intro');
+  window.scrollTo(0, 0);
+  topBar();
+  const fn = {
+    id: viewId, consent: viewConsent, pre: () => viewPage('pre'), assign: viewAssign,
+    intro: viewIntro, stimulus: viewStimulus, post: () => viewPage('post'),
+    debrief: viewDebrief, done: viewDone, end: viewEnd, lost: viewLost, loading: viewLoading
+  }[S.stage];
+  fn ? fn() : viewLost();
+  debugPanel();       // 화면을 그린 뒤(건너뛴 페이지가 반영된 뒤) 갱신
+}
+
+/* 상단 바: 단계 이름과 진행 막대. 조건마다 페이지 수가 달라 %가 아니라 "Part N of 4"로 보여 줍니다 */
+const BRAND_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>';
+function topBar(){
+  const top = document.getElementById('top');
+  if (!S){ top.hidden = true; return; }
+  const P = T.parts, st = S.stage;
+  const frac = part => { const n = (C.PAGES[part] || []).length || 1; return Math.min(S.page, n) / n; };
+  const map = {
+    consent: [P.consent, 6], pre: [P.pre, 10 + frac('pre') * 22], assign: [P.stream, 36], intro: [P.stream, 40],
+    stimulus: [P.stream, 48], post: [P.post, 55 + frac('post') * 35], debrief: [P.debrief, 94], done: [P.done, 100]
+  }[st];
+  top.hidden = false;
+  top.innerHTML = `<div class="top-in"><span class="brand"><span class="brand-mark">${BRAND_ICON}</span>${esc(T.studyName)}</span>
+    <span class="top-step">${map ? esc(map[0]) : ''}</span></div>
+    <div class="top-bar">${map ? `<span style="width:${Math.round(map[1])}%"></span>` : ''}</div>`;
+}
+
+/* 카드 하나짜리 화면. actions = 카드 아래 버튼 줄 */
+function paper(title, inner, actions){
+  app.innerHTML = `<div class="page"><section class="card">${title ? `<h1>${title}</h1>` : ''}${inner}</section>
+    ${actions ? `<div class="actions">${actions}</div>` : ''}</div>`;
+  return app.firstElementChild;
+}
+const spinner = msg => `<div class="center"><div class="spinner"></div><div class="note">${msg || ''}</div></div>`;
+function viewLoading(){ paper('', spinner()); }
+
+function viewId(){
+  const el = paper(T.idTitle, `<p style="margin:0">${T.idBody}</p>
+    <label class="vh" for="pidIn">${T.idTitle}</label>
+    <input type="text" id="pidIn" autocomplete="off" style="width:100%">
+    <div class="err" id="pidErr" hidden>${T.idInvalid}</div>`,
+    `<span class="right"><button id="go">${T.next}</button></span>`);
+  el.querySelector('#go').onclick = () => {
+    const v = el.querySelector('#pidIn').value.trim();
+    if (!C.ID_PATTERN.test(v)){ el.querySelector('#pidErr').hidden = false; return; }
+    start(v);
+    S.meta.pid_manual = 1;
+    render();
+  };
+}
+
+/* 동의서: 체크해야 [Next]가 눌립니다 */
+function viewConsent(){
+  const CS = C.CONSENT;
+  const facts = CS.facts || [];
+  const el = paper(CS.title, `${CS.lead ? `<p class="lead">${CS.lead}</p>` : ''}
+    ${facts.length ? `<div class="facts" style="--n:${facts.length}">${facts.map(f => `<div class="fact"><span>${f.label}</span><b>${f.value}</b></div>`).join('')}</div>` : ''}
+    <div class="prose">${CS.html}</div>
+    <label class="consent-check"><input type="checkbox" id="agree"><span>${CS.agree}</span></label>`,
+    `<span class="note">${CS.declineNote || ''}</span><span class="right"><button id="next" disabled>${T.next}</button></span>`);
+  const cb = el.querySelector('#agree'), next = el.querySelector('#next');
+  cb.addEventListener('change', () => { next.disabled = !cb.checked; });
+  next.onclick = () => {
+    if (!cb.checked) return;
+    Object.assign(S.meta, {consent: 1, consent_at: iso()});
+    save(Object.assign({status: 'consented'}, S.meta));
+    S.stage = 'pre'; S.page = 0; render();
+  };
+}
+
+/* ───────── 문항 페이지 ───────── */
+function viewPage(part){
+  const pages = C.PAGES[part] || [];
+  let i = S.page;
+  while (i < pages.length && pages[i].showIf && !pages[i].showIf(ctx())) i++;
+  if (i >= pages.length) return finishPart(part);
+  S.page = i; store.set();
+  const page = pages[i];
+  const t0 = Date.now();
+  app.innerHTML = `<div class="page">
+    ${page.title ? `<div class="page-head"><h1>${interp(page.title)}</h1></div>` : ''}
+    <div class="err-sum" id="errSum" role="alert" tabindex="-1" hidden></div>
+    <form novalidate class="page" style="gap:20px"></form>
+    <div class="actions"><span class="note">${T.noBack}</span>
+      <span class="right"><span class="note" id="wait"></span><button id="next" type="button">${T.next}</button></span></div></div>`;
+  const el = app.firstElementChild;
+  const form = el.querySelector('form');
+  let qn = 0;
+  const ctrls = page.blocks.map((b, k) => {
+    const c = BLOCKS[b.type](b);
+    c.el.classList.add('block', 'card');
+    c.el.id = 'q_' + page.id + '_' + k;
+    if (b.type !== 'html'){
+      qn++;
+      c.el.insertAdjacentHTML('afterbegin', `<div class="q-num">${T.questionFmt(qn)}${isRequired(b) ? '' : ' · ' + T.optional}</div>`);
+      c.el.insertAdjacentHTML('beforeend', `<div class="msg">${blockMsg(b)}</div>`);
+    }
+    form.appendChild(c.el);
+    return {b, c};
+  });
+  // 오류 요약: 맨 위에 빠뜨린 문항 목록 → 누르면 그 문항으로
+  const errSum = el.querySelector('#errSum');
+  const showErrors = () => {
+    const bad = ctrls.filter(({c}) => c.el.classList.contains('missing'));
+    if (!bad.length){ errSum.hidden = true; return; }
+    const label = ({b, c}) => {
+      const t = (c.el.querySelector('.q') || {}).textContent || '';
+      return esc((t.trim() || blockMsg(b)).slice(0, 140));
+    };
+    errSum.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#B42318" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      <div><h2>${T.errorSumFmt(bad.length)}</h2><ul>${bad.map(x => `<li><a href="#${x.c.el.id}">${label(x)}</a></li>`).join('')}</ul></div>`;
+    errSum.hidden = false;
+    errSum.querySelectorAll('a').forEach(a => a.onclick = e => {
+      e.preventDefault();
+      const t = document.getElementById(a.getAttribute('href').slice(1));
+      t.scrollIntoView({behavior: 'smooth', block: 'start'});
+      const f = t.querySelector('input:not([disabled]),textarea,select'); f && f.focus({preventScroll: true});
+    });
+  };
+  // 빠뜨려서 빨갛게 표시된 문항은 답하는 순간 원래 색으로
+  const unmark = e => {
+    const row = e.target.closest('.lk-item.missing');
+    if (row) row.classList.remove('missing');
+    const blk = e.target.closest('.block.missing');
+    if (blk && !blk.querySelector('.lk-item.missing') && (e.type === 'change' || e.target.value.trim())) blk.classList.remove('missing');
+    if (!errSum.hidden) showErrors();
+  };
+  form.addEventListener('change', unmark);
+  form.addEventListener('input', unmark);
+  const next = el.querySelector('#next');
+  holdButton(next, el.querySelector('#wait'), page.minSeconds || 0);
+
+  next.onclick = () => {
+    let ok = true, firstBad = null, patch = {}, attFail = 0, screened = false;
+    for (const {c} of ctrls){
+      const r = c.collect();
+      if (!r.ok){ ok = false; firstBad = firstBad || r.bad; }
+      Object.assign(patch, r.values || {});
+      attFail += r.attFail || 0;
+      if (r.screened) screened = true;
+    }
+    if (!ok){
+      showErrors();
+      window.scrollTo({top: 0, behavior: 'smooth'});
+      errSum.focus({preventScroll: true});
+      return;
+    }
+    errSum.hidden = true;
+
+    patch['t_' + page.id] = secs(t0);
+    if (attFail){ S.att += attFail; patch.attention_fails = S.att; }
+    Object.assign(S.answers, patch);
+    if (screened){ save(patch); return end('screened'); }
+    if (attFail && C.ATTENTION.action === 'end' && S.att >= C.ATTENTION.maxFails){ save(patch); return end('attention'); }
+    save(patch);
+    S.page = i + 1; render();
+  };
+}
+
+function finishPart(part){
+  S.stage = part === 'pre' ? 'assign' : 'debrief';
+  render();
+}
+
+function holdButton(btn, label, secsLeft){
+  if (FAST && secsLeft > 3) secsLeft = 3;
+  if (!secsLeft) return;
+  btn.disabled = true;
+  const endAt = Date.now() + secsLeft * 1000;
+  const tick = () => {
+    const left = Math.ceil((endAt - Date.now()) / 1000);
+    if (left <= 0){ btn.disabled = false; label.textContent = ''; return; }
+    label.textContent = T.waitFmt(left);
+    setTimeout(tick, 250);
+  };
+  tick();
+}
+
+/* ───────── 문항 유형 ───────── */
+function normOptions(opts){
+  if (opts === 'TOPIC') return C.TOPIC.order.map(k => ({value: k, label: C.TOPIC[k]}));
+  return opts.map(o => typeof o === 'string' ? {value: o, label: o} : o);
+}
+function shuffle(a){ a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function isRequired(b){ return b.required !== undefined ? b.required : !['textarea', 'html'].includes(b.type); }
+function qHead(b){ return b.text ? `<div class="q" id="${b.id}_q">${interp(b.text)}</div>` : ''; }
+/* 문항별 오류 문구 */
+function blockMsg(b){
+  const M = T.msg;
+  if (b.type === 'single' || b.type === 'select') return M.single;
+  if (b.type === 'multi') return M.multiFmt(b.min != null ? b.min : 1);
+  if (b.type === 'likert') return (b.items.length === 1 && !b.items[0].text) ? M.scale : M.likert;
+  if (b.type === 'number') return (b.min != null && b.max != null) ? M.rangeFmt(b.min, b.max) : M.number;
+  if (b.type === 'textarea') return b.minChars ? M.minCharsFmt(b.minChars) : M.text;
+  return M.single;
+}
+function div(html){ const d = document.createElement('div'); d.innerHTML = html; return d; }
+function mark(el, bad){ el.classList.toggle('missing', bad); }
+
+const BLOCKS = {
+  html(b){ return {el: div(`<div class="prose">${interp(b.html)}</div>`), collect: () => ({ok: true})}; },
+
+  single(b){
+    let opts = normOptions(b.options);
+    if (b.randomize) opts = shuffle(opts);
+    const el = div(qHead(b) + `<div class="opts ${b.horizontal ? 'row' : ''}" role="radiogroup" aria-labelledby="${b.id}_q">` + opts.map(o => `
+      <label class="opt"><input type="radio" name="${b.id}" value="${esc(o.value)}">
+        <span>${interp(o.label)}</span>${o.other ? `<input type="text" class="other" data-for="${esc(o.value)}" disabled>` : ''}</label>`).join('') + '</div>');
+    el.querySelectorAll('input[type=radio]').forEach(r => r.addEventListener('change', () => {
+      el.querySelectorAll('input.other').forEach(t => { t.disabled = t.dataset.for !== r.value; if (!t.disabled) t.focus(); });
+    }));
+    return {el, collect(){
+      const r = el.querySelector('input[type=radio]:checked');
+      const v = r ? r.value : '';
+      const bad = isRequired(b) && !v;
+      mark(el, bad);
+      const values = {[b.id]: v};
+      const other = el.querySelector(`input.other[data-for="${CSS.escape(v)}"]`);
+      if (other) values[b.id + '_other'] = other.value.trim();
+      if (b.randomize) values[b.id + '__order'] = opts.map(o => o.value).join(';');
+      return {
+        ok: !bad, bad: bad ? el : null, values,
+        attFail: b.attention && v !== String(b.attention.correct) ? 1 : 0,
+        screened: !!(b.screen && v && !b.screen.allowed.map(String).includes(v))
+      };
+    }};
+  },
+
+  multi(b){
+    let opts = normOptions(b.options);
+    if (b.randomize) opts = shuffle(opts);
+    const el = div(qHead(b) + `<div class="opts" role="group" aria-labelledby="${b.id}_q">` + opts.map(o => `
+      <label class="opt"><input type="checkbox" value="${esc(o.value)}">
+        <span>${interp(o.label)}</span>${o.other ? `<input type="text" class="other" disabled>` : ''}</label>`).join('') + '</div>');
+    el.querySelectorAll('.opt').forEach(l => {
+      const cb = l.querySelector('input[type=checkbox]'), t = l.querySelector('input.other');
+      if (t) cb.addEventListener('change', () => { t.disabled = !cb.checked; if (cb.checked) t.focus(); });
+    });
+    return {el, collect(){
+      const values = {}; const picked = [];
+      el.querySelectorAll('.opt').forEach(l => {
+        const cb = l.querySelector('input[type=checkbox]'), t = l.querySelector('input.other');
+        values[b.id + '_' + keyify(cb.value)] = cb.checked ? 1 : 0;
+        if (cb.checked) picked.push(cb.value);
+        if (t) values[b.id + '_' + keyify(cb.value) + '_text'] = cb.checked ? t.value.trim() : '';
+      });
+      values[b.id] = picked.join(';');
+      const min = b.min != null ? b.min : (isRequired(b) ? 1 : 0);
+      const bad = picked.length < min || (b.max != null && picked.length > b.max);
+      mark(el, bad);
+      return {ok: !bad, bad: bad ? el : null, values};
+    }};
+  },
+
+  /* 척도: 문항 → 바로 밑에 1~N 척도, 양 끝 옆에 작은 방향 라벨.
+     모든 점은 같은 모양·간격이며 기본 선택은 없습니다. */
+  likert(b){
+    let items = b.items.slice();
+    if (b.randomize) items = shuffle(items);
+    const pts = b.points || 7;
+    const single = b.items.length === 1 && !b.items[0].text;     // 단일 척도 문항은 열 이름 = id
+    const keyOf = it => single ? b.id : b.id + '_' + it.id;
+    const labels = b.labels || {};
+    const nums = Array.from({length: pts}, (_, k) => k + 1);
+    const scale = it => `<div class="lk-row" style="--pts:${pts}">
+        <span class="lk-end l">${labels[1] ? interp(labels[1]) : ''}</span>
+        <div class="lk-pts" role="radiogroup" style="--pts:${pts}" aria-label="${esc(single ? (b.text || b.id).replace(/<[^>]+>/g, '') : it.text)}">${nums.map(n => `<label title="${n}${labels[n] ? ' – ' + esc(labels[n]) : ''}">
+          <input type="radio" name="${keyOf(it)}" value="${n}" aria-label="${n}${labels[n] ? ' ' + esc(labels[n]) : ''}"><span class="n">${n}</span>
+          ${labels[n] && n !== 1 && n !== pts ? `<span class="mid">${interp(labels[n])}</span>` : ''}</label>`).join('')}</div>
+        <span class="lk-end r">${labels[pts] ? interp(labels[pts]) : ''}</span>
+      </div>`;
+    const el = div(qHead(b) + '<div class="lk">' + items.map(it => `
+      <div class="lk-item" data-key="${keyOf(it)}">
+        ${single ? '' : `<div class="lk-text">${interp(it.text)}</div>`}${scale(it)}
+      </div>`).join('') + '</div>');
+    if (single) el.classList.add('lk-single');
+    return {el, collect(){
+      const values = {}; let firstBad = null, attFail = 0;
+      el.querySelectorAll('.lk-item').forEach(row => {
+        const it = items.find(x => keyOf(x) === row.dataset.key);
+        const r = row.querySelector('input:checked');
+        const v = r ? Number(r.value) : '';
+        values[row.dataset.key] = v;
+        const bad = isRequired(b) && v === '';
+        mark(row, bad);
+        if (bad && !firstBad) firstBad = row;
+        if (it.attention && v !== '' && String(v) !== String(it.attention.correct)) attFail++;
+      });
+      mark(el, !!firstBad);
+      if (b.randomize) values[b.id + '__order'] = items.map(it => it.id).join(';');
+      return {ok: !firstBad, bad: firstBad, values, attFail};
+    }};
+  },
+
+  textarea(b){
+    const el = div(qHead(b) + `<textarea aria-labelledby="${b.id}_q"></textarea>`);
+    return {el, collect(){
+      const v = el.querySelector('textarea').value.trim();
+      const bad = (isRequired(b) && !v) || (b.minChars && v.length > 0 && v.length < b.minChars);
+      mark(el, !!bad);
+      return {ok: !bad, bad: bad ? el : null, values: {[b.id]: v}};
+    }};
+  },
+
+  number(b){
+    const el = div(qHead(b) + `<input type="number" inputmode="numeric" aria-labelledby="${b.id}_q" ${b.min != null ? `min="${b.min}"` : ''} ${b.max != null ? `max="${b.max}"` : ''}>`);
+    return {el, collect(){
+      const raw = el.querySelector('input').value.trim();
+      const v = raw === '' ? '' : Number(raw);
+      let bad = isRequired(b) && raw === '';
+      if (raw !== '' && (!Number.isFinite(v) || (b.min != null && v < b.min) || (b.max != null && v > b.max))) bad = true;
+      mark(el, bad);
+      return {ok: !bad, bad: bad ? el : null, values: {[b.id]: v}};
+    }};
+  },
+
+  select(b){
+    const opts = normOptions(b.options);
+    const el = div(qHead(b) + `<select aria-labelledby="${b.id}_q"><option value="">—</option>${opts.map(o => `<option value="${esc(o.value)}">${o.label}</option>`).join('')}</select>`);
+    return {el, collect(){
+      const v = el.querySelector('select').value;
+      const bad = isRequired(b) && !v;
+      mark(el, bad);
+      return {ok: !bad, bad: bad ? el : null, values: {[b.id]: v}};
+    }};
+  }
+};
+
+/* ───────── 균등 배정 ───────── */
+async function viewAssign(){
+  paper('', spinner());
+  if (S.cell){ S.stage = 'intro'; return render(); }
+  const force = DEBUG ? Q.get('cell') : null;
+  let res = null;
+  if (C.API_URL){
+    for (let k = 0; k < 3 && !res; k++){
+      try {
+        res = await api('assign', {
+          pid: S.pid, cells: C.CELLS, quota: C.CELL_QUOTA, inProgressMinutes: C.IN_PROGRESS_MINUTES,
+          is_test: S.meta.is_test, forceCell: force
+        });
+      } catch (e){ await new Promise(r => setTimeout(r, 1500 * (k + 1))); }
+    }
+  }
+  if (res && res.full) return end('full');
+  let cell;
+  if (res && res.cell){ cell = res.cell; }
+  else {
+    // 서버 없이 점검하는 모드이거나 서버가 응답하지 않을 때만 무작위 배정(기록에 표시됨)
+    cell = (force && C.CELLS.find(c => c.id === force)) || C.CELLS[Math.floor(Math.random() * C.CELLS.length)];
+    S.meta.assign_fallback = C.API_URL ? 1 : 0;
+  }
+  S.cell = cell;
+  Object.assign(S.meta, {cell: cell.id, group: cell.group, cong: cell.cong, stim_code: cell.code, assign_at: iso()});
+  save(Object.assign({status: 'assigned'}, S.meta));
+  S.stage = 'intro'; render();
+}
+
+/* ───────── 조건별 설명문 ───────── */
+function stimulusUrl(){
+  const u = new URL(C.STIMULUS_URL, location.href);
+  u.searchParams.set('c', S.cell.code);
+  u.searchParams.set('panel_id', S.pid);
+  for (const [k, v] of Object.entries(C.STIMULUS_EXTRA || {})) u.searchParams.set(k, v);
+  // 점검·관리자 모드: 자극물의 연구자 미리보기(구간 이동 버튼, 자극물 DB에 기록 안 함)
+  if (DEBUG) u.searchParams.set('preview', '1');
+  return u.toString();
+}
+let stimOpened = false;          // 이번 페이지 로드에서 자극물을 연 적이 있는지
+const ICONS = {
+  like: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>',
+  sub: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
+  cursor: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 8-6 2-3 6z" fill="#fff" stroke="#141517" stroke-width="1.5" stroke-linejoin="round"/></svg>'
+};
+/* 세 조건이 같은 구성: 항목 3개(시청자 / 할 수 있는 것 / 종료 버튼)가 대기 시간을 3등분해 하나씩 나타납니다.
+   조건마다 다른 것은 ①의 문장과 미리보기 채팅의 AI 배지뿐입니다. */
+function viewIntro(){
+  const I = C.INTRO, G = I.groups[S.cell.group];
+  const chat = I.chatPreview.map((m, k) => `<div class="cp-msg" style="--d:${(0.8 + k * 0.7).toFixed(1)}s">${G.aiRows[k] ? '<span class="aib">AI</span>' : ''}<span class="cp-nm">${esc(m.name)}</span>${esc(m.text)}</div>`).join('');
+  const head = (n, h) => `<div class="ir-head"><span class="ir-n">${n}</span>${interp(h)}</div>`;
+  const rows = [
+    `<section class="ir" id="ir1">
+      <div class="ir-txt">${head(1, I.viewers.heading)}
+        <p class="ir-main">${interp(G.headline)}</p>${G.sub ? `<p class="ir-sub">${interp(G.sub)}</p>` : ''}</div>
+      <figure><div class="dk"><div class="cp-top">${esc(I.viewers.chatTitle)}</div><div class="cp-feed">${chat}</div></div>
+        <figcaption>${esc(I.viewers.caption)}</figcaption></figure>
+    </section>`,
+    `<section class="ir" id="ir2">
+      <div class="ir-txt">${head(2, I.actions.heading)}
+        <p class="ir-main">${interp(I.actions.headline)}</p><p class="ir-sub">${interp(I.actions.sub)}</p></div>
+      <figure><div class="dk ctl" aria-hidden="true">
+          <div class="ctl-feed"><span class="sent"><span class="cp-nm">${esc(I.actions.demoName)}</span>${esc(I.actions.demoMessage)}</span></div>
+          <div class="ctl-row"><span class="ctl-in"><span>${esc(I.actions.demoMessage)}</span></span><span class="ctl-send">Chat</span></div>
+          <div class="ctl-row"><span class="pill like">${ICONS.like}Like</span><span class="pill">${ICONS.sub}Subscribe</span></div>
+        </div><figcaption>${esc(I.actions.caption)}</figcaption></figure>
+    </section>`,
+    `<section class="ir" id="ir3">
+      <div class="ir-txt">${head(3, I.finish.heading)}
+        <p class="ir-main">${interp(I.finish.headline)}</p><p class="ir-sub">${interp(I.finish.sub)}</p></div>
+      <figure><div class="dk endm" aria-hidden="true"><span>${esc(I.finish.mockTitle)}</span>
+          <span class="endm-btn">${esc(I.finish.mockButton)}</span>${ICONS.cursor}</div>
+        <figcaption>${esc(I.finish.caption)}</figcaption></figure>
+    </section>`
+  ];
+  const heads = [I.viewers.heading, I.actions.heading, I.finish.heading];
+  app.innerHTML = `<div class="page" style="gap:16px">
+    <div class="page-head" style="margin-bottom:8px"><h1>${interp(I.title)}</h1><p class="lead">${interp(I.lead)}</p></div>
+    <div id="irList" class="page" style="gap:16px"></div>
+    <div class="actions enter-bar"><span class="note">${interp(I.enterNote)}</span>
+      <span class="right"><button id="enter" class="fillbtn" disabled><span class="fill"></span><span class="lbl"></span></button></span></div>
+    <p class="vh" id="wait" aria-live="polite"></p></div>`;
+  const el = app.firstElementChild;
+  const list = el.querySelector('#irList');
+  const btn = el.querySelector('#enter'), lbl = btn.querySelector('.lbl'), fill = btn.querySelector('.fill');
+  const t0 = Date.now();
+  let wait = C.INTRO_MIN_SECONDS;
+  if (FAST && wait > 3) wait = 3;
+  const per = wait / 3;
+  let shown = 0, timer = null;
+  const tick = () => {
+    if (S.stage !== 'intro' || !document.body.contains(btn)){ clearTimeout(timer); return; }
+    const t = (Date.now() - t0) / 1000;
+    const want = Math.min(3, 1 + Math.floor(t / per + 1e-6));
+    while (shown < want){
+      const holder = list.querySelector('.ir-wait');
+      if (holder) holder.remove();
+      list.insertAdjacentHTML('beforeend', rows[shown]);
+      shown++;
+      if (shown > 1) list.lastElementChild.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+    }
+    // 아직 안 나온 다음 항목 자리: 점선 칸 + 남은 시간
+    let holder = list.querySelector('.ir-wait');
+    if (shown < 3){
+      const left = Math.max(1, Math.ceil(shown * per - t));
+      if (!holder){
+        list.insertAdjacentHTML('beforeend', `<div class="ir-wait"><span><span class="ir-n">${shown + 1}</span>${interp(heads[shown])}</span><span class="note"></span></div>`);
+        holder = list.querySelector('.ir-wait');
+      }
+      holder.lastElementChild.textContent = T.appearsFmt(left);
+    }
+    const left = Math.ceil(wait - t);
+    fill.style.width = Math.min(100, (t / wait) * 100) + '%';
+    if (left <= 0){
+      btn.disabled = false; lbl.textContent = C.ENTER_BUTTON; fill.style.width = '0';
+      el.querySelector('#wait').textContent = C.ENTER_BUTTON;
+      return;
+    }
+    lbl.textContent = T.waitFmt(left);
+    timer = setTimeout(tick, 200);
+  };
+  tick();
+  btn.onclick = async () => {
+    btn.disabled = true; lbl.textContent = T.saving;
+    S.meta.stim_start_at = iso();
+    S.stage = 'stimulus'; store.set();
+    save({status: 'stimulus', stim_start_at: S.meta.stim_start_at, t_intro: secs(t0)});
+    if (!C.STIMULUS_EMBED){ await flushWithin(SAVE_WAIT_MS); location.href = stimulusUrl(); return; }
+    stimOpened = true;
+    render();
+  };
+}
+
+/* ───────── 자극물 ─────────
+   설문 페이지 위에 자극물을 화면 가득 띄우고, 자극물의 종료 화면(#done)이 뜨는지 지켜봅니다.
+   자극물 파일은 바꾸지 않습니다. 읽는 것: #done, #doneTitle, #returnLink, 투표 상태(PS), 조건(cond), 세션 ID(Sink.id). */
+function viewStimulus(){
+  // 새로고침·재접속으로 다시 온 경우: 방송을 바로 다시 틀지 않고 버튼을 보여 줍니다
+  if (!stimOpened){
+    const el = paper('', `<p style="margin:0">${T.returnStream}</p>`, `<span class="right"><button id="back">${T.returnStreamBtn}</button></span>`);
+    el.querySelector('#back').onclick = () => {
+      S.meta.stim_reenter = (S.meta.stim_reenter || 0) + 1;
+      save({stim_reenter: S.meta.stim_reenter});
+      if (!C.STIMULUS_EMBED){ flushWithin(3000).then(() => { location.href = stimulusUrl(); }); return; }
+      stimOpened = true; render();
+    };
+    return;
+  }
+  app.innerHTML = '';
+  document.body.classList.add('stim-on');
+  const wrap = document.createElement('div');
+  wrap.id = 'stimWrap';
+  wrap.innerHTML = `<iframe title="Live stream" allow="autoplay; fullscreen; clipboard-write" allowfullscreen></iframe>
+    <div id="stimCover" hidden>${spinner(T.stimFinishing)}</div>
+    <button id="stimFallback" hidden>${T.stimFallback}</button>`;
+  document.body.appendChild(wrap);
+  const frame = wrap.querySelector('iframe');
+  const cover = wrap.querySelector('#stimCover');
+  const fallback = wrap.querySelector('#stimFallback');
+  const stimPath = new URL(stimulusUrl()).pathname;
+  let seen = false, hooked = false, doneAt = 0, endKind = '', t1 = null, finished = false, loads = 0, blindTimer = null;
+  function readDone(d){
+    if (doneAt) return;
+    try {
+      const done = d.getElementById('done');
+      if (!done || !done.classList.contains('on')) return;
+      doneAt = Date.now();
+      cover.hidden = false;                         // 종료 뒤 자극물 화면(이동 안내 등)을 가립니다
+      const title = (d.getElementById('doneTitle') || {}).textContent || '';
+      endKind = /unavailable/i.test(title) ? 'video_failed' : 'complete';
+    } catch (e) {}
+  }
+
+  // 투표 상태 읽기(읽기만). 자극물이 다른 주소로 넘어가기 전에 마지막 값을 남겨 둡니다.
+  const READ = `(function(){try{return JSON.stringify({
+      ps: PS.map(function(p){return {v:p.vote,c:p.confidence,l:p.voteLocked,f:p.firstVote,n:p.clicks,d:p.draftChoice}}),
+      code: (cond && cond.code) || '', sid: (typeof Sink !== 'undefined' && Sink.id) ? Sink.id() : null})}catch(e){return null}})()`;
+  const readT1 = w => { if (!C.READ_T1) return; try { const r = w.eval(READ); if (r) t1 = JSON.parse(r); } catch (e) {} };
+
+  function finish(via){
+    if (finished) return;
+    finished = true;
+    clearInterval(iv); clearTimeout(blindTimer);
+    const m = {stim_return_at: iso(), stim_end: via};
+    if (C.READ_T1){
+      const p = t1 && t1.ps && t1.ps[0];
+      Object.assign(m, {
+        t1_read: t1 ? 1 : 0,
+        t1_vote: p && p.l ? p.v : '',             // 확신도까지 제출된 투표만
+        t1_conf: p && p.l ? p.c : '',
+        t1_submitted: p ? (p.l ? 1 : 0) : '',
+        t1_first_choice: p ? (p.f || '') : '',
+        t1_clicks: p ? p.n : '',
+        t1_unsubmitted_choice: p && !p.l ? (p.v || p.d || '') : '',
+        stim_session_id: t1 ? (t1.sid || '') : '',
+        stim_code_seen: t1 ? t1.code : ''
+      });
+    }
+    Object.assign(S.meta, m);
+    S.stage = 'post'; S.page = 0;
+    save(Object.assign({status: 'returned'}, m));
+    wrap.remove();                                  // 자극물을 닫습니다(남은 로그는 자극물이 닫힐 때 보냄)
+    document.body.classList.remove('stim-on');
+    render();
+  }
+  window.__stimFinish = finish;                     // 점검 모드의 "skip stream" 버튼용
+
+  function check(){
+    let w, d;
+    try {
+      w = frame.contentWindow; d = frame.contentDocument;
+      if (!d) throw new Error('no access');
+      void w.location.href;
+    } catch (e){
+      // 자극물 화면을 읽은 뒤 접근이 막혔다 = 자극물이 다른 주소로 넘어감(종료 후 이동)
+      if (seen) return finish(endKind || 'navigated');
+      return blind();
+    }
+    if (!d.getElementById('watch') || !w.location.pathname.startsWith(stimPath)){
+      if (seen && d.readyState === 'complete' && !w.location.pathname.startsWith(stimPath)) finish(endKind || 'navigated');
+      return;
+    }
+    seen = true;
+    if (!hooked){
+      hooked = true;
+      // 자극물 페이지가 닫히는 순간의 상태를 남깁니다(이동이 확인 간격보다 빨라도 놓치지 않게)
+      w.addEventListener('pagehide', () => { readT1(w); readDone(d); }, {once: true});
+    }
+    readT1(w);
+    readDone(d);
+    if (doneAt){
+      const link = d.getElementById('returnLink');
+      // 자극물이 로그를 다 보낸 뒤 링크를 띄우고 이동합니다. 그 신호나 최대 대기 시간을 기다립니다.
+      if ((link && !link.hidden) || Date.now() - doneAt > C.STIM_FLUSH_WAIT_MS) finish(endKind);
+    }
+  }
+  // 자극물 화면을 읽을 수 없는 환경(다른 사이트에 설문을 올렸거나 PC 파일로 연 경우)
+  function blind(){
+    if (blindTimer) return;
+    if (!S.meta.stim_embed_blind){ S.meta.stim_embed_blind = 1; save({stim_embed_blind: 1}); }
+    console.warn('[stimulus] cannot read the embedded page; end detection is off');
+    // 점검·관리자 모드에서는 바로, 실제 참가자에게는 방송 길이가 지난 뒤에만 보입니다
+    blindTimer = setTimeout(() => { fallback.hidden = false; }, DEBUG ? 0 : 270000);
+  }
+  fallback.onclick = () => finish('fallback_button');
+  frame.addEventListener('load', () => { loads++; check(); });
+  const iv = setInterval(check, 300);
+  window.__stimStop = () => clearInterval(iv);   // 관리자 모드에서 다른 화면으로 이동할 때
+  frame.src = stimulusUrl();
+}
+
+/* ───────── 디브리핑 · 완료 ───────── */
+function viewDebrief(){
+  const D = C.DEBRIEF;
+  app.innerHTML = `<div class="page">
+    <section class="card"><h1>${D.title}</h1><div class="prose">${interp(D.html)}</div></section>
+    <section class="card block" id="wdBlock">
+      <div class="q" id="wd_q">${D.question}</div>
+      <div class="opts" role="radiogroup" aria-labelledby="wd_q">
+        <label class="opt"><input type="radio" name="wd" value="keep"><span>${D.keep}</span></label>
+        <label class="opt"><input type="radio" name="wd" value="withdraw"><span>${D.withdraw}</span></label>
+      </div>
+      <div class="msg">${T.msg.single}</div>
+    </section>
+    <div class="actions"><span class="right"><button id="fin">${T.finish}</button></span></div></div>`;
+  const el = app.firstElementChild;
+  const blk = el.querySelector('#wdBlock');
+  blk.addEventListener('change', () => blk.classList.remove('missing'));
+  const t0 = Date.now();
+  el.querySelector('#fin').onclick = () => {
+    const r = el.querySelector('input[name=wd]:checked');
+    blk.classList.toggle('missing', !r);
+    if (!r){ blk.scrollIntoView({behavior: 'smooth', block: 'center'}); return; }
+    const withdraw = r.value === 'withdraw';
+    const fin = iso();
+    const startAt = S.meta.consent_at || S.meta.start_at;
+    Object.assign(S.meta, {withdraw: withdraw ? 'yes' : 'no', finish_at: fin});
+    save({
+      status: withdraw ? 'withdrawn' : 'complete',
+      withdraw: withdraw ? 'yes' : 'no', finish_at: fin, t_debrief: secs(t0),
+      total_min: startAt ? Math.round((Date.parse(fin) - Date.parse(startAt)) / 600) / 100 : ''
+    });
+    if (withdraw){ S.answers = {}; }      // 브라우저에 남은 응답도 지웁니다
+    S.stage = 'done'; render();
+  };
+}
+
+const CHECK_ICON = '<div class="done-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#11743F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></div>';
+/* 완료·종료 화면 공통 틀: 가운데 정렬 카드 */
+function doneCard(title, body, icon){
+  app.innerHTML = `<div class="page"><section class="card done">${icon ? CHECK_ICON : ''}${title ? `<h1>${title}</h1>` : ''}${body}</section></div>`;
+  return app.firstElementChild;
+}
+function redirectTo(url, msg, title){
+  const el = doneCard(title || T.doneTitle, `<p>${msg}</p><p class="note"><a href="${esc(url)}">${T.redirectLink}</a></p>`, !title);
+  if (!DEBUG) setTimeout(() => location.replace(url), 1200);
+  return el;
+}
+async function viewDone(){
+  paper('', spinner(T.saving));
+  await flushWithin(SAVE_WAIT_MS * 2);
+  const url = C.REDIRECTS.complete;
+  if (url) return redirectTo(url, T.doneRedirect);
+  if (!C.COMPLETION_CODE) return doneCard(T.doneTitle, `<p>${T.doneSaved}</p>`, true);
+  const el = doneCard(T.doneTitle, `<p>${T.doneCodeLead}</p>
+    <div class="codebox"><span class="code" id="code">${esc(C.COMPLETION_CODE)}</span><button id="copy" type="button">${T.copy}</button></div>
+    <p class="note" id="copied" aria-live="polite"></p>`, true);
+  el.querySelector('#copy').onclick = async () => {
+    let ok = false;
+    try { await navigator.clipboard.writeText(C.COMPLETION_CODE); ok = true; } catch (e) {
+      const r = document.createRange(); r.selectNodeContents(el.querySelector('#code'));
+      const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    }
+    el.querySelector('#copied').textContent = ok ? T.copied : T.copyManual;
+  };
+}
+
+function end(reason){
+  S.stage = 'end'; S.meta.end_reason = reason;
+  const status = {screened: 'screened', attention: 'attention_fail', full: 'full', mobile: 'mobile'}[reason] || reason;
+  save({status, end_reason: reason, end_at: iso()});
+  render();
+}
+async function viewEnd(){
+  const r = S.meta.end_reason;
+  const msg = {screened: T.screenedMsg, attention: T.attentionMsg, full: T.fullMsg, mobile: T.mobileBlocked}[r] || '';
+  const url = {screened: C.REDIRECTS.screenedOut, attention: C.REDIRECTS.attentionFail, full: C.REDIRECTS.full}[r];
+  const title = T.endTitles[r] || '';
+  paper('', spinner());
+  await flushWithin(SAVE_WAIT_MS);
+  if (url) return redirectTo(url, msg, title || ' ');
+  doneCard(title, `<p>${msg}</p>`, false);
+}
+function viewLost(){ doneCard(T.lostTitle, `<p>${T.lostMsg}</p>${S && S.pid ? `<p class="note">ID: <span class="code">${esc(S.pid)}</span></p>` : ''}`, false); }
+
+/* ───────── 뒤로가기 막기 ───────── */
+history.pushState(null, '', location.href);
+window.addEventListener('popstate', () => history.pushState(null, '', location.href));
+
+/* ───────── 점검 모드 (?debug=1) ───────── */
+function debugPanel(){
+  if (ADMIN) return adminPanel();
+  if (!DEBUG) return;
+  const d = document.getElementById('dbg'); d.hidden = false;
+  const inStim = S.stage === 'intro' || S.stage === 'stimulus';
+  d.innerHTML = `<b>DEBUG</b> · API ${C.API_URL ? 'on' : 'off (local)'}<br>
+    pid: ${esc(S.pid || '-')}<br>stage: ${S.stage}${['pre','post'].includes(S.stage) ? ' / page ' + S.page : ''}<br>
+    cell: ${S.cell ? S.cell.id + ' (' + S.cell.code + ')' : '-'}<br>
+    att fails: ${S.att}<br>
+    <button id="dbgReset">reset</button>
+    ${inStim ? '<button id="dbgSkip">skip stream</button>' : ''}
+    <button id="dbgDump">dump</button>`;
+  d.querySelector('#dbgReset').onclick = () => { store.clear(); location.href = location.pathname + '?debug=1'; };
+  const skip = d.querySelector('#dbgSkip');
+  if (skip) skip.onclick = () => {
+    if (window.__stimFinish && document.getElementById('stimWrap')) return window.__stimFinish('debug_skip');
+    S.stage = 'post'; S.page = 0;
+    S.meta.stim_end = 'debug_skip';
+    save({status: 'returned', stim_end: 'debug_skip', stim_return_at: iso()});
+    render();
+  };
+  d.querySelector('#dbgDump').onclick = () => console.log(JSON.parse(JSON.stringify(S)));
+}
+
+/* ───────── 관리자 모드 (?admin=1) ─────────
+   화면 아래 막대에서 화면·조건을 고르면 바로 그 화면으로 갑니다. 응답은 저장하지 않습니다. */
+let admOpen = true;
+function admScreens(){
+  const L = [['consent', 'Consent'], ['id', 'Enter ID (no ID in link)']];
+  (C.PAGES.pre || []).forEach((p, i) => L.push(['pre:' + i, `Before · ${p.id}${p.showIf ? ' (some conditions)' : ''}`]));
+  L.push(['intro', 'Before the stream'], ['stimulus', 'Live stream'], ['stimreturn', 'Live stream · came back after refresh']);
+  (C.PAGES.post || []).forEach((p, i) => L.push(['post:' + i, `After · ${p.id}${p.showIf ? ' (some conditions)' : ''}`]));
+  L.push(['debrief', 'Debrief'], ['done', 'Complete'],
+    ['end:screened', 'Exit · not eligible'], ['end:attention', 'Exit · attention check'],
+    ['end:full', 'Exit · study full'], ['end:mobile', 'Exit · computer required'], ['lost', 'Session not found']);
+  return L;
+}
+function admCurrent(){
+  if (!S) return 'consent';
+  if (S.stage === 'pre' || S.stage === 'post') return S.stage + ':' + S.page;
+  if (S.stage === 'end') return 'end:' + (S.meta.end_reason || 'screened');
+  if (S.stage === 'stimulus') return stimOpened ? 'stimulus' : 'stimreturn';
+  return S.stage;
+}
+function admGo(key, cellId){
+  if (window.__stimStop) window.__stimStop();
+  const w = document.getElementById('stimWrap'); if (w) w.remove();
+  document.body.classList.remove('stim-on');
+  if (!S || !S.pid) S = newState('TEST_ADMIN');
+  const cell = C.CELLS.find(c => c.id === cellId) || C.CELLS[0];
+  S.cell = cell;
+  Object.assign(S.meta, {is_test: 1, cell: cell.id, group: cell.group, cong: cell.cong, stim_code: cell.code});
+  const [st, arg] = key.split(':');
+  if (st === 'pre' || st === 'post'){ S.stage = st; S.page = Number(arg); }
+  else if (st === 'end'){ S.stage = 'end'; S.meta.end_reason = arg; }
+  else if (st === 'stimulus'){ S.stage = 'stimulus'; stimOpened = true; }
+  else if (st === 'stimreturn'){ S.stage = 'stimulus'; stimOpened = false; }
+  else S.stage = st;
+  render();
+}
+function adminPanel(){
+  let d = document.getElementById('adm');
+  if (!d){ d = document.createElement('div'); d.id = 'adm'; document.body.appendChild(d); }
+  document.getElementById('dbg').hidden = true;
+  document.body.classList.toggle('adm-on', admOpen);
+  if (!admOpen){
+    d.className = 'min';
+    d.innerHTML = `<button id="admShow" type="button">Admin</button>`;
+    d.querySelector('#admShow').onclick = () => { admOpen = true; adminPanel(); };
+    return;
+  }
+  d.className = '';
+  const cur = admCurrent();
+  const curCell = S && S.cell ? S.cell.id : C.CELLS[0].id;
+  // 조건 이름: group(시청자) · cong(일치 정도)
+  const gName = {ai: 'AI viewers', human: 'Human viewers', mixed: 'Half AI / half human'};
+  const cName = {all: '100%', half: '50%', none: '0%'};
+  d.innerHTML = `
+    <span class="adm-tag">ADMIN</span>
+    <label>Screen <select id="admScreen">${admScreens().map(([k, t]) => `<option value="${k}"${k === cur ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+    <button type="button" id="admPrev" aria-label="Previous screen">‹</button><button type="button" id="admNext" aria-label="Next screen">›</button>
+    <label>Condition <select id="admCell">${C.CELLS.map(c => `<option value="${c.id}"${c.id === curCell ? ' selected' : ''}>${esc(gName[c.group] || c.group)} · ${cName[c.cong] || c.cong} (${c.id})</option>`).join('')}</select></label>
+    <label>Waits <select id="admFast"><option value="0"${FAST ? '' : ' selected'}>Real time</option><option value="1"${FAST ? ' selected' : ''}>Fast (3 s)</option></select></label>
+    <button type="button" id="admReplay">Replay</button>
+    <span class="adm-note">Nothing is saved${S && S.stage === 'stimulus' && stimOpened ? ' · stream in preview mode (not logged)' : ''}</span>
+    <button type="button" id="admHide" class="ghost">Hide</button>`;
+  const scr = d.querySelector('#admScreen'), cel = d.querySelector('#admCell');
+  const go = () => admGo(scr.value, cel.value);
+  scr.onchange = go; cel.onchange = go;
+  const step = k => { const i = scr.selectedIndex + k; if (i >= 0 && i < scr.options.length){ scr.selectedIndex = i; go(); } };
+  d.querySelector('#admPrev').onclick = () => step(-1);
+  d.querySelector('#admNext').onclick = () => step(1);
+  d.querySelector('#admFast').onchange = e => {
+    FAST = e.target.value === '1';
+    try { sessionStorage.setItem('lsv_admin_fast', FAST ? '1' : '0'); } catch (err) {}
+    go();
+  };
+  d.querySelector('#admReplay').onclick = go;
+  d.querySelector('#admHide').onclick = () => { admOpen = false; adminPanel(); };
+}
+
+init();
+})();
+</script>
+</body>
+</html>
