@@ -3,3 +3,5 @@
 .work-media/
 .work-tools/
 __pycache__/
+.qa-tools/
+.qa-artifacts/
