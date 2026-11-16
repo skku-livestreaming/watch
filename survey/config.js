@@ -191,26 +191,26 @@ window.SURVEY_CONFIG = {
 
   /* ── 8. 문항 페이지 ───────────────────────────────────────────
      pre  = 동의 후 · 자극물 전 /  post = 자극물 후 · 디브리핑 전
-     ※ 「라이브 스트리밍 설문지」(PDF) 기준. 문항은 원문 그대로 영어로 옮긴 것. 선별(스크린아웃) 문항은 뺌.
+     ※ 「라이브스트리밍_설문문항_근거」 엑셀의 합본_1113 시트 기준. 문구는 'Revised (우리 설문에 사용)' 열 그대로.
+       쪽 나눔: 시트의 1~5번page는 그대로, 그 뒤는 시트의 표 구분(종속변수 / 조작점검 / 조절변수 / 통제변수 / 인구통계)대로 한 쪽씩.
 
      페이지: { id, title?, blocks:[…], showIf?: ctx => bool, minSeconds? }
      블록 type
        html      : 안내문           { html }
        single    : 하나 선택         { id, text, options, required?, randomize?, horizontal?, screen?, attention? }
        multi     : 여러 개 선택      { id, text, options, min?, max? }
-       likert    : 척도 묶음         { id, text, items:[{id,text}], points, labels:{1:'..',7:'..'}, randomize? }
+       likert    : 척도 묶음         { id, text, items:[{id,text,attention?}], points, labels:{1:'..',7:'..'}, randomize?, rawKeys? }
        textarea  : 주관식           { id, text, minChars? }
        number    : 숫자 (키보드로만 입력, 숫자 외 글자는 자동으로 지움)  { id, text, min?, max? }
        select    : 드롭다운          { id, text, options }
      options: ['문구', …] 또는 [{value:'코드', label:'문구', other:true(기타 입력칸)}]
      screen   : { allowed:['값', …] }  → 그 외를 고르면 선정 기준 탈락으로 종료
-     attention: { correct:'값' }       → 틀리면 ATTENTION 규칙 적용
+     attention: { correct:'값' }       → 틀리면 ATTENTION 규칙 적용 (likert는 항목에 붙임)
+     dependsOn: '같은 쪽 single 문항 id' + textByAnswer: { 값: '질문' }
+                → 그 문항에 답하기 전엔 숨기고, 고른 답에 맞는 질문으로 바꿔 보여 줌 (3번 쪽 주관식)
      splash   : 문항 없는 단계 안내 화면 { steps, current, kicker, title, body, pagesFmt, button } (main_start 참고)
      showIf   : ctx => 조건. ctx.group('ai'|'human'|'mixed'), ctx.cong, ctx.answers 사용 가능
-     문구 안 {{viewers}} = 조건별 시청자 표현 (VIEWER_WORDS)
-     저장되는 열 이름: single/number/textarea = id, likert = id_항목id, multi = id_값(1/0) */
-  VIEWER_WORDS: { ai: 'the AI viewers', human: 'the other viewers', mixed: 'the other viewers' },
-
+     저장되는 열 이름: single/number/textarea = id, likert = id_항목id (rawKeys: true면 항목id 그대로), multi = id_값(1/0) */
   PAGES: {
     pre: [],
 
@@ -229,315 +229,321 @@ window.SURVEY_CONFIG = {
         },
         blocks: []
       },
+
+      /* ── 1번page. 종속변수: Opinion confidence ── */
       {
-        // 종속변수(T2)는 안내 바로 다음, 문항 중 맨 앞
-        id: 'dv_revote',
+        id: 'p1_confidence',
         blocks: [
-          { type: 'single', id: 't2_vote', required: true,
-            text: 'If the poll from the stream were held again right now, which would you choose?<br><i>{{topic_q}}</i>',
-            options: 'TOPIC' },     // 'TOPIC' = 3번 주제의 A/B를 자극물과 같은 순서로
-          { type: 'likert', id: 't2_conf', required: true,
-            text: 'How confident are you in this choice?',
+          { type: 'likert', id: 'op_conf', required: true,
+            text: `Think back to your vote during the live stream. How confident are you now in the choice you made on the question “Do violent video games contribute to youth violence?”`,
             points: 7, labels: { 1: 'Not at all confident', 7: 'Extremely confident' },
             items: [{ id: 'x', text: '' }] }
         ]
       },
 
-      /* ── Part 1. 방송 시청 후 ── */
+      /* ── 2번page. 종속변수: Opinion change (re-vote) ── */
       {
-        // 1. 의견 공유
-        id: 'shared_view',
+        id: 'p2_revote',
         blocks: [
-          { type: 'likert', id: 'shared', required: true,
-            text: 'Please rate, from 1 (Strongly disagree) to 7 (Strongly agree), how much you think you share thoughts and feelings with the other viewers of this live stream about the discussion topic presented in the stream.',
-            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
-            items: [
-              { id: '1', text: 'I think my thoughts on this topic match well with those of the other viewers of this live stream.' },
-              { id: '2', text: 'I think I feel the same way about this topic as the other viewers of this live stream.' },
-              { id: '3', text: 'I agree with the other viewers\' perspectives on this topic in this live stream.' },
-              { id: '4', text: 'I see this topic in the same way as the other viewers of this live stream.' },
-              { id: '5', text: 'I agree with the other viewers\' judgments on this topic in this live stream.' }
-            ] }
+          { type: 'single', id: 't2_vote', required: true,
+            text: `If you could go back and vote in the poll again, what would you choose now? Please vote again.<br><i>“Do violent video games contribute to youth violence?”</i>`,
+            options: 'TOPIC' }     // 'TOPIC' = 자극물 투표와 같은 A/B 코드 (A = Yes, B = No) → t1_vote와 바로 비교
         ]
       },
+
+      /* ── 3번page. 종속변수: Opinion change (self-report) + 이유(주관식) ── */
       {
-        // 2. 집단 동일시
-        id: 'group_identity',
+        id: 'p3_change',
         blocks: [
-          { type: 'likert', id: 'groupid', required: true,
-            text: 'Please rate, from 1 (Strongly disagree) to 7 (Strongly agree), how much you felt like one group with the other viewers while watching this live stream.',
-            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
-            items: [
-              { id: '1', text: 'I thought I belonged to one group with the other viewers of this live stream.' },
-              { id: '2', text: 'I felt that I formed a close community with the other viewers of this live stream.' },
-              { id: '3', text: 'I felt a sense of "we" with the other viewers of this live stream.' },
-              { id: '4', text: 'Even with our differences, I felt that I shared the same identity with the other viewers of this live stream.' },
-              { id: '5', text: 'I felt a sense of unity with the other viewers of this live stream.' }
-            ] }
-        ]
-      },
-      {
-        // 3. 사회적 실재감
-        id: 'social_presence',
-        blocks: [
-          { type: 'likert', id: 'presence', required: true,
-            text: 'Please rate, from 1 (Strongly disagree) to 7 (Strongly agree), how much you felt the other viewers were present while watching this live stream.',
-            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
-            items: [
-              { id: '1', text: 'I clearly felt the presence of the other viewers in this live stream.' },
-              { id: '2', text: 'I felt as if I were together with the other viewers of this live stream.' },
-              { id: '3', text: 'I felt connected to the other viewers of this live stream.' },
-              { id: '4', text: 'I felt that the other viewers of this live stream were interacting with each other.' },
-              { id: '5', text: 'I felt a sense of belonging to the viewer group of this live stream.' }
-            ] }
-        ]
-      },
-      {
-        // 4. 함께하는 느낌
-        id: 'companionship',
-        blocks: [
-          { type: 'likert', id: 'company', required: true,
-            text: 'Please rate, from 1 (Strongly disagree) to 7 (Strongly agree), how much you felt you were with someone while watching this live stream.',
-            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
-            items: [
-              { id: '1', text: 'While watching this live stream, I felt that I was not alone.' },
-              { id: '2', text: 'While watching this live stream, I felt that I had someone to be with.' },
-              { id: '3', text: 'While watching this live stream, I felt less lonely.' }
-            ] }
-        ]
-      },
-      {
-        // 5. 몰입
-        id: 'immersion',
-        blocks: [
-          { type: 'likert', id: 'immerse', required: true,
-            text: 'Please rate, from 1 (Strongly disagree) to 7 (Strongly agree), how immersed you were while watching this live stream.',
-            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
-            items: [
-              { id: '1', text: 'I was very immersed while watching this live stream.' },
-              { id: '2', text: 'I was able to concentrate without being disturbed while watching this live stream.' },
-              { id: '3', text: 'I lost track of time while watching this live stream.' },
-              { id: '4', text: 'I hardly noticed what was happening around me while watching this live stream.' },
-              { id: '5', text: 'I briefly forgot about the things I had to do while watching this live stream.' }
-            ] }
-        ]
-      },
-      {
-        // 6. 즐거움
-        id: 'enjoyment',
-        blocks: [
-          { type: 'likert', id: 'enjoy', required: true,
-            text: 'Please rate, from 1 (Strongly disagree) to 7 (Strongly agree), how much enjoyment you felt while watching this live stream.',
-            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
-            items: [
-              { id: '1', text: 'Watching this live stream was enjoyable.' },
-              { id: '2', text: 'I had fun watching this live stream.' },
-              { id: '3', text: 'I found watching this live stream exciting.' }
-            ] }
-        ]
-      },
-      {
-        // 7. 관심
-        id: 'interest',
-        blocks: [
-          { type: 'likert', id: 'interest', required: true,
-            text: 'Please rate your overall interest in this live stream from 1 (Strongly disagree) to 7 (Strongly agree).',
-            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
-            items: [
-              { id: '1', text: 'I am interested in this live stream.' },
-              { id: '2', text: 'I like this live stream.' },
-              { id: '3', text: 'I got a good impression of this live stream.' }
-            ] }
-        ]
-      },
-      {
-        // 8. 지속 시청 의도 + 9. 이유(주관식)
-        id: 'continuance',
-        blocks: [
-          { type: 'likert', id: 'contin', required: true,
-            text: 'Please rate, from 1 (Strongly disagree) to 7 (Strongly agree), how much you intend to keep watching this live stream in the future.',
-            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
-            items: [
-              { id: '1', text: 'I intend to keep watching this live stream in the future.' },
-              { id: '2', text: 'I will try to watch this live stream regularly in my daily life in the future.' },
-              { id: '3', text: 'I plan to watch this live stream often in the future.' }
-            ] },
-          { type: 'textarea', id: 'contin_why', required: true,
-            text: 'Please freely write why you would or would not like to keep watching this live stream in the future.' }
-        ]
-      },
-      {
-        // 조작점검
-        id: 'manip',
-        blocks: [
-          { type: 'single', id: 'mc_author', required: true,
-            text: 'Who wrote the chat messages?',
-            options: [{ value: '1', label: 'Humans' }, { value: '2', label: 'AI' }] },
-          { type: 'single', id: 'mc_match', required: true,
-            text: 'How closely do you think the result you voted for matches the result chosen by {{viewers}}?',
+          { type: 'single', id: 'op_changed', required: true,
+            text: 'Is your choice now different from the one you made during the live stream, or is it the same?',
             options: [
-              { value: '1', label: 'Hardly matches' },
-              { value: '2', label: 'About half matches' },
-              { value: '3', label: 'Almost fully matches' }
+              { value: '1', label: 'My choice is different from before.' },
+              { value: '2', label: 'My choice is the same as before.' }
+            ] },
+          { type: 'textarea', id: 'op_why', required: true, dependsOn: 'op_changed',
+            textByAnswer: {
+              '1': 'Why did your choice change? Please explain in detail.',
+              '2': 'Why did your choice stay the same? Please explain in detail.'
+            } }
+        ]
+      },
+
+      /* ── 4번page. 매개변수: Social presence · Mind perception · Shared social identity · Group entitativity
+            (+ 주의집중 점검) / Shared reality ── */
+      {
+        id: 'p4_viewers',
+        blocks: [
+          { type: 'likert', id: 'p4', rawKeys: true, required: true,
+            text: 'Think about your experience of watching the live stream with other viewers.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
+              { id: 'sp_1', text: 'I felt as if the other viewers were there with me.' },
+              { id: 'sp_2', text: 'While watching the live stream, I was constantly aware of the other viewers.' },
+              { id: 'sp_3', text: 'I felt as if the other viewers had real emotions.' },
+              { id: 'mind_1', text: 'It seemed to me that the other viewers were capable of thinking.' },
+              { id: 'mind_2', text: 'It seemed to me that the other viewers were capable of conveying their thoughts and feelings to others.' },
+              { id: 'mind_3', text: 'It seemed to me that the other viewers were capable of understanding how others feel.' },
+              { id: 'mind_4', text: 'It seemed to me that the other viewers were capable of telling right from wrong and trying to do what is right.' },
+              { id: 'sid_1', text: 'The other viewers seemed to share a sense of “we-ness” with me.' },
+              { id: 'sid_2', text: 'The other viewers seemed to share the same identity as me, despite our differences.' },
+              { id: 'sid_3', text: 'The other viewers seemed to feel a sense of unity with me.' },
+              { id: 'ent_1', text: 'The other viewers seemed like a community.' },
+              { id: 'ent_2', text: 'The other viewers seemed like a single unit.' },
+              { id: 'ent_3', text: 'The other viewers felt like a group.' },
+              { id: 'att_1', text: 'If you are reading carefully, please select 6 for this statement.', attention: { correct: '6' } }
+            ] },
+          { type: 'likert', id: 'sr', rawKeys: true, required: true,
+            text: 'Think about your views on the issue raised in the poll, and those of the other viewers, while you were watching the live stream.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
+              { id: 'sr_1', text: 'I thought that the other reviewers and I were on the same wavelength with regard to video games.' },
+              { id: 'sr_2', text: 'I felt the same way about video games as the other reviewers did.' },
+              { id: 'sr_3', text: 'I agreed with the other reviewers\' point of view of video games.' },
+              { id: 'sr_4', text: 'The other reviewers and I saw video games in the same way.' },
+              { id: 'sr_5', text: 'I agreed with the other reviewers\' perception of video games.' }
             ] }
         ]
       },
 
-      /* ── Part 2. 추가 질문 ── */
+      /* ── 5번page. 매개변수: Perceived public opinion / Informational · Normative influence /
+            Perceived manipulation · Threat to freedom · Message credibility ── */
       {
-        // 1. 투표 의견 확신 + 2. 의견 변화
-        id: 'opinion',
+        id: 'p5_comments',
         blocks: [
-          { type: 'likert', id: 'vote_conf', required: true,
-            text: 'How confident are you in the opinion you chose in the poll during this live stream? Please choose from 1 (Not at all confident) to 7 (Very confident).',
-            points: 7, labels: { 1: 'Not at all confident', 7: 'Very confident' },
+          { type: 'likert', id: 'pub_op', required: true,
+            text: 'How much do you think the general public agrees with the statement “Violent video games contribute to youth violence”?',
+            points: 7, labels: { 1: 'The general public strongly disagrees', 7: 'The general public strongly agrees' },
             items: [{ id: 'x', text: '' }] },
-          { type: 'likert', id: 'op_change', required: true,
-            text: 'Please rate, from 1 (Strongly disagree) to 7 (Strongly agree), any change in your opinion after watching this live stream.',
+          { type: 'likert', id: 'infl', rawKeys: true, required: true,
+            text: 'Think about how you felt about the comments other viewers posted in the live stream you just watched.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
-              { id: '1', text: 'My opinion was influenced by seeing the opinions of the other viewers in the chat.' },
-              { id: '2', text: 'I was persuaded by what the other viewers said in the chat and accepted their opinions.' },
-              { id: '3', text: 'While watching the stream, I felt that I had to agree with the other viewers\' opinions.' },
-              { id: '4', text: 'I was not persuaded by the other viewers\' opinions, but I accepted them.' }
+              { id: 'inf_1', text: 'My opinion was influenced by the comments.' },
+              { id: 'inf_2', text: 'I was persuaded by the comments and accepted the opinion they expressed.' },
+              { id: 'nor_1', text: 'I felt like I had to agree with the opinions in the comments.' },
+              { id: 'nor_2', text: 'I was not persuaded by the comments, but I still accepted the opinions they expressed.' }
+            ] },
+          { type: 'likert', id: 'cmt', rawKeys: true, required: true,
+            text: 'Think about the comments other viewers posted in the live stream you just watched about the issue raised in the poll.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
+              { id: 'manip_1', text: 'The comments felt manipulative.' },
+              { id: 'manip_2', text: 'The comments seemed to be trying to influence viewers\' judgments in ways I didn\'t like.' },
+              { id: 'manip_3', text: 'The comments seemed to be trying to inappropriately control viewers\' judgments.' },
+              { id: 'manip_4', text: 'The comments seemed intentionally designed to influence viewers\' judgments without their awareness.' },
+              { id: 'thr_1', text: 'The comments seemed to threaten my freedom to form my own opinion.' },
+              { id: 'thr_2', text: 'The comments seemed to be trying to make the decision for me.' },
+              { id: 'thr_3', text: 'The comments seemed to be trying to manipulate me.' },
+              { id: 'thr_4', text: 'The comments seemed to be pressuring me to hold a particular opinion.' },
+              { id: 'cred_1', text: 'Overall, the comments were accurate.' },
+              { id: 'cred_2', text: 'Overall, the comments were authentic.' },
+              { id: 'cred_3', text: 'Overall, the comments were believable.' }
             ] }
         ]
       },
+
+      /* ── 종속변수: Enjoyment / Live-streaming interest / Platform future use intention ── */
       {
-        // 3. 즐겨 보는 방송 + 4. 주당 시청 일수
-        id: 'viewing_habits',
+        id: 'p6_platform',
+        blocks: [
+          { type: 'likert', id: 'enjoy', rawKeys: true, required: true,
+            text: 'Think about your experience participating in the live stream you just watched.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
+              { id: 'enj_1', text: 'I enjoyed participating in the live stream.' },
+              { id: 'enj_2', text: 'I had fun participating in the live stream.' },
+              { id: 'enj_3', text: 'I found participating in the live stream exciting.' }
+            ] },
+          { type: 'likert', id: 'interest', rawKeys: true, required: true,
+            text: 'Think about how viewers can participate in live streams on the platform you just used.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
+              { id: 'int_1', text: 'I am interested in the way of participating in live streams on this platform.' },
+              { id: 'int_2', text: 'I like the way of participating in live streams on this platform.' },
+              { id: 'int_3', text: 'The way of participating in live streams on this platform gives me a positive impression.' }
+            ] },
+          { type: 'likert', id: 'future', rawKeys: true, required: true,
+            text: 'Imagine that the platform on which you just watched the live stream were actually available to you.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
+              { id: 'fut_1', text: 'I would use this platform in the future.' },
+              { id: 'fut_2', text: 'I would choose this platform over other platforms.' },
+              { id: 'fut_3r', text: 'If possible, I would avoid using this platform in the future.' }   // 역문항
+            ] }
+        ]
+      },
+
+      /* ── 조작점검 ── */
+      {
+        id: 'p7_manip',
+        blocks: [
+          { type: 'single', id: 'mc_match', required: true,
+            text: 'How closely do you think the other viewers\' opinions matched your vote during the live stream?',
+            options: [
+              { value: '1', label: 'Almost all other viewers voted the same way as I did.' },
+              { value: '2', label: 'About half of the other viewers voted the same way as I did.' },
+              { value: '3', label: 'Almost all other viewers voted differently from me.' }
+            ] },
+          { type: 'single', id: 'mc_comp', required: true,
+            text: 'Who were the viewers of the live stream you just watched?',
+            options: [
+              { value: '1', label: 'Only AI viewers' },
+              { value: '2', label: 'Both human and AI viewers' },
+              { value: '3', label: 'Only human viewers' }
+            ] }
+        ]
+      },
+
+      /* ── 조절변수: Bandwagon heuristic · Personal issue importance · Subjective knowledge · Conformity tendency · Trust in AI ── */
+      {
+        id: 'p8_traits',
+        blocks: [
+          { type: 'likert', id: 'bandwagon', rawKeys: true, required: true,
+            text: 'Think about your general beliefs about the opinions and judgments of groups of people.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
+              { id: 'bw_1', text: 'Large groups of people are good at telling which opinions are right, so it is reasonable to trust their judgment.' },
+              { id: 'bw_2', text: 'An opinion that many people believe is right is likely to actually be right.' }
+            ] },
+          { type: 'likert', id: 'importance', rawKeys: true, required: true,
+            text: 'The following statements are about the issue of whether violent video games contribute to youth violence.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
+              { id: 'imp_1', text: 'This issue is personally important to me.' },
+              { id: 'imp_2', text: 'I care a great deal about this issue.' }
+            ] },
+          { type: 'likert', id: 'knowledge', rawKeys: true, required: true,
+            text: 'The following statements are about your knowledge of whether violent video games contribute to youth violence.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
+              { id: 'know_1', text: 'I know quite a lot about this issue.' },
+              { id: 'know_2', text: 'Among my friends, I am one of the “experts” on this issue.' }
+            ] },
+          { type: 'likert', id: 'conformity', rawKeys: true, required: true,
+            text: 'Think about how you actually are in most situations.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
+              { id: 'conf_1', text: 'I often rely on others\' advice and follow it.' },
+              { id: 'conf_2', text: 'If someone is persuasive, I tend to change my opinion and go along with them.' }
+            ] },
+          { type: 'likert', id: 'trust_ai', rawKeys: true, required: true,
+            text: 'Think about how much you generally trust AI.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
+              { id: 'tai_1', text: 'AI is reliable.' },
+              { id: 'tai_2', text: 'AI is dependable.' }
+            ] }
+        ]
+      },
+
+      /* ── 통제변수 ── */
+      {
+        id: 'p9_controls',
         blocks: [
           { type: 'multi', id: 'genres', required: true, min: 1,
-            text: 'What kinds of live streams do you enjoy watching the most? (Select all that apply)',
+            text: 'What kinds of live streams do you enjoy watching the most? (Choose all that apply)',
             options: [
-              { value: '1', label: 'Games' },
-              { value: '2', label: 'Daily life, talking about experiences' },
+              { value: '1', label: 'Gaming' },
+              { value: '2', label: 'In real life (daily life and personal stories)' },
               { value: '3', label: 'Music, singing, dancing' },
-              { value: '4', label: 'Creative work, art' },
-              { value: '5', label: 'Eating shows (mukbang), cooking shows' },
-              { value: '6', label: 'Health, exercise' },
-              { value: '7', label: 'Education, knowledge' },
-              { value: '8', label: 'Science, technology' },
-              { value: '9', label: 'Entertainment' },
-              { value: '10', label: 'Travel' },
+              { value: '4', label: 'Creative (art, crafts)' },
+              { value: '5', label: 'Food (mukbang, cooking)' },
+              { value: '6', label: 'Health and fitness' },
+              { value: '7', label: 'Education and knowledge' },
+              { value: '8', label: 'Science and technology' },
+              { value: '9', label: 'Variety shows' },
+              { value: '10', label: 'Traveling' },
               { value: '11', label: 'Live events' },
-              { value: '12', label: 'Talk, chatting with viewers' },
-              { value: '13', label: 'Current affairs, debate' },
+              { value: '12', label: 'Talk and chatting with viewers' },
+              { value: '13', label: 'Current affairs and debate' },
               { value: '14', label: 'Other' }
             ] },
           { type: 'single', id: 'watch_days', required: true,
-            text: 'On how many days a week do you usually watch live streams?',
+            text: 'On how many days of the week do you usually watch live streams?',
             options: [
-              { value: '1', label: 'Less than 1 day a week' },
+              { value: '1', label: 'Less than 1 day per week' },
               { value: '2', label: '1–3 days' },
               { value: '3', label: '4–5 days' },
               { value: '4', label: '6–7 days' }
-            ] }
-        ]
-      },
-      {
-        // 5. 시청 참여 유형 + 6-1. 선호 규모 + 6-2. 이유(주관식)
-        id: 'viewing_style',
-        blocks: [
-          { type: 'likert', id: 'style', required: true,
-            text: 'Please rate your usual way of taking part in streams from 1 (Strongly disagree) to 7 (Strongly agree).',
-            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
-            items: [
-              { id: '1', text: 'I like watching the content the streamer is broadcasting without being disturbed by other viewers.' },
-              { id: '2', text: 'I do not like interacting with other people in live streams.' },
-              { id: '3', text: 'I think what happens in the content being streamed is more interesting than interacting with other viewers.' },
-              { id: '4', text: 'I think what happens in the content being streamed is more interesting than interacting with the streamer.' },
-              { id: '5', text: 'I do not like it when the streamer gets distracted by other viewers.' }
             ] },
-          { type: 'single', id: 'size_pref', required: true,
-            text: 'What size of stream do you prefer when watching live streams?',
-            options: [
-              { value: '1', label: 'Streams with many viewers' },
-              { value: '2', label: 'Streams with few viewers' },
-              { value: '3', label: 'Doesn\'t matter' }
-            ] },
-          { type: 'textarea', id: 'size_why', required: true,
-            text: 'Please freely write why you chose that answer in the question above.' }
-        ]
-      },
-      {
-        // 7. AI 친숙도 + 8. 생성형 AI 사용 빈도 + 9. AI 인식
-        id: 'ai_attitude',
-        blocks: [
-          { type: 'single', id: 'ai_familiar', required: true,
-            text: 'How familiar are you with using AI services?',
-            options: [
-              { value: '1', label: 'Very familiar' },
-              { value: '2', label: 'Familiar' },
-              { value: '3', label: 'Neutral' },
-              { value: '4', label: 'Unfamiliar' },
-              { value: '5', label: 'Very unfamiliar' }
-            ] },
+          { type: 'likert', id: 'ai_familiar', required: true,
+            text: 'How familiar are you with AI services?',
+            points: 7, labels: { 1: 'Not at all familiar', 7: 'Very familiar' },
+            items: [{ id: 'x', text: '' }] },
           { type: 'single', id: 'genai_freq', required: true,
-            text: 'How often do you use generative AI such as ChatGPT, Gemini, or Copilot?',
+            text: 'How often do you use generative AI, such as ChatGPT, Gemini, or Copilot?',
             options: [
               { value: '1', label: 'Never' },
-              { value: '2', label: 'Rarely (less than once a month)' },
-              { value: '3', label: 'Fairly often (several times a month)' },
-              { value: '4', label: 'Often (several times a week)' },
-              { value: '5', label: 'Very often (every day)' }
+              { value: '2', label: 'Less than once a month' },
+              { value: '3', label: '1–3 times a month' },
+              { value: '4', label: 'About once a week' },
+              { value: '5', label: 'Several times a week' },
+              { value: '6', label: 'Daily' }
             ] },
-          { type: 'likert', id: 'ai_view', required: true,
-            text: 'Please rate how you usually perceive AI from 1 (Strongly disagree) to 7 (Strongly agree).',
-            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
-            items: [
-              { id: '1', text: 'I usually feel comfortable talking with AI.' },
-              { id: '2', text: 'If AI had emotions, I think I could become friends with them.' },
-              { id: '3', text: 'I usually find it comforting to be with AI that has emotions.' }
-            ] }
+          { type: 'multi', id: 'genai_purpose', required: true, min: 1,
+            text: 'For what purposes do you use generative AI, such as ChatGPT, Gemini, or Copilot? (Select all that apply.)',
+            options: [
+              { value: '1', label: 'Searching for information' },
+              { value: '2', label: 'Work-related tasks' },
+              { value: '3', label: 'Studying or learning' },
+              { value: '4', label: 'Writing or editing text' },
+              { value: '5', label: 'Creating images, videos, or other content' },
+              { value: '6', label: 'Coding or programming' },
+              { value: '7', label: 'Entertainment or casual conversation' },
+              { value: '8', label: 'Personal advice or emotional support' },
+              { value: '9', label: 'Other (please specify)', other: true },
+              { value: '10', label: 'I do not use generative AI' }
+            ] },
+          { type: 'likert', id: 'game_freq', required: true,
+            text: 'How often do you play video games?',
+            points: 7, labels: { 1: 'Never', 7: 'Always' },
+            items: [{ id: 'x', text: '' }] },
+          { type: 'likert', id: 'violent_familiar', required: true,
+            text: 'How familiar are you with violent video games?',
+            points: 7, labels: { 1: 'Not at all familiar', 7: 'Very familiar' },
+            items: [{ id: 'x', text: '' }] }
         ]
       },
 
-      /* ── Part 3. 기본 정보 ── */
+      /* ── 인구통계 ── */
       {
         id: 'demo',
         title: 'About you',
         blocks: [
-          { type: 'single', id: 'gender', required: true, text: 'What is your gender?',
-            options: [{ value: '1', label: 'Male' }, { value: '2', label: 'Female' }] },
           { type: 'number', id: 'birth_year', required: true, min: 1920, max: 2008,
             text: 'What is your year of birth?' },
+          { type: 'single', id: 'gender', required: true, text: 'What is your gender?',
+            options: [
+              { value: '1', label: 'Male' },
+              { value: '2', label: 'Female' },
+              { value: '3', label: 'Non-binary' },
+              { value: '4', label: 'Prefer to self-describe', other: true },
+              { value: '5', label: 'Prefer not to say' }
+            ] },
           { type: 'single', id: 'education', required: true,
-            text: 'What is your highest level of education?',
+            text: 'What is the highest level of education you have completed?',
             options: [
-              { value: '1', label: 'High school graduate or less' },
-              { value: '2', label: 'Currently in college/university (including leave of absence)' },
-              { value: '3', label: 'College/university graduate' },
-              { value: '4', label: 'Currently in graduate school or higher' }
+              { value: '1', label: 'Less than high school' },
+              { value: '2', label: 'High school graduate' },
+              { value: '3', label: 'Some college' },
+              { value: '4', label: 'College graduate (4-year degree)' },
+              { value: '5', label: 'Master\'s degree' },
+              { value: '6', label: 'Doctoral or professional degree' },
+              { value: '7', label: 'Prefer not to say' }
             ] },
-          { type: 'single', id: 'job', required: true,
-            text: 'What is your occupation?',
+          { type: 'single', id: 'employment', required: true,
+            text: 'What is your current employment status?',
             options: [
-              { value: '1', label: 'Full-time homemaker' },
-              { value: '2', label: 'Student' },
-              { value: '3', label: 'Professional (doctor, lawyer, pharmacist, etc.)' },
-              { value: '4', label: 'IT industry' },
-              { value: '5', label: 'Culture/arts (designer, music, etc.)' },
-              { value: '6', label: 'Research' },
-              { value: '7', label: 'Education' },
-              { value: '8', label: 'Office/technical' },
-              { value: '9', label: 'Sales/service' },
-              { value: '10', label: 'Skilled/manual/simple labor' },
-              { value: '11', label: 'Job seeker' },
-              { value: '12', label: 'Unemployed' },
-              { value: '13', label: 'Other' }
-            ] },
-          { type: 'single', id: 'income', required: true,
-            text: 'What is your average monthly income?',
-            options: [
-              { value: '1', label: 'Less than 2 million KRW' },
-              { value: '2', label: '2 million KRW range' },
-              { value: '3', label: '3 million KRW range' },
-              { value: '4', label: '4 million KRW range' },
-              { value: '5', label: '5 million KRW range' },
-              { value: '6', label: '6 million KRW range' },
-              { value: '7', label: '7–9.99 million KRW' },
-              { value: '8', label: '10 million KRW or more' }
+              { value: '1', label: 'Employed full-time' },
+              { value: '2', label: 'Employed part-time' },
+              { value: '3', label: 'Unemployed, looking for work' },
+              { value: '4', label: 'Unemployed, not looking for work' },
+              { value: '5', label: 'Retired' },
+              { value: '6', label: 'Student' },
+              { value: '7', label: 'Homemaker' },
+              { value: '8', label: 'Prefer not to say' },
+              { value: '9', label: 'Other' }
             ] }
         ]
       }

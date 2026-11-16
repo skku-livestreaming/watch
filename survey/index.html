@@ -549,12 +549,24 @@ function viewPage(part){
   };
   form.addEventListener('change', unmark);
   form.addEventListener('input', unmark);
+  // dependsOn: 같은 쪽 문항에 답하기 전엔 숨기고, 답에 맞는 질문(textByAnswer)으로 바꿔 보여 줌
+  const deps = ctrls.filter(({b}) => b.dependsOn);
+  const applyDeps = () => deps.forEach(({b, c}) => {
+    const r = form.querySelector(`input[name="${CSS.escape(b.dependsOn)}"]:checked`);
+    const v = r ? r.value : '';
+    const q = b.textByAnswer ? b.textByAnswer[v] : null;
+    const show = b.textByAnswer ? !!q : !!v;
+    c.el.hidden = !show;
+    if (q){ const h = c.el.querySelector('.q'); if (h && h.dataset.v !== v){ h.innerHTML = interp(q); h.dataset.v = v; } }
+  });
+  if (deps.length){ form.addEventListener('change', applyDeps); applyDeps(); }
   const next = el.querySelector('#next');
   holdButton(next, el.querySelector('#wait'), page.minSeconds || 0);
 
   next.onclick = () => {
     let ok = true, firstBad = null, patch = {}, attFail = 0, screened = false;
-    for (const {c} of ctrls){
+    for (const {b, c} of ctrls){
+      if (c.el.hidden){ c.el.classList.remove('missing'); patch[b.id] = ''; continue; }   // 숨겨진 문항은 건너뜀
       const r = c.collect();
       if (!r.ok){ ok = false; firstBad = firstBad || r.bad; }
       Object.assign(patch, r.values || {});
@@ -632,7 +644,7 @@ function normOptions(opts){
 }
 function shuffle(a){ a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 function isRequired(b){ return b.required !== undefined ? b.required : !['textarea', 'html'].includes(b.type); }
-function qHead(b){ return b.text ? `<div class="q" id="${b.id}_q">${interp(b.text)}</div>` : ''; }
+function qHead(b){ return (b.text || b.textByAnswer) ? `<div class="q" id="${b.id}_q">${interp(b.text || '')}</div>` : ''; }
 /* 문항별 오류 문구 */
 function blockMsg(b){
   const M = T.msg;
@@ -708,7 +720,7 @@ const BLOCKS = {
     if (b.randomize) items = shuffle(items);
     const pts = b.points || 7;
     const single = b.items.length === 1 && !b.items[0].text;     // 단일 척도 문항은 열 이름 = id
-    const keyOf = it => single ? b.id : b.id + '_' + it.id;
+    const keyOf = it => single ? b.id : (b.rawKeys ? it.id : b.id + '_' + it.id);   // rawKeys: 항목 id를 그대로 열 이름으로
     const labels = b.labels || {};
     const nums = Array.from({length: pts}, (_, k) => k + 1);
     const scale = it => `<div class="lk-row" style="--pts:${pts}">
