@@ -24,7 +24,7 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
   ⑤ 자극물을 설문 화면 안에 띄움  …/watch/?c=셀코드&panel_id=참가자ID
        투표 + 확신도(T1)는 자극물이 자체 DB(Supabase)에 저장
        [Finish participation] → 설문이 감지해 자극물을 닫고 ⑥으로
-  ⑥ 본조사 시작 안내 → 재투표 + 확신도(T2), 사후 문항 ( 그다음 「라이브 스트리밍 설문지」 PDF 순서: Part 1 → 조작점검 → Part 2 → Part 3)
+  ⑥ 본조사 시작 안내 → 사후 문항 (「설문문항_근거」 엑셀 합본_1113 순서: 1번 확신도 → 2번 재투표(T2) → 3번 변화 여부+이유 → 4·5번 매개변수 → 종속변수 → 조작점검 → 조절변수 → 통제변수 → 인구통계)
   ⑦ 디브리핑 + 데이터 사용 동의/철회
   ⑧ CloudResearch 완료 주소로 이동
 ```
@@ -120,7 +120,7 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 
 | type | 용도 | 저장되는 열 |
 |---|---|---|
-| `likert` | 척도 표 (문항 = 행, 점수 = 열). 항목이 1개이고 문구가 없으면 단일 척도 | `id_항목id` (단일이면 `id`) |
+| `likert` | 척도 표 (문항 = 행, 점수 = 열). 항목이 1개이고 문구가 없으면 단일 척도 | `id_항목id` (단일이면 `id`, `rawKeys: true`면 `항목id`) |
 | `single` | 하나 선택 | `id`, 기타 입력 시 `id_other` |
 | `multi` | 여러 개 선택 | `id_값` = 1/0, `id` = 고른 값 목록 |
 | `number` | 숫자. 키보드로만 입력(화살표 버튼·마우스 휠 없음), 숫자 외 글자는 자동으로 지움, min/max 검사 | `id` |
@@ -133,9 +133,9 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 - `screen: { allowed: ['yes'] }` → 다른 답이면 선정 기준 탈락으로 종료.
 - `attention: { correct: '2' }` → 틀린 횟수가 `attention_fails`에 쌓이고, `ATTENTION.action`이 `'end'`면 `maxFails`에서 종료.
 - 문구 안에 `{{topic_q}}`, `{{topic_A}}`, `{{topic_B}}`를 쓰면 주제 문구가 들어가요.
-- 문구 안에 `{{viewers}}`를 쓰면 조건별 시청자 표현(`VIEWER_WORDS`, 예: AI 조건 = the AI viewers)이 들어가요.
+- `dependsOn: '문항id'` + `textByAnswer: { 값: '질문' }`을 주면 같은 쪽의 그 문항에 답하기 전엔 숨어 있다가, 고른 답에 맞는 질문으로 나타나요 (3번 쪽 변화 이유 주관식).
 - 문구에 `<span class="alert">…</span>`를 쓰면 빨간 굵은 글씨로 강조돼요.
-- 사후 첫 페이지(`dv_revote`)는 종속변수라 맨 앞에 두는 게 좋아요. 조작점검을 먼저 물으면 답에 영향을 줄 수 있어요.
+- 종속변수(확신도·재투표·변화 여부)는 사후 설문 맨 앞에 두는 게 좋아요. 조작점검을 먼저 물으면 답에 영향을 줄 수 있어요.
 - 화면 디자인: 데스크톱 전용(`BLOCK_MOBILE: true`). 문항마다 흰 카드 한 장, 선택지는 넓은 카드형, 척도는 1~N 같은 너비 버튼. 모든 선택지가 같은 모양·너비이고 기본 선택이 없으며, 색은 응답자가 고른 칸에만 들어가요.
 - 미응답이 있으면 맨 위에 오류 요약(누르면 해당 문항으로 이동)과 문항별 이유 문구가 나와요. 문구는 `TEXT.msg`에서 바꿔요.
 - 강조색은 `index.html` 맨 위 CSS의 `--accent` 한 곳만 바꾸면 돼요.
@@ -171,7 +171,11 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 | `t1_submitted` | 투표 제출 여부 (0이면 일치도 조작이 성립하지 않음 → 분석 제외 후보) |
 | `t1_first_choice`, `t1_clicks`, `t1_unsubmitted_choice` | 처음 고른 답, 선택 클릭 수, 제출하지 못한 선택 |
 | `t1_read` | 자극물에서 T1을 읽었는지 |
-| `t2_vote`, `t2_conf` | 사후 재투표(A/B)와 확신도 |
+| `op_conf` | 방송 중 투표한 선택에 대한 지금의 확신도 (1~7) |
+| `t2_vote` | 사후 재투표 (A = Yes, B = No) |
+| `op_changed`, `op_why` | 선택이 바뀌었는지(1 = 바뀜, 2 = 그대로)와 그 이유 |
+| `sp_*`, `mind_*`, `sid_*`, `ent_*`, `sr_*`, `inf_*`, `nor_*`, `manip_*`, `thr_*`, `cred_*`, `enj_*`, `int_*`, `fut_*`, `bw_*`, `imp_*`, `know_*`, `conf_*`, `tai_*` | 척도 항목 (변수별 접두어, `fut_3r`은 역문항) |
+| `att_1` | 주의집중 점검 (정답 6) |
 | `stim_session_id` | 자극물 DB(Supabase)의 세션 ID → 자극물 데이터와 정확히 합칠 때 사용 |
 | `stim_code_seen` | 자극물이 실제로 받은 조건 코드 (`stim_code`와 같아야 정상) |
 | `stim_end` | complete(정상 종료) / video_failed / navigated / debug_skip / fallback_button |
