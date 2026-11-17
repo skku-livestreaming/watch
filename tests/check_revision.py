@@ -20,7 +20,7 @@ def main():
         browser = pw.chromium.launch(headless=True, executable_path=os.environ.get('CHROME_PATH'))
         for code in ['q7','m2','z5','b9','k3','r6','v3','t8','f1']:
             page, errors = prepare(browser, base, code)
-            advance(page, 141.55)
+            advance(page, 177.03)
             page.locator('#pollOpts button[data-v="B"]').click()
             page.locator('input[name=confidence][value="6"]').check()
             page.locator('#voteSubmit').click()
@@ -130,7 +130,7 @@ def main():
         assert child.url.startswith(base + '/?')
         assert not child.locator('#intro').is_visible()
         child.evaluate(STUB_CLOCK)
-        advance(child, 141.55)
+        advance(child, 177.03)
         child.locator('#pollOpts button[data-v="B"]').click()
         child.locator('input[name=confidence][value="6"]').check()
         child.locator('#voteSubmit').click()

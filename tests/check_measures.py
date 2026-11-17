@@ -39,7 +39,7 @@ def main():
         page.evaluate("document.getElementById('streamVideo').dispatchEvent(new Event('waiting'))")
         page.evaluate('qaWall+=4000;setHidden(false);qaWall+=1000')
         page.evaluate("document.getElementById('streamVideo').dispatchEvent(new Event('playing'))")
-        advance(page,141.55)
+        advance(page,177.03)
         page.locator('#pollOpts button[data-v=B]').click()
         page.locator('input[name=confidence][value="6"]').check()
         page.locator('#voteSubmit').click()

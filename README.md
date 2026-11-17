@@ -201,7 +201,7 @@ https://skku-livestreaming.github.io/watch/?c=t8&preview=1
 
 ### 흐름과 시각
 
-현재 `stream.mp4`는 약 **244.77초(4분 5초)**의 영어 방송입니다. 농장 게임 이야기를 한 뒤, 비디오게임과 청소년 폭력에 관한 Yes/No 투표를 한 번 진행합니다. 새 원본(HEVC)은 로컬에 보관하고, 배포 영상은 H.264/AAC·1920×1080·faststart로 변환했습니다. 원본 화면 전체를 유지하도록 위아래 여백을 넣었습니다.
+현재 `stream.mp4`는 약 **244.77초(4분 5초)**의 영어 방송입니다. 농장 게임 이야기를 한 뒤, 비디오게임과 청소년 폭력에 관한 Yes/No 투표를 한 번 진행합니다. 새 원본(HEVC)은 로컬에 보관하고, 배포 영상은 H.264/AAC·1920×1080·faststart로 변환했습니다. 원본 화면 전체를 유지하도록 위아래 여백을 넣었습니다. 오디오는 기존 배포본 대비 1.5배(+3.52 dB) 증폭했습니다.
 영상은 0초부터 재생하며, 안내 후 약 3초의 입장 버퍼링이 있습니다. 방송 경과 시간은 `03:31:26 live`부터 표시하는 모의 설정입니다.
 모든 투표 시점은 원본 영상 시각(초)이며 `currentTime`을 따라갑니다. 버퍼링 중에는 채팅과 투표도 멈춥니다.
 
@@ -210,9 +210,9 @@ https://skku-livestreaming.github.io/watch/?c=t8&preview=1
 | 0–100.35초 | 농장 게임 잡담과 대사 반응. 투표 질문·선호는 미리 노출하지 않음 |
 | 100.35초 | “quick poll”에 맞춰 투표 예고 (`poll_announced`) |
 | 약 112.57–131.89초 | 스트리머가 비디오게임과 청소년 폭력에 관한 질문 설명 |
-| 141.55초 | “the poll is up”에 맞춰 카드 표시: **Do you think that violent video games contribute to youth violence?** (Yes / No) |
-| 151.75초 | “pause the chat”에 맞춰 채팅 잠금 |
-| 약 156.05–170.45초 | 답 선택 뒤 확신도를 1–7로 고르는 방법 설명. 채팅은 잠긴 상태 유지 |
+| 약 156.05–170.45초 | 답 선택 뒤 확신도를 1–7로 고르는 방법 설명. 투표 카드는 아직 숨기고 채팅은 열어 둠 |
+| 177.03초 | 뒤쪽 “The poll is up”에 맞춰 카드 표시: **Do you think that violent video games contribute to youth violence?** (Yes / No) |
+| 178.37초 | 이어지는 “chat is frozen”에 맞춰 채팅 잠금 |
 | 183.1초 | “15 more seconds”에 맞춰 15초 남음 표시 시작 |
 | 196.55초 | “time is up”에 맞춰 마감 |
 | 198.85초 | “look at the results” 직후 결과 표시. 채팅은 아직 잠금 |
@@ -235,7 +235,7 @@ Submit vote 전에는 답과 확신도를 바꿀 수 있고, 답을 바꾸면 �
 
 `leave.polls[]`에는 투표 **1개**만 들어갑니다. `vote`와 `confidence`는 요약용 사본이고 `vote2`는 생성하지 않습니다.
 완료된 투표는 `vote` 이벤트의 `confidence` 및 `vote_confidence.value`에 1–7 값이 저장됩니다.
-세션 조건의 `stimulus_version = 2026-11-behavior-visible-exposure-v2`와 `language = en`으로 이전 버전과 구분할 수 있습니다. v2는 본인 채팅에 연동된 ID를 표시하며, 행동 측정 정의는 v1과 같습니다. 직전 댓글·설문 연결 버전은 `2026-11-balanced-result-burst-survey`입니다. 정체성별 출력 대본을 통일하기 전 버전은 `2026-11-en-youth-violence-poll-human-reaction`입니다. 유사 문장 두 개를 배정했던 버전은 `2026-11-en-youth-violence-poll-paired-reaction`이며, 그 전 새 영상 버전은 `2026-11-en-youth-violence-poll-synced`입니다.
+세션 조건의 `stimulus_version = 2026-11-behavior-visible-exposure-v3`와 `language = en`으로 이전 버전과 구분할 수 있습니다. v3는 뒤쪽 투표 시작 대사에 맞춰 투표 카드와 채팅 잠금을 늦추고, 대기 중 채팅도 안내에 맞췄습니다. 투표 질문은 violent video games로 구체화했고, 입장 버퍼링은 3초이며, 오디오는 기존 배포본 대비 1.5배입니다. 이전 `2026-11-behavior-visible-exposure-v2`는 본인 채팅에 연동된 ID를 표시하며, 행동 측정 정의는 v1과 같습니다. 그 전 댓글·설문 연결 버전은 `2026-11-balanced-result-burst-survey`입니다. 정체성별 출력 대본을 통일하기 전 버전은 `2026-11-en-youth-violence-poll-human-reaction`입니다. 유사 문장 두 개를 배정했던 버전은 `2026-11-en-youth-violence-poll-paired-reaction`이며, 그 전 새 영상 버전은 `2026-11-en-youth-violence-poll-synced`입니다.
 이전 고릴라/100명 영상의 결과 애니메이션 버전은 `2026-11-en-single-poll-result-motion`입니다.
 결과 화면이 바뀌기 전(`all` 100%·`none` 1명, 총 투표 수 비공개, 움직임 없음) 세션은 `2026-11-en-single-poll-contextual-chat`입니다.
 

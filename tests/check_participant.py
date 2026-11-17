@@ -236,7 +236,7 @@ def main():
 
         ctx,p,c,errors = fixture(browser,base,state('stimulus'))
         child=stream(p,base)
-        advance(child,141.55);child.locator('#pollOpts button[data-v=B]').click()
+        advance(child,177.03);child.locator('#pollOpts button[data-v=B]').click()
         child.locator('input[name=confidence][value="6"]').check();child.locator('#voteSubmit').click()
         child.evaluate('''async()=>{
           await Sink.flush(false);

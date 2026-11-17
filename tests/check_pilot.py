@@ -73,7 +73,7 @@ def main():
         assert child.locator('#previewBar').count()==0
         assert page.locator('#pilotNotice').is_visible()
         child.evaluate(STUB_CLOCK)
-        advance(child,141.55)
+        advance(child,177.03)
         child.locator('#pollOpts button[data-v=B]').click()
         child.locator('input[name=confidence][value="6"]').check()
         child.locator('#voteSubmit').click()

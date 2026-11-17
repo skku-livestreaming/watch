@@ -98,7 +98,7 @@ def check_preview(browser, base):
     assert not page.locator('#pvNote').is_visible()
     assert page.evaluate('Math.abs(tick - (POLLS[0].at - 3)) < 0.01 && chatOpen && !PS[0].shown')
     assert not page.evaluate("Logger.ev.some(e => e.type === 'seek_attempt')")
-    advance(page, 141.55)
+    advance(page, 177.03)
     page.locator('#pollOpts button[data-v="B"]').click()
     page.locator('input[name=confidence][value="6"]').check()
     page.locator('#voteSubmit').click()
@@ -177,7 +177,7 @@ def check_matched_scripts(browser, base):
         baseline = None
         for code in ['m2', 'k3', 't8']:
             page, errors = prepare(browser, base, code, extra=extra)
-            advance(page, 141.55)
+            advance(page, 177.03)
             if choice:
                 page.locator(f'#pollOpts button[data-v="{choice}"]').click()
                 page.locator('input[name=confidence][value="5"]').check()
@@ -189,6 +189,9 @@ def check_matched_scripts(browser, base):
             else:
                 assert script == baseline, (extra, choice, code, 'Identity changed the displayed script')
             check_one_side_per_viewer(page.evaluate('shownLines'))
+            if code in ['m2', 'k3']:
+                expected = 'ai' if code == 'm2' else 'human'
+                assert page.evaluate('shownLines.every(m => m.kind === "' + expected + '")'), (extra, code)
             if choice:
                 summary = page.evaluate('leaveSummary("end_button")')
                 for stats in summary['polls'][0]['shown_by_identity'].values():
@@ -249,7 +252,7 @@ SAMPLE_MOTION = """async () => {
 
 
 def vote_and_close(page, choice):
-    advance(page, 141.55)
+    advance(page, 177.03)
     page.locator(f'#pollOpts button[data-v="{choice}"]').click()
     page.locator('input[name=confidence][value="5"]').check()
     page.locator('#voteSubmit').click()
@@ -336,15 +339,25 @@ def main():
                 page, errors = prepare(browser, base, code)
                 check_english(page)
                 assert page.locator('#previewBar').count() == 0, 'Participants never see the preview tools'
-                advance(page, 141.5)
-                assert not page.evaluate('PS[0].shown')
+                # Earlier mentions only explain the poll; keep the card hidden and chat open.
                 advance(page, 141.55)
+                assert page.locator('#poll').is_hidden() and page.evaluate('chatOpen')
+                advance(page, 151.75)
+                assert page.locator('#poll').is_hidden() and page.evaluate('chatOpen')
+                advance(page, 177.02)
+                assert not page.evaluate('PS[0].shown')
+                advance(page, 177.03)
                 assert page.locator('#poll').is_visible() and page.evaluate('chatOpen')
-                advance(page, 151.65)
+                advance(page, 178.36)
                 assert page.evaluate('chatOpen')
                 assert not page.evaluate('shownLines.some(m=>m.stance)')
-                advance(page, 151.75)
+                advance(page, 178.37)
                 assert not page.evaluate('chatOpen')
+                assert page.evaluate('''() => {
+                  const shown = Logger.ev.findIndex(e => e.type === 'poll_shown');
+                  const locked = Logger.ev.findIndex(e => e.type === 'chat_locked');
+                  return shown >= 0 && locked > shown;
+                }'''), 'Show the poll before locking chat at the later spoken cues'
                 assert page.locator('#poll').is_visible()
                 assert page.locator('#pollOpts button').all_text_contents() == ['Yes', 'No']
                 page.locator(f'#pollOpts button[data-v="{choice}"]').click()
@@ -459,7 +472,7 @@ def main():
         # Draft-only choices are not submitted; complete responses can auto-submit at the deadline.
         for mode in ['missing-confidence','auto-submit','no-answer','change-answer']:
             page, errors = prepare(browser, base)
-            advance(page, 141.55)
+            advance(page, 177.03)
             if mode != 'no-answer':
                 page.locator('#pollOpts button[data-v="A"]').click()
                 draft = page.evaluate('leaveSummary("closed")')
@@ -536,7 +549,7 @@ def main():
         # Small viewports: poll, radio labels, and result rows must fit their containers.
         for width, height in [(390,844),(320,740),(1024,768),(1440,900)]:
             page, errors = prepare(browser, base, width=width, height=height)
-            advance(page, 141.55)
+            advance(page, 177.03)
             page.locator('#pollOpts button[data-v="A"]').click()
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), (width, 'horizontal overflow')
             assert page.evaluate("document.querySelector('.confidence-grid').scrollWidth <= document.querySelector('.confidence-grid').clientWidth")

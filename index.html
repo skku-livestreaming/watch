@@ -1126,7 +1126,7 @@ const ConditionRouter = (() => {
        안내 페이지를 건너뛰고, 로그를 서버로 보내지 않고, 속도·일시정지·앞으로 건너뛰기를 허용합니다. */
     c.preview = q.get('preview') === '1';
     if (c.preview){ c.intro = 'off'; if (!c.panel_id) c.pid = 'preview'; }
-    c.stimulus_version = '2026-11-behavior-visible-exposure-v2';
+    c.stimulus_version = '2026-11-behavior-visible-exposure-v3';
     c.language = 'en';
     c.poll_count = 1;
     return c;
@@ -1410,23 +1410,62 @@ const CHAT_PHASES = [
     "at": 144.5,
     "texts": [
       "okay yes or no",
-      "i can see the choices",
+      "ill wait for the card to appear",
       "ill think before submitting",
-      "the poll is on screen now",
-      "got the question in front of me",
+      "im listening to the instructions",
+      "got the question now",
       "ill take a moment with this",
-      "i nearly missed the card",
-      "okay i know where to answer",
-      "ill read the question again",
-      "i can see it now",
+      "im watching for the card",
+      "okay ill wait before answering",
+      "ill read the question when it opens",
+      "still here listening",
       "ill wait for the rest of the instructions",
       "got it im following"
+    ]
+  },
+  {
+    "at": 159.75,
+    "texts": [
+      "okay one to seven",
+      "ill remember the confidence part",
+      "so we answer both parts",
+      "got it ill include the rating",
+      "ill think about how sure i am too",
+      "thanks for explaining the scale",
+      "okay that makes sense",
+      "ill check both answers before submitting",
+      "still listening to the instructions",
+      "ill wait until youre ready",
+      "i understand how to answer now",
+      "ready when the card opens"
+    ]
+  },
+  {
+    "at": 173.5,
+    "texts": [
+      "ready here",
+      "okay im ready",
+      "lets do it",
+      "waiting for the card",
+      "im still here",
+      "ready when you are"
+    ]
+  },
+  {
+    "at": 177.03,
+    "texts": [
+      "i can see the choices",
+      "the poll is on screen now",
+      "got the question in front of me",
+      "okay i know where to answer",
+      "i can see it now",
+      "ill read the question again"
     ]
   }
 ];
 
 /* Single poll. All times are seconds in the current stream.mp4 (244.77 s).
-   The streamer reads the question aloud, then opens the Yes/No card.
+   Open the Yes/No card at the later "The poll is up", then pause chat at "frozen".
    Result reveal and chat reopening follow separate lines in the new recording.
    Stance messages state a choice without supplying persuasive reasons.
    A/B pools use matching phrasing, and neutral reactions fit every result condition. */
@@ -1445,8 +1484,8 @@ const POLLS = [
       "B"
     ],
     "announce": 100.35,
-    "lock": 151.75,
-    "at": 141.55,
+    "lock": 178.37,
+    "at": 177.03,
     "countdown": 183.1,
     "countdownSeconds": 15,
     "close": 196.55,
@@ -2128,7 +2167,12 @@ function IdentityAssigner(c, nChatters, counts, balance = []){
 
   const aiSet = new Set();
   let acc = 0, method = 'none';
-  if (c.label === 'mixed' && c.ratio > 0){
+  // Post-poll balancing can select speakers with zero planned messages.
+  // The all-AI condition must include those speakers as well.
+  if (c.label === 'mixed' && c.ratio === 100){
+    idx.forEach(i => { aiSet.add(i); acc += cnt[i]; });
+    method = 'all';
+  } else if (c.label === 'mixed' && c.ratio > 0){
     const targetSize = nChatters * c.ratio / 100;
     const rnd2 = mulberry32(c.seed * 2654435761 + nChatters);  // 동점 처리 전용
 
@@ -3003,15 +3047,15 @@ function loop(at){
     Logger.add('viewers_shown', {n: vn, at_sec: +tick.toFixed(2)});
   }
 
-  // 투표마다: 예고 → 채팅 잠금 → 투표 카드 → 카운트다운 → Closed → 결과와 함께 채팅 해제 → 결과 내림
+  // 투표마다: 예고 → 투표 카드 → 채팅 잠금 → 카운트다운 → Closed → 결과 → 채팅 재개 → 결과 내림
   POLLS.forEach((d, i) => {
     const p = PS[i];
     if (!p.announced && tick >= d.announce){
       p.announced = true;
       Logger.add('poll_announced', {poll: i + 1, at_sec: +tick.toFixed(2)});
     }
-    if (!p.locked && tick >= d.lock) lockChat(i);
     if (!p.shown && tick >= d.at) showPoll(i);
+    if (!p.locked && tick >= d.lock) lockChat(i);
     if (p.shown && !p.closed) tickTimer(i);
     if (!p.closed && tick >= d.close) closePoll(i);
     if (!p.resultShown && tick >= d.result) showResult(i);
