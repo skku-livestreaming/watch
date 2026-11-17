@@ -300,11 +300,11 @@ window.SURVEY_CONFIG = {
             text: 'Think about your views on the issue raised in the poll, and those of the other viewers, while you were watching the live stream.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
-              { id: 'sr_1', text: 'I thought that the other reviewers and I were on the same wavelength with regard to video games.' },
-              { id: 'sr_2', text: 'I felt the same way about video games as the other reviewers did.' },
-              { id: 'sr_3', text: 'I agreed with the other reviewers\' point of view of video games.' },
-              { id: 'sr_4', text: 'The other reviewers and I saw video games in the same way.' },
-              { id: 'sr_5', text: 'I agreed with the other reviewers\' perception of video games.' }
+              { id: 'sr_1', text: 'I thought that the other viewers and I were on the same wavelength with regard to video games.' },
+              { id: 'sr_2', text: 'I felt the same way about video games as the other viewers did.' },
+              { id: 'sr_3', text: 'I agreed with the other viewers\' point of view of video games.' },
+              { id: 'sr_4', text: 'The other viewers and I saw video games in the same way.' },
+              { id: 'sr_5', text: 'I agreed with the other viewers\' perception of video games.' }
             ] }
         ]
       },
