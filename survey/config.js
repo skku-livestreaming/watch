@@ -62,7 +62,7 @@ window.SURVEY_CONFIG = {
      T1(자극물 투표)과 T2(사후 재투표)를 바로 비교할 수 있습니다. 문구 안에서 {{topic_q}},
      {{topic_A}}, {{topic_B}}로 불러 쓸 수 있습니다. */
   TOPIC: {                     // 자극물 hj 브랜치(11/12) 기준
-    q: 'Do you think that video games contribute to youth violence?',
+    q: 'Do you think that violent video games contribute to youth violence?',
     A: 'Yes',
     B: 'No',
     order: ['A', 'B']          // 자극물 화면의 선택지 순서와 같게

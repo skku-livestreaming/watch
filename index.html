@@ -1433,7 +1433,7 @@ const CHAT_PHASES = [
 const POLLS = [
   {
     "id": 1,
-    "q": "Do you think that video games contribute to youth violence?",
+    "q": "Do you think that violent video games contribute to youth violence?",
     "A": {
       "label": "Yes"
     },
@@ -2935,7 +2935,7 @@ const VIDEO_TRIM = 0;
 /* Simulated broadcast uptime at entry, independent of the clip duration. */
 const UPTIME_AT_ENTRY = 3 * 3600 + 31 * 60 + 26;
 /* 입장 직후 버퍼링(ms). 실제 라이브에 들어갈 때처럼 잠깐 검은 화면에 로딩이 돕니다. */
-const ENTRY_BUFFER_MS = 1800;
+const ENTRY_BUFFER_MS = 3000;
 /* 시청자 수는 40초마다 3~4명씩 오르내립니다. 조건값에서 ±8명 밖으로는 벗어나지 않습니다.
    순서는 시드로 정해 참가자 모두 같은 값을 봅니다. */
 const VIEWER_STEP_SEC = 40;
