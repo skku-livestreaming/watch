@@ -150,7 +150,7 @@ def check_chat_output(page):
         'one more thing before you go?', 'one more thing before you leave?')]
     assert len(reactions) == 1, reactions
     assert reactions[0]['text'] == 'one more thing before you go?'
-    assert 82 <= reactions[0]['t'] < 82.5, reactions
+    assert 83.5 <= reactions[0]['t'] < 84, reactions
     condition = page.evaluate('({label:cond.label,ratio:cond.ratio})')
     expected = 'ai' if condition['label'] == 'mixed' and condition['ratio'] == 100 else 'human'
     assert reactions[0]['kind'] == expected, reactions

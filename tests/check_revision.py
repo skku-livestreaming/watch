@@ -28,10 +28,11 @@ def main():
             assert not page.evaluate('PS[0].resultDocked')
             advance(page, 203.35)
             assert page.evaluate('PS[0].resultDocked')
-            advance(page, 212.45)
+            advance(page, 215.95)
             lines = page.evaluate('shownLines.filter(m=>m.stance)')
-            assert len(lines) >= 20, (code, len(lines))
+            assert len(lines) == 34, (code, len(lines))
             assert all(m['t'] >= 205.45 for m in lines)
+            assert 10 <= lines[-1]['t'] - lines[0]['t'] <= 10.5, (code, lines)
             gaps = [round(b['t']-a['t'], 2) for a,b in zip(lines,lines[1:])]
             assert max(gaps) > min(gaps) * 2, gaps
             if code in ['v3','t8','f1']:
@@ -65,7 +66,7 @@ def main():
                 page.screenshot(path=str(artifacts / 'finish-centred.png'))
             assert not errors, errors
             page.close()
-        print('PASS: 20+ opinions, uneven bursts, balanced mixed opinions, delayed docking without chat overlap, centred finish in all 9 conditions')
+        print('PASS: 34 opinions over 10.5 seconds, uneven bursts, balanced mixed opinions, delayed docking without chat overlap, centred finish in all 9 conditions')
 
         page, errors = prepare(browser, base)
         page.wait_for_timeout(900)
@@ -75,7 +76,7 @@ def main():
         assert page.locator('#ovFeed .nm', has_text='delay-check').count() == 0
         page.wait_for_timeout(400)
         assert page.locator('#ovFeed .nm', has_text='delay-check').count() == 1
-        assert page.evaluate('OV_DELAY_MS === 800 && CUE_DELAY >= 1')
+        assert page.evaluate('OV_DELAY_MS === 800 && CUE_DELAY === 4')
         page.close()
         print('PASS: on-video chat appears after 0.8 seconds')
 
