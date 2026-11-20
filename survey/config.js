@@ -84,31 +84,71 @@ window.SURVEY_CONFIG = {
   INTRO_MIN_SECONDS: 45,       // 조건별 설명문 강제 체류 시간(초). 항목 3개가 이 시간을 3등분해 하나씩 나타납니다 (45초 = 항목당 15초)
 
   /* ── 5. 동의서 ─────────────────────────────────────────────── */
+  /* Live_Streaming_Survey_IRB.docx 동의서 그대로. 바꾼 곳 두 군데:
+     ① 2. Procedures 끝에 주의집중 점검 문항 안내 문장 추가 (IRB 요청)
+     ② 4. 개인정보 보호의 참가자 ID 사용 범위를 10번(삭제 요청)과 맞춤
+     sections: { html } = 본문 / { choice: { id, text, options:[{value,label,decline?}] } } = 하나 고르는 문항.
+     decline: true인 답을 고르면 참여하지 않는 것으로 보고 종료 화면(declined)으로 갑니다.
+     choice 답은 응답 시트에 id 이름 열로 저장됩니다 (consent_pi, consent_future, consent_agree). */
   CONSENT: {
-    title: 'Research Consent',
-    lead: 'Please read the information below before deciding whether to take part.',
+    title: 'Research Participant Consent Form',
+    lead: '※ The researchers of this study would like to ask you to participate in a survey. Please read the following information carefully, and if you have any questions, please contact the researcher, Hyerin Park, by email (hrp0112@g.skku.edu).',
     // 맨 위 요약 칸 (비우면 표시하지 않음). 본문 값과 같게 맞출 것
     facts: [
-      { label: 'Time', value: 'About [N] minutes' },
-      { label: 'Payment', value: '[Amount]' },
+      { label: 'Time', value: 'About 10 minutes' },
+      { label: 'Payment', value: '$3' },
       { label: 'Device', value: 'Computer only' }
     ],
-    html: `
-      <p><b>Purpose.</b> This study examines viewers' experiences with and perceptions of live streaming.
-      It is conducted for academic research only.</p>
-      <p><b>Procedure.</b> You will answer a few questions, watch a short live stream, and then complete a
-      questionnaire. The study takes about [N] minutes.</p>
-      <p><b>Data.</b> We collect your responses and basic demographic information (e.g., gender, age).
-      Your CloudResearch ID is used only to process payment and is stored separately from your answers
-      after the study. All data are kept confidential and used for research purposes only.</p>
-      <p><b>Compensation.</b> [Amount] upon completion.</p>
-      <p><b>Voluntary participation.</b> You may stop at any time without penalty.</p>
-      <p><b>Contact.</b> This study has been reviewed by the Institutional Review Board of Sungkyunkwan
-      University (IRB No. [XXXX]). Questions: [Researcher name], [email].</p>`,
-    // 체크박스 문구. 체크해야 [Next]가 눌립니다.
+    sections: [
+      { html: `
+        <p><b>Project Title:</b> A Study on Live-Streaming Viewing Experiences</p>
+        <p><b>1. Background</b><br>AI viewers, which are labeled as AI, have recently begun to participate in the chat on live-streaming platforms. This study aims to understand what experiences and perceptions viewers have while watching live streams.</p>
+        <p><b>2. Procedures</b><br>If you agree to participate, you will watch a short video in a live-streaming format. While watching, you may use the chat, like, and subscribe features only if you wish. You will then respond to a survey. Due to the nature of this study, some details will be explained in a debriefing after your participation. The entire study will take about 10 minutes.
+        The survey includes an attention-check question that asks you to select a specific answer to confirm that you are reading the questions carefully. Responses that do not pass this check may be excluded from the analysis.</p>
+        <p><b>3. Benefits of Participation</b><br>You will not receive any direct benefit from participating in this study. The knowledge gained from this study may be published in academic papers so that it is available to everyone, and the results of the study may develop into commercial value, such as royalties, in the future. However, such future benefits will not be provided directly to you.</p>
+        <p><b>4. Confidentiality of Personal Information</b><br>This study does not collect directly identifying information, such as your name, contact information, address, or email address, or any sensitive information. The information collected in this study includes your CloudResearch participant ID, demographic information (gender, year of birth, education, and employment status), your survey responses, and records of your activity while watching the broadcast (votes, chat messages you type, likes, and whether you subscribed). Your CloudResearch participant ID will be used only to confirm compensation and to process requests to delete your data, and it will be stored separately from the analysis data. The collected data will be kept for 3 years after the study ends and then destroyed.</p>` },
+      { choice: {
+        id: 'consent_pi',
+        text: '* Consent to the collection of personal information (please check one)',
+        options: [
+          { value: '1', label: 'My responses may be recorded, but I do not consent to the use of my personal information.' },
+          { value: '2', label: 'I consent to providing my personal information, as it is necessary for the nature of this study.' },
+          { value: '3', label: 'I do not consent to the collection of my personal information and will not participate in this study.', decline: true }
+        ] } },
+      { html: `
+        <p><b>5. Risks of Participation</b><br>This study is a minimal-risk study that does not exceed the level of risk encountered in daily life. You may feel fatigue or mild discomfort while responding; in that case, you may stop participating at any time by closing your browser window. If a health problem occurs during your participation, please stop participating and contact a local medical facility or emergency services (911 in the United States). The researchers will make every effort to protect your personal information and prevent your identity from being disclosed.</p>
+        <p><b>6. Participant Responsibilities</b><br>If you agree to participate, you will complete a survey for this study. Please answer the survey questions sincerely.</p>
+        <p><b>7. Study Period and Number of Participants</b><br>This study is scheduled to be conducted from November 2026 to November 2027 with a total of 450 participants.</p>
+        <p><b>8.</b> There are no additional costs for participating in this study.</p>
+        <p><b>9. Compensation and Benefits</b><br>Participants who complete the survey will receive $3 through CloudResearch Connect. Withdrawing the use of your data in the debriefing will not affect your compensation.</p>
+        <p><b>10. Voluntary Participation and Freedom to Decline or Withdraw</b><br>Your participation in this study is entirely voluntary. If you do not wish to participate, you do not have to consent. Even after consenting, if you change your mind, you may stop participating at any time by closing your browser window, and you may request the deletion of your data through the CloudResearch Connect messaging feature or by emailing the researcher.</p>
+        <p><b>11. Confidentiality</b><br>Your personal information will be kept confidential in any reports or publications resulting from this study and will be protected by law.</p>
+        <p><b>12. Consent to Additional Use of Data</b><br>If this study goes well, your data may also be used in other future studies to achieve better results. Please indicate one of the following regarding the use of your data in other future studies.</p>` },
+      { choice: {
+        id: 'consent_future',
+        text: 'Use of your data in other future studies',
+        options: [
+          { value: '1', label: 'I consent to my data being provided for all other future studies.' },
+          { value: '2', label: 'I consent only for researchers at Sungkyunkwan University.' },
+          { value: '3', label: 'I consent only for the researchers of this study.' },
+          { value: '4', label: 'I do not consent.' }
+        ] } },
+      { html: `
+        <p><b>13. Information on Your Rights as a Research Participant</b><br>This study has been reviewed and approved by the Sungkyunkwan University Institutional Review Board (IRB). If any information arises in the future that may harm your rights as a research participant, the researchers will inform you as soon as possible. If you have any questions about this study, you may contact the researcher, Hyerin Park, by email (hrp0112@g.skku.edu). If you have any questions about the violation of your rights as a research participant, you may contact the Sungkyunkwan University Institutional Review Board at +82-31-299-6711 or skkuedu@skku.edu.</p>
+        <p><b>14.</b> By clicking the "I agree" button below, you confirm that you have read and understood the information above and voluntarily agree to participate in this study.</p>` },
+      { choice: {
+        id: 'consent_agree',
+        text: 'Do you agree to participate in this study?',
+        options: [
+          { value: '1', label: 'I agree' },
+          { value: '2', label: 'I do not agree', decline: true }
+        ] } },
+      { html: `<p class="note">※ This form is valid only if it has been reviewed and approved by the Institutional Review Board (IRB).</p>` }
+    ],
+    // sections를 쓰지 않을 때만 쓰는 예전 방식 (체크박스 하나)
     agree: 'I have read the information above and agree to participate.',
-    // 체크박스 아래 작은 안내. 비우면 표시하지 않습니다. (IRB 문구와 맞출 것)
-    declineNote: 'If you do not wish to participate, you may close this window.'
+    // [Next] 옆 작은 안내. 비우면 표시하지 않습니다.
+    declineNote: ''
   },
 
   /* ── 6. 조건별 설명문 (자극물 입장 직전, INTRO_MIN_SECONDS 체류) ──
@@ -172,24 +212,29 @@ window.SURVEY_CONFIG = {
   ENTER_BUTTON: 'Enter the stream',
 
   /* ── 7. 디브리핑 ───────────────────────────────────────────── */
+  /* Live_Streaming_Survey_IRB.docx 디브리핑 그대로.
+     html = 연구 목적 + 미리 알리지 않은 정보 / question·keep·withdraw = 데이터 사용 선택 / after = 연락처 + 마지막 안내 */
   DEBRIEF: {
-    title: 'About this study',
+    title: 'Debriefing',
     html: `
-      <p>Thank you for participating. Before you finish, we would like to tell you more about this study.</p>
-      <p>This study examined whether chat messages from other viewers in a live stream influence viewers'
-      opinions.</p>
+      <p>Thank you for participating in this study. Before you finish, please read the following information about the study.</p>
+      <p><b>Purpose of the study</b><br>This study examined how other viewers' opinions in a live-stream chat influence viewers' own opinions. Specifically, we examined whether the composition of the viewers in the chat (human viewers only, AI viewers only, or both) and the extent to which their opinions agreed with your vote affect your opinion. If participants knew this purpose in advance, we could not measure how they respond to others' opinions. For this reason, the purpose and the following information were not disclosed before your participation.</p>
       <div class="callout">
-        <p><b>Some information in the stream was not real.</b> [Describe exactly what was false, e.g.:
-        all chat messages were prepared in advance by the research team, and the poll results were generated
-        based on your own vote.]</p>
-        <p>We could not tell you this beforehand because knowing it would have changed how you responded.</p>
+        <p><b>Information that was not disclosed in advance</b></p>
+        <p>1. The live-streaming environment you used was developed by the research team for this study. It is not an actual streaming platform.</p>
+        <p>2. All chat messages, including those shown as written by human viewers, were scripted in advance by the research team.</p>
+        <p>3. The poll results (the percentage of votes for each option and the total number of voters) were values set by the research team and did not reflect actual votes.</p>
+        <p>4. Although the broadcast appeared to be live, it was a pre-recorded video, and there were no other viewers.</p>
+        <p>5. Any chat messages you typed were not shown to anyone else.</p>
       </div>
-      <p>Your choice in the poll does not reflect what other people actually think.</p>
-      <p>Now that you know the purpose of the study, you may withdraw your data. You will be paid in either
-      case. Questions: [Researcher name], [email].</p>`,
-    question: 'May we use your responses in our research?',
-    keep: 'Yes, you may use my responses.',
-    withdraw: 'No, please delete my responses.'
+      <p>The opinions in the chat messages were written for research purposes and do not represent the views of the researchers or actual public opinion. To protect the quality of this research, please do not share the details of this study with others who may participate.</p>`,
+    question: '<b>Use of your data</b><br><span style="font-weight:400">Now that you know the full purpose and procedures of this study, please choose whether you allow the researchers to use your data. If you withdraw, your data will be deleted and will not be used in the analysis. Your choice will not affect your compensation.</span>',
+    keep: 'I agree to the use of my data in this study.',
+    withdraw: 'I withdraw. Please delete my data.',
+    after: `
+      <p><b>Contact</b><br>If you have any questions about this study, please contact the researcher, Hyerin Park, by email (hrp0112@g.skku.edu) or through the CloudResearch Connect messaging feature. If you have questions about your rights as a research participant, you may contact the Sungkyunkwan University Institutional Review Board at +82-31-299-6711 or skkuedu@skku.edu.</p>
+      <p>Please click "Next" to return to CloudResearch Connect and complete the study.</p>`,
+    button: 'Next'
   },
 
   /* ── 8. 문항 페이지 ───────────────────────────────────────────
@@ -300,11 +345,11 @@ window.SURVEY_CONFIG = {
             text: 'Think about your views on the issue raised in the poll, and those of the other viewers, while you were watching the live stream.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
-              { id: 'sr_1', text: 'I thought that the other viewers and I were on the same wavelength with regard to video games.' },
-              { id: 'sr_2', text: 'I felt the same way about video games as the other viewers did.' },
-              { id: 'sr_3', text: 'I agreed with the other viewers\' point of view of video games.' },
-              { id: 'sr_4', text: 'The other viewers and I saw video games in the same way.' },
-              { id: 'sr_5', text: 'I agreed with the other viewers\' perception of video games.' }
+              { id: 'sr_1', text: 'I thought that the other viewers and I were on the same wavelength with regard to violent video games.' },
+              { id: 'sr_2', text: 'I felt the same way about violent video games as the other viewers did.' },
+              { id: 'sr_3', text: 'I agreed with the other viewers\' point of view of violent video games.' },
+              { id: 'sr_4', text: 'The other viewers and I saw violent video games in the same way.' },
+              { id: 'sr_5', text: 'I agreed with the other viewers\' perception of violent video games.' }
             ] }
         ]
       },
@@ -599,7 +644,8 @@ window.SURVEY_CONFIG = {
     doneSaved: 'Your responses have been saved. You may now close this window.',
     doneCodeLead: 'Your responses have been saved. Enter this completion code on CloudResearch.',
     copy: 'Copy', copied: 'Copied.', copyManual: 'Press Ctrl+C (Cmd+C on Mac) to copy the selected code.',
-    endTitles: { screened: 'Thank you', attention: 'Thank you', full: 'Study full', mobile: 'Computer required' },
+    endTitles: { screened: 'Thank you', attention: 'Thank you', full: 'Study full', mobile: 'Computer required', declined: 'Thank you' },
+    declinedMsg: 'You have chosen not to participate in this study. Thank you for your time. You may now close this window.',   // 동의서에서 비동의 답을 고른 경우
     redirectLink: 'Click here if you are not redirected automatically.',
     errorSave: 'Connection problem while saving. Retrying…'
   }

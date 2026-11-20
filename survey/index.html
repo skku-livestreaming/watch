@@ -142,6 +142,10 @@
   .fact{background:var(--page);border-radius:var(--radius-sm);padding:14px 16px;display:flex;flex-direction:column;gap:2px}
   .fact span{font-size:13px;color:var(--muted)}
   .fact b{font-weight:600}
+  .consent-q{gap:12px;margin:4px 0 8px}
+  .consent-q .cq{font-weight:600}
+  .consent-q.missing{box-shadow:none}
+  .consent-q.missing .opt{border-color:var(--bad)}
   .consent-check{display:flex;gap:14px;align-items:flex-start;padding:18px;border:1px solid var(--ctl);border-radius:var(--radius-sm);cursor:pointer;font-weight:500}
   .consent-check:has(input:checked){border:2px solid var(--accent);padding:17px;background:var(--accent-soft)}
   .consent-check input{accent-color:var(--accent);width:20px;height:20px;margin:2px 0 0;flex:none}
@@ -633,6 +637,7 @@ function viewId(){
 /* 동의서: 체크해야 [Next]가 눌립니다 */
 function viewConsent(){
   const CS = C.CONSENT;
+  if (CS.sections) return viewConsentSections();
   const facts = CS.facts || [];
   const el = paper(CS.title, `${CS.lead ? `<p class="lead">${CS.lead}</p>` : ''}
     ${facts.length ? `<div class="facts" style="--n:${facts.length}">${facts.map(f => `<div class="fact"><span>${f.label}</span><b>${f.value}</b></div>`).join('')}</div>` : ''}
@@ -644,6 +649,42 @@ function viewConsent(){
   next.onclick = () => {
     if (!cb.checked) return;
     Object.assign(S.meta, {consent: 1, consent_at: iso()});
+    save(Object.assign({status: 'consented'}, S.meta));
+    S.stage = 'pre'; S.page = 0; render();
+  };
+}
+
+/* 동의서(IRB 형식): 본문(html)과 하나 고르는 문항(choice)을 순서대로 보여 줌.
+   모든 choice에 답해야 넘어가고, decline 답을 고르면 참여하지 않음(declined)으로 종료.
+   choice 답은 meta에 id 이름으로 저장 → 응답 시트 열 (consent_pi, consent_future, consent_agree) */
+function viewConsentSections(){
+  const CS = C.CONSENT, facts = CS.facts || [];
+  const choices = CS.sections.filter(s => s.choice).map(s => s.choice);
+  const body = CS.sections.map(s => s.html ? `<div class="prose">${s.html}</div>` : `
+    <div class="block consent-q" data-id="${esc(s.choice.id)}">
+      <div class="cq" id="${esc(s.choice.id)}_q">${s.choice.text}</div>
+      <div class="opts" role="radiogroup" aria-labelledby="${esc(s.choice.id)}_q">${s.choice.options.map(o => `
+        <label class="opt"><input type="radio" name="${esc(s.choice.id)}" value="${esc(o.value)}"${s.choice.id === 'consent_agree' && !o.decline ? ' id="agree"' : ''}><span>${o.label}</span></label>`).join('')}</div>
+      <div class="msg">${T.msg.single}</div>
+    </div>`).join('');
+  const el = paper(CS.title, `${CS.lead ? `<p class="lead">${CS.lead}</p>` : ''}
+    ${facts.length ? `<div class="facts" style="--n:${facts.length}">${facts.map(f => `<div class="fact"><span>${f.label}</span><b>${f.value}</b></div>`).join('')}</div>` : ''}
+    ${body}`,
+    `<span class="note">${CS.declineNote || ''}</span><span class="right"><button id="next">${T.next}</button></span>`);
+  el.addEventListener('change', e => { const b = e.target.closest('.consent-q'); if (b) b.classList.remove('missing'); });
+  el.querySelector('#next').onclick = () => {
+    const picked = {}; let firstBad = null, declined = false;
+    choices.forEach(ch => {
+      const blk = el.querySelector(`.consent-q[data-id="${CSS.escape(ch.id)}"]`);
+      const r = blk.querySelector('input:checked');
+      blk.classList.toggle('missing', !r);
+      if (!r){ firstBad = firstBad || blk; return; }
+      picked[ch.id] = r.value;
+      if ((ch.options.find(o => String(o.value) === r.value) || {}).decline) declined = true;
+    });
+    if (firstBad){ firstBad.scrollIntoView({behavior: 'smooth', block: 'center'}); return; }
+    Object.assign(S.meta, picked, {consent: declined ? 0 : 1, consent_at: iso()});
+    if (declined){ save(Object.assign({}, S.meta)); return end('declined'); }
     save(Object.assign({status: 'consented'}, S.meta));
     S.stage = 'pre'; S.page = 0; render();
   };
@@ -1311,7 +1352,8 @@ function viewDebrief(){
       </div>
       <div class="msg">${T.msg.single}</div>
     </section>
-    <div class="actions"><span class="right"><button id="fin">${T.finish}</button></span></div></div>`;
+    ${D.after ? `<section class="card"><div class="prose">${interp(D.after)}</div></section>` : ''}
+    <div class="actions"><span class="right"><button id="fin">${D.button || T.finish}</button></span></div></div>`;
   const el = app.firstElementChild;
   const blk = el.querySelector('#wdBlock');
   blk.addEventListener('change', () => blk.classList.remove('missing'));
@@ -1386,7 +1428,7 @@ function end(reason){
 async function viewEnd(){
   const version = viewVersion;
   const r = S.meta.end_reason;
-  const msg = {screened: T.screenedMsg, attention: T.attentionMsg, full: T.fullMsg, mobile: T.mobileBlocked,
+  const msg = {screened: T.screenedMsg, attention: T.attentionMsg, full: T.fullMsg, mobile: T.mobileBlocked, declined: T.declinedMsg,
     technical:'The stream could not be played. Please return to the recruitment platform and contact the researcher.'}[r] || '';
   const url = {screened: C.REDIRECTS.screenedOut, attention: C.REDIRECTS.attentionFail, full: C.REDIRECTS.full}[r];
   const title = T.endTitles[r] || '';

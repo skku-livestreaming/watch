@@ -167,6 +167,7 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 | `cell`, `group`, `cong`, `stim_code` | 배정 조건 |
 | `is_test` | 점검 기록이면 1 |
 | `consent`, `consent_at` | 동의 여부·시각 |
+| `consent_pi`, `consent_future`, `consent_agree` | 동의서 선택: 개인정보 수집(1~3, 3 = 비동의·불참), 추가 연구 활용(1~4), 참여 동의(1 = 동의, 2 = 비동의). 비동의면 `status = declined`로 종료 |
 | `t1_vote`, `t1_conf` | 자극물 투표(A/B)와 확신도. 확신도까지 제출된 경우만 |
 | `t1_submitted` | 투표 제출 여부 (0이면 일치도 조작이 성립하지 않음 → 분석 제외 후보) |
 | `t1_first_choice`, `t1_clicks`, `t1_unsubmitted_choice` | 처음 고른 답, 선택 클릭 수, 제출하지 못한 선택 |
