@@ -655,7 +655,7 @@ function viewConsent(){
 }
 
 /* 동의서(IRB 형식): 본문(html)과 하나 고르는 문항(choice)을 순서대로 보여 줌.
-   모든 choice에 답해야 넘어가고, decline 답을 고르면 참여하지 않음(declined)으로 종료.
+   참여하려면 모든 choice에 답해야 함. decline 답은 다른 문항이 비어 있어도 종료.
    choice 답은 meta에 id 이름으로 저장 → 응답 시트 열 (consent_pi, consent_future, consent_agree) */
 function viewConsentSections(){
   const CS = C.CONSENT, facts = CS.facts || [];
@@ -682,9 +682,14 @@ function viewConsentSections(){
       picked[ch.id] = r.value;
       if ((ch.options.find(o => String(o.value) === r.value) || {}).decline) declined = true;
     });
+    // Refusal does not require completing the rest of the consent form.
+    if (declined){
+      Object.assign(S.meta, picked, {consent: 0, consent_at: iso()});
+      save(Object.assign({}, S.meta));
+      return end('declined');
+    }
     if (firstBad){ firstBad.scrollIntoView({behavior: 'smooth', block: 'center'}); return; }
-    Object.assign(S.meta, picked, {consent: declined ? 0 : 1, consent_at: iso()});
-    if (declined){ save(Object.assign({}, S.meta)); return end('declined'); }
+    Object.assign(S.meta, picked, {consent: 1, consent_at: iso()});
     save(Object.assign({status: 'consented'}, S.meta));
     S.stage = 'pre'; S.page = 0; render();
   };
