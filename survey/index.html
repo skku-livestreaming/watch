@@ -655,7 +655,7 @@ function viewConsent(){
 }
 
 /* 동의서(IRB 형식): 본문(html)과 하나 고르는 문항(choice)을 순서대로 보여 줌.
-   참여하려면 모든 choice에 답해야 함. decline 답은 다른 문항이 비어 있어도 종료.
+   모든 choice에 답하고 참여에 동의했을 때만 Next 활성화. 비동의는 화면에 머무름.
    choice 답은 meta에 id 이름으로 저장 → 응답 시트 열 (consent_pi, consent_future, consent_agree) */
 function viewConsentSections(){
   const CS = C.CONSENT, facts = CS.facts || [];
@@ -670,25 +670,21 @@ function viewConsentSections(){
   const el = paper(CS.title, `${CS.lead ? `<p class="lead">${CS.lead}</p>` : ''}
     ${facts.length ? `<div class="facts" style="--n:${facts.length}">${facts.map(f => `<div class="fact"><span>${f.label}</span><b>${f.value}</b></div>`).join('')}</div>` : ''}
     ${body}`,
-    `<span class="note">${CS.declineNote || ''}</span><span class="right"><button id="next">${T.next}</button></span>`);
-  el.addEventListener('change', e => { const b = e.target.closest('.consent-q'); if (b) b.classList.remove('missing'); });
-  el.querySelector('#next').onclick = () => {
-    const picked = {}; let firstBad = null, declined = false;
+    `<span class="note">${CS.declineNote || ''}</span><span class="right"><button id="next" disabled>${T.next}</button></span>`);
+  const next = el.querySelector('#next');
+  const canContinue = () => choices.every(ch => {
+    const r = el.querySelector(`input[name="${CSS.escape(ch.id)}"]:checked`);
+    const option = r && ch.options.find(o => String(o.value) === r.value);
+    return !!option && !option.decline;
+  });
+  el.addEventListener('change', () => { next.disabled = !canContinue(); });
+  next.onclick = () => {
+    if (!canContinue()) return;
+    const picked = {};
     choices.forEach(ch => {
-      const blk = el.querySelector(`.consent-q[data-id="${CSS.escape(ch.id)}"]`);
-      const r = blk.querySelector('input:checked');
-      blk.classList.toggle('missing', !r);
-      if (!r){ firstBad = firstBad || blk; return; }
+      const r = el.querySelector(`input[name="${CSS.escape(ch.id)}"]:checked`);
       picked[ch.id] = r.value;
-      if ((ch.options.find(o => String(o.value) === r.value) || {}).decline) declined = true;
     });
-    // Refusal does not require completing the rest of the consent form.
-    if (declined){
-      Object.assign(S.meta, picked, {consent: 0, consent_at: iso()});
-      save(Object.assign({}, S.meta));
-      return end('declined');
-    }
-    if (firstBad){ firstBad.scrollIntoView({behavior: 'smooth', block: 'center'}); return; }
     Object.assign(S.meta, picked, {consent: 1, consent_at: iso()});
     save(Object.assign({status: 'consented'}, S.meta));
     S.stage = 'pre'; S.page = 0; render();
