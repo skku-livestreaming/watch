@@ -239,7 +239,8 @@ window.SURVEY_CONFIG = {
 
   /* ── 8. 문항 페이지 ───────────────────────────────────────────
      pre  = 동의 후 · 자극물 전 /  post = 자극물 후 · 디브리핑 전
-     ※ 「라이브스트리밍_설문문항_근거」 엑셀의 합본_1113 시트 기준. 문구는 'Revised (우리 설문에 사용)' 열 그대로.
+     ※ 「라이브스트리밍_설문문항_근거」 엑셀 합본_1113 시트 + Live_Streaming_Survey_IRB.docx 기준.
+       문항 문구는 시트 Revised 열, 지시문(구성개념별)·선별 문항·구간 안내는 IRB 문서 그대로.
        쪽 나눔: 시트의 1~5번page는 그대로, 그 뒤는 시트의 표 구분(종속변수 / 조작점검 / 조절변수 / 통제변수 / 인구통계)대로 한 쪽씩.
 
      페이지: { id, title?, blocks:[…], showIf?: ctx => bool, minSeconds? }
@@ -260,7 +261,19 @@ window.SURVEY_CONFIG = {
      showIf   : ctx => 조건. ctx.group('ai'|'human'|'mixed'), ctx.cong, ctx.answers 사용 가능
      저장되는 열 이름: single/number/textarea = id, likert = id_항목id (rawKeys: true면 항목id 그대로), multi = id_값(1/0) */
   PAGES: {
-    pre: [],
+    pre: [
+      /* ── IRB Screening: No를 고르면 설문 끝으로 (screenedMsg) ── */
+      {
+        id: 'screening',
+        title: 'Screening',
+        blocks: [
+          { type: 'single', id: 'scr_live3m', required: true,
+            text: 'In the past 3 months, have you watched a live stream on a platform such as YouTube Live, Twitch, TikTok LIVE, or Instagram Live?',
+            options: [{ value: '1', label: 'Yes' }, { value: '2', label: 'No' }],
+            screen: { allowed: ['1'] } }
+        ]
+      }
+    ],
 
     post: [
       {
@@ -281,7 +294,9 @@ window.SURVEY_CONFIG = {
       /* ── 1번page. 종속변수: Opinion confidence ── */
       {
         id: 'p1_confidence',
+        title: 'Main Survey',
         blocks: [
+          { type: 'html', html: '<p>Please answer the following questions based on the live stream you just watched.</p>' },
           { type: 'likert', id: 'op_conf', required: true,
             text: `Think back to your vote during the live stream. How confident are you now in the choice you made on the question “Do violent video games contribute to youth violence?”`,
             points: 7, labels: { 1: 'Not at all confident', 7: 'Extremely confident' },
@@ -322,27 +337,45 @@ window.SURVEY_CONFIG = {
       {
         id: 'p4_viewers',
         blocks: [
-          { type: 'likert', id: 'p4', rawKeys: true, required: true,
-            text: 'Think about your experience of watching the live stream with other viewers.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+          { type: 'likert', id: 'sp', rawKeys: true, required: true,
+            text: 'Think about your experience of watching the live stream with other viewers. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'sp_1', text: 'I felt as if the other viewers were there with me.' },
               { id: 'sp_2', text: 'While watching the live stream, I was constantly aware of the other viewers.' },
-              { id: 'sp_3', text: 'I felt as if the other viewers had real emotions.' },
+              { id: 'sp_3', text: 'I felt as if the other viewers had real emotions.' }
+            ] },
+          { type: 'likert', id: 'mind', rawKeys: true, required: true,
+            text: 'Think about how you perceived the other viewers in the live stream you just watched. Please indicate how much you agree with each statement.',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
               { id: 'mind_1', text: 'It seemed to me that the other viewers were capable of thinking.' },
               { id: 'mind_2', text: 'It seemed to me that the other viewers were capable of conveying their thoughts and feelings to others.' },
               { id: 'mind_3', text: 'It seemed to me that the other viewers were capable of understanding how others feel.' },
-              { id: 'mind_4', text: 'It seemed to me that the other viewers were capable of telling right from wrong and trying to do what is right.' },
+              { id: 'mind_4', text: 'It seemed to me that the other viewers were capable of telling right from wrong and trying to do what is right.' }
+            ] },
+          { type: 'likert', id: 'sid', rawKeys: true, required: true,
+            text: 'Think about your relationship with the other viewers in the live stream you just watched. Please indicate how much you agree with each statement.',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
               { id: 'sid_1', text: 'The other viewers seemed to share a sense of “we-ness” with me.' },
               { id: 'sid_2', text: 'The other viewers seemed to share the same identity as me, despite our differences.' },
-              { id: 'sid_3', text: 'The other viewers seemed to feel a sense of unity with me.' },
+              { id: 'sid_3', text: 'The other viewers seemed to feel a sense of unity with me.' }
+            ] },
+          { type: 'likert', id: 'ent', rawKeys: true, required: true,
+            text: 'Think about how the other viewers in the live stream you just watched appeared to you as a whole. Please indicate how much you agree with each statement.',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
               { id: 'ent_1', text: 'The other viewers seemed like a community.' },
               { id: 'ent_2', text: 'The other viewers seemed like a single unit.' },
-              { id: 'ent_3', text: 'The other viewers felt like a group.' },
-              { id: 'att_1', text: 'If you are reading carefully, please select 6 for this statement.', attention: { correct: '6' } }
+              { id: 'ent_3', text: 'The other viewers felt like a group.' }
             ] },
+          { type: 'likert', id: 'att_1', required: true,          // 주의집중 점검 (정답 6)
+            text: 'If you are reading carefully, please select 6 for this statement.',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [{ id: 'x', text: '', attention: { correct: '6' } }] },
           { type: 'likert', id: 'sr', rawKeys: true, required: true,
-            text: 'Think about your views on the issue raised in the poll, and those of the other viewers, while you were watching the live stream.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            text: 'Think about your views on the issue raised in the poll, and those of the other viewers, while you were watching the live stream. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'sr_1', text: 'I thought that the other viewers and I were on the same wavelength with regard to violent video games.' },
@@ -363,27 +396,42 @@ window.SURVEY_CONFIG = {
             text: 'How much do you think the general public agrees with the statement “Violent video games contribute to youth violence”?',
             points: 7, labels: { 1: 'The general public strongly disagrees', 7: 'The general public strongly agrees' },
             items: [{ id: 'x', text: '' }] },
-          { type: 'likert', id: 'infl', rawKeys: true, required: true,
-            text: 'Think about how you felt about the comments other viewers posted in the live stream you just watched.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+          { type: 'likert', id: 'inf', rawKeys: true, required: true,
+            text: 'Think about how you felt about the comments other viewers posted in the live stream you just watched. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'inf_1', text: 'My opinion was influenced by the comments.' },
-              { id: 'inf_2', text: 'I was persuaded by the comments and accepted the opinion they expressed.' },
+              { id: 'inf_2', text: 'I was persuaded by the comments and accepted the opinion they expressed.' }
+            ] },
+          { type: 'likert', id: 'nor', rawKeys: true, required: true,
+            text: 'Think about how you responded to the opinions expressed in the comments other viewers posted in the live stream you just watched. Please indicate how much you agree with each statement.',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
               { id: 'nor_1', text: 'I felt like I had to agree with the opinions in the comments.' },
               { id: 'nor_2', text: 'I was not persuaded by the comments, but I still accepted the opinions they expressed.' }
             ] },
-          { type: 'likert', id: 'cmt', rawKeys: true, required: true,
-            text: 'Think about the comments other viewers posted in the live stream you just watched about the issue raised in the poll.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+          { type: 'likert', id: 'manip', rawKeys: true, required: true,
+            text: 'Think about the comments other viewers posted in the live stream you just watched about the issue raised in the poll. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'manip_1', text: 'The comments felt manipulative.' },
               { id: 'manip_2', text: 'The comments seemed to be trying to influence viewers\' judgments in ways I didn\'t like.' },
               { id: 'manip_3', text: 'The comments seemed to be trying to inappropriately control viewers\' judgments.' },
-              { id: 'manip_4', text: 'The comments seemed intentionally designed to influence viewers\' judgments without their awareness.' },
+              { id: 'manip_4', text: 'The comments seemed intentionally designed to influence viewers\' judgments without their awareness.' }
+            ] },
+          { type: 'likert', id: 'thr', rawKeys: true, required: true,
+            text: 'Think about what you thought of the opinions expressed in the comments other viewers posted in the live stream you just watched. Please indicate how much you agree with each statement.',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
               { id: 'thr_1', text: 'The comments seemed to threaten my freedom to form my own opinion.' },
               { id: 'thr_2', text: 'The comments seemed to be trying to make the decision for me.' },
               { id: 'thr_3', text: 'The comments seemed to be trying to manipulate me.' },
-              { id: 'thr_4', text: 'The comments seemed to be pressuring me to hold a particular opinion.' },
+              { id: 'thr_4', text: 'The comments seemed to be pressuring me to hold a particular opinion.' }
+            ] },
+          { type: 'likert', id: 'cred', rawKeys: true, required: true,
+            text: 'Think about the content of the comments other viewers posted in the live stream you just watched. Please indicate how much you agree with each statement.',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
               { id: 'cred_1', text: 'Overall, the comments were accurate.' },
               { id: 'cred_2', text: 'Overall, the comments were authentic.' },
               { id: 'cred_3', text: 'Overall, the comments were believable.' }
@@ -396,7 +444,7 @@ window.SURVEY_CONFIG = {
         id: 'p6_platform',
         blocks: [
           { type: 'likert', id: 'enjoy', rawKeys: true, required: true,
-            text: 'Think about your experience participating in the live stream you just watched.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            text: 'Think about your experience participating in the live stream you just watched. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'enj_1', text: 'I enjoyed participating in the live stream.' },
@@ -404,7 +452,7 @@ window.SURVEY_CONFIG = {
               { id: 'enj_3', text: 'I found participating in the live stream exciting.' }
             ] },
           { type: 'likert', id: 'interest', rawKeys: true, required: true,
-            text: 'Think about how viewers can participate in live streams on the platform you just used.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            text: 'Think about how viewers can participate in live streams on the platform you just used. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'int_1', text: 'I am interested in the way of participating in live streams on this platform.' },
@@ -412,7 +460,7 @@ window.SURVEY_CONFIG = {
               { id: 'int_3', text: 'The way of participating in live streams on this platform gives me a positive impression.' }
             ] },
           { type: 'likert', id: 'future', rawKeys: true, required: true,
-            text: 'Imagine that the platform on which you just watched the live stream were actually available to you.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            text: 'Imagine that the platform on which you just watched the live stream were actually available to you. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'fut_1', text: 'I would use this platform in the future.' },
@@ -446,37 +494,39 @@ window.SURVEY_CONFIG = {
       /* ── 조절변수: Bandwagon heuristic · Personal issue importance · Subjective knowledge · Conformity tendency · Trust in AI ── */
       {
         id: 'p8_traits',
+        title: 'Additional Survey',
         blocks: [
+          { type: 'html', html: '<p>The following questions are about your general beliefs and experiences.</p>' },
           { type: 'likert', id: 'bandwagon', rawKeys: true, required: true,
-            text: 'Think about your general beliefs about the opinions and judgments of groups of people.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            text: 'Think about your general beliefs about the opinions and judgments of groups of people. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'bw_1', text: 'Large groups of people are good at telling which opinions are right, so it is reasonable to trust their judgment.' },
               { id: 'bw_2', text: 'An opinion that many people believe is right is likely to actually be right.' }
             ] },
           { type: 'likert', id: 'importance', rawKeys: true, required: true,
-            text: 'The following statements are about the issue of whether violent video games contribute to youth violence.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            text: 'The following statements are about the issue of whether violent video games contribute to youth violence. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'imp_1', text: 'This issue is personally important to me.' },
               { id: 'imp_2', text: 'I care a great deal about this issue.' }
             ] },
           { type: 'likert', id: 'knowledge', rawKeys: true, required: true,
-            text: 'The following statements are about your knowledge of whether violent video games contribute to youth violence.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            text: 'The following statements are about your knowledge of whether violent video games contribute to youth violence. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'know_1', text: 'I know quite a lot about this issue.' },
               { id: 'know_2', text: 'Among my friends, I am one of the “experts” on this issue.' }
             ] },
           { type: 'likert', id: 'conformity', rawKeys: true, required: true,
-            text: 'Think about how you actually are in most situations.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            text: 'Think about how you actually are in most situations. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'conf_1', text: 'I often rely on others\' advice and follow it.' },
               { id: 'conf_2', text: 'If someone is persuasive, I tend to change my opinion and go along with them.' }
             ] },
           { type: 'likert', id: 'trust_ai', rawKeys: true, required: true,
-            text: 'Think about how much you generally trust AI.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            text: 'Think about how much you generally trust AI. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'tai_1', text: 'AI is reliable.' },
@@ -557,8 +607,9 @@ window.SURVEY_CONFIG = {
       /* ── 인구통계 ── */
       {
         id: 'demo',
-        title: 'About you',
+        title: 'Demographics',
         blocks: [
+          { type: 'html', html: '<p>The following questions are about you. Please select one option or fill in the blank.</p>' },
           { type: 'number', id: 'birth_year', required: true, min: 1920, max: 2008,
             text: 'What is your year of birth?' },
           { type: 'single', id: 'gender', required: true, text: 'What is your gender?',

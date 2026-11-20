@@ -18,7 +18,7 @@ CloudResearch Connect → 설문(동의·사전) → 셀 균등 배정 → 조�
 ```
 CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?participantId=…&assignmentId=…&projectId=…
   ① 동의서 (체크해야 Next 활성화)
-  ② 사전 문항 (지금은 없음. 선정 기준 탈락도 없음)
+  ② 선별 문항 (IRB Screening: 최근 3개월 라이브 시청 여부, No → 설문 끝 `screened`)
   ③ 셀 배정 (서버에서 인원이 가장 적은 셀)
   ④ 조건별 설명문 (ai / human / mixed), 항목당 15초·총 45초 뒤 입장 버튼 활성화
   ⑤ 자극물을 설문 화면 안에 띄움  …/watch/?c=셀코드&panel_id=참가자ID
@@ -177,6 +177,7 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 | `op_changed`, `op_why` | 선택이 바뀌었는지(1 = 바뀜, 2 = 그대로)와 그 이유 |
 | `sp_*`, `mind_*`, `sid_*`, `ent_*`, `sr_*`, `inf_*`, `nor_*`, `manip_*`, `thr_*`, `cred_*`, `enj_*`, `int_*`, `fut_*`, `bw_*`, `imp_*`, `know_*`, `conf_*`, `tai_*` | 척도 항목 (변수별 접두어, `fut_3r`은 역문항) |
 | `att_1` | 주의집중 점검 (정답 6) |
+| `scr_live3m` | 선별 문항 (1 = Yes, 2 = No → 종료) |
 | `stim_session_id` | 자극물 DB(Supabase)의 세션 ID → 자극물 데이터와 정확히 합칠 때 사용 |
 | `stim_code_seen` | 자극물이 실제로 받은 조건 코드 (`stim_code`와 같아야 정상) |
 | `stim_end` | complete(정상 종료) / video_failed / navigated / debug_skip / fallback_button |
