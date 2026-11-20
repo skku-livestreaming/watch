@@ -84,31 +84,71 @@ window.SURVEY_CONFIG = {
   INTRO_MIN_SECONDS: 45,       // 조건별 설명문 강제 체류 시간(초). 항목 3개가 이 시간을 3등분해 하나씩 나타납니다 (45초 = 항목당 15초)
 
   /* ── 5. 동의서 ─────────────────────────────────────────────── */
+  /* Live_Streaming_Survey_IRB.docx 동의서 그대로. 바꾼 곳 두 군데:
+     ① 2. Procedures 끝에 주의집중 점검 문항 안내 문장 추가 (IRB 요청)
+     ② 4. 개인정보 보호의 참가자 ID 사용 범위를 10번(삭제 요청)과 맞춤
+     sections: { html } = 본문 / { choice: { id, text, options:[{value,label,decline?}] } } = 하나 고르는 문항.
+     decline: true인 답을 고르면 참여하지 않는 것으로 보고 종료 화면(declined)으로 갑니다.
+     choice 답은 응답 시트에 id 이름 열로 저장됩니다 (consent_pi, consent_future, consent_agree). */
   CONSENT: {
-    title: 'Research Consent',
-    lead: 'Please read the information below before deciding whether to take part.',
+    title: 'Research Participant Consent Form',
+    lead: '※ The researchers of this study would like to ask you to participate in a survey. Please read the following information carefully, and if you have any questions, please contact the researcher, Hyerin Park, by email (hrp0112@g.skku.edu).',
     // 맨 위 요약 칸 (비우면 표시하지 않음). 본문 값과 같게 맞출 것
     facts: [
-      { label: 'Time', value: 'About [N] minutes' },
-      { label: 'Payment', value: '[Amount]' },
+      { label: 'Time', value: 'About 10 minutes' },
+      { label: 'Payment', value: '$3' },
       { label: 'Device', value: 'Computer only' }
     ],
-    html: `
-      <p><b>Purpose.</b> This study examines viewers' experiences with and perceptions of live streaming.
-      It is conducted for academic research only.</p>
-      <p><b>Procedure.</b> You will answer a few questions, watch a short live stream, and then complete a
-      questionnaire. The study takes about [N] minutes.</p>
-      <p><b>Data.</b> We collect your responses and basic demographic information (e.g., gender, age).
-      Your CloudResearch ID is used only to process payment and is stored separately from your answers
-      after the study. All data are kept confidential and used for research purposes only.</p>
-      <p><b>Compensation.</b> [Amount] upon completion.</p>
-      <p><b>Voluntary participation.</b> You may stop at any time without penalty.</p>
-      <p><b>Contact.</b> This study has been reviewed by the Institutional Review Board of Sungkyunkwan
-      University (IRB No. [XXXX]). Questions: [Researcher name], [email].</p>`,
-    // 체크박스 문구. 체크해야 [Next]가 눌립니다.
+    sections: [
+      { html: `
+        <p><b>Project Title:</b> A Study on Live-Streaming Viewing Experiences</p>
+        <p><b>1. Background</b><br>AI viewers, which are labeled as AI, have recently begun to participate in the chat on live-streaming platforms. This study aims to understand what experiences and perceptions viewers have while watching live streams.</p>
+        <p><b>2. Procedures</b><br>If you agree to participate, you will watch a short video in a live-streaming format. While watching, you may use the chat, like, and subscribe features only if you wish. You will then respond to a survey. Due to the nature of this study, some details will be explained in a debriefing after your participation. The entire study will take about 10 minutes.
+        The survey includes an attention-check question that asks you to select a specific answer to confirm that you are reading the questions carefully. Responses that do not pass this check may be excluded from the analysis.</p>
+        <p><b>3. Benefits of Participation</b><br>You will not receive any direct benefit from participating in this study. The knowledge gained from this study may be published in academic papers so that it is available to everyone, and the results of the study may develop into commercial value, such as royalties, in the future. However, such future benefits will not be provided directly to you.</p>
+        <p><b>4. Confidentiality of Personal Information</b><br>This study does not collect directly identifying information, such as your name, contact information, address, or email address, or any sensitive information. The information collected in this study includes your CloudResearch participant ID, demographic information (gender, year of birth, education, and employment status), your survey responses, and records of your activity while watching the broadcast (votes, chat messages you type, likes, and whether you subscribed). Your CloudResearch participant ID will be used only to confirm compensation and to process requests to delete your data, and it will be stored separately from the analysis data. The collected data will be kept for 3 years after the study ends and then destroyed.</p>` },
+      { choice: {
+        id: 'consent_pi',
+        text: '* Consent to the collection of personal information (please check one)',
+        options: [
+          { value: '1', label: 'My responses may be recorded, but I do not consent to the use of my personal information.' },
+          { value: '2', label: 'I consent to providing my personal information, as it is necessary for the nature of this study.' },
+          { value: '3', label: 'I do not consent to the collection of my personal information and will not participate in this study.', decline: true }
+        ] } },
+      { html: `
+        <p><b>5. Risks of Participation</b><br>This study is a minimal-risk study that does not exceed the level of risk encountered in daily life. You may feel fatigue or mild discomfort while responding; in that case, you may stop participating at any time by closing your browser window. If a health problem occurs during your participation, please stop participating and contact a local medical facility or emergency services (911 in the United States). The researchers will make every effort to protect your personal information and prevent your identity from being disclosed.</p>
+        <p><b>6. Participant Responsibilities</b><br>If you agree to participate, you will complete a survey for this study. Please answer the survey questions sincerely.</p>
+        <p><b>7. Study Period and Number of Participants</b><br>This study is scheduled to be conducted from November 2026 to November 2027 with a total of 450 participants.</p>
+        <p><b>8.</b> There are no additional costs for participating in this study.</p>
+        <p><b>9. Compensation and Benefits</b><br>Participants who complete the survey will receive $3 through CloudResearch Connect. Withdrawing the use of your data in the debriefing will not affect your compensation.</p>
+        <p><b>10. Voluntary Participation and Freedom to Decline or Withdraw</b><br>Your participation in this study is entirely voluntary. If you do not wish to participate, you do not have to consent. Even after consenting, if you change your mind, you may stop participating at any time by closing your browser window, and you may request the deletion of your data through the CloudResearch Connect messaging feature or by emailing the researcher.</p>
+        <p><b>11. Confidentiality</b><br>Your personal information will be kept confidential in any reports or publications resulting from this study and will be protected by law.</p>
+        <p><b>12. Consent to Additional Use of Data</b><br>If this study goes well, your data may also be used in other future studies to achieve better results. Please indicate one of the following regarding the use of your data in other future studies.</p>` },
+      { choice: {
+        id: 'consent_future',
+        text: 'Use of your data in other future studies',
+        options: [
+          { value: '1', label: 'I consent to my data being provided for all other future studies.' },
+          { value: '2', label: 'I consent only for researchers at Sungkyunkwan University.' },
+          { value: '3', label: 'I consent only for the researchers of this study.' },
+          { value: '4', label: 'I do not consent.' }
+        ] } },
+      { html: `
+        <p><b>13. Information on Your Rights as a Research Participant</b><br>This study has been reviewed and approved by the Sungkyunkwan University Institutional Review Board (IRB). If any information arises in the future that may harm your rights as a research participant, the researchers will inform you as soon as possible. If you have any questions about this study, you may contact the researcher, Hyerin Park, by email (hrp0112@g.skku.edu). If you have any questions about the violation of your rights as a research participant, you may contact the Sungkyunkwan University Institutional Review Board at +82-31-299-6711 or skkuedu@skku.edu.</p>
+        <p><b>14.</b> By clicking the "I agree" button below, you confirm that you have read and understood the information above and voluntarily agree to participate in this study.</p>` },
+      { choice: {
+        id: 'consent_agree',
+        text: 'Do you agree to participate in this study?',
+        options: [
+          { value: '1', label: 'I agree' },
+          { value: '2', label: 'I do not agree', decline: true }
+        ] } },
+      { html: `<p class="note">※ This form is valid only if it has been reviewed and approved by the Institutional Review Board (IRB).</p>` }
+    ],
+    // sections를 쓰지 않을 때만 쓰는 예전 방식 (체크박스 하나)
     agree: 'I have read the information above and agree to participate.',
-    // 체크박스 아래 작은 안내. 비우면 표시하지 않습니다. (IRB 문구와 맞출 것)
-    declineNote: 'If you do not wish to participate, you may close this window.'
+    // [Next] 옆 작은 안내. 비우면 표시하지 않습니다.
+    declineNote: ''
   },
 
   /* ── 6. 조건별 설명문 (자극물 입장 직전, INTRO_MIN_SECONDS 체류) ──
@@ -172,29 +212,35 @@ window.SURVEY_CONFIG = {
   ENTER_BUTTON: 'Enter the stream',
 
   /* ── 7. 디브리핑 ───────────────────────────────────────────── */
+  /* Live_Streaming_Survey_IRB.docx 디브리핑 그대로.
+     html = 연구 목적 + 미리 알리지 않은 정보 / question·keep·withdraw = 데이터 사용 선택 / after = 연락처 + 마지막 안내 */
   DEBRIEF: {
-    title: 'About this study',
+    title: 'Debriefing',
     html: `
-      <p>Thank you for participating. Before you finish, we would like to tell you more about this study.</p>
-      <p>This study examined whether chat messages from other viewers in a live stream influence viewers'
-      opinions.</p>
+      <p>Thank you for participating in this study. Before you finish, please read the following information about the study.</p>
+      <p><b>Purpose of the study</b><br>This study examined how other viewers' opinions in a live-stream chat influence viewers' own opinions. Specifically, we examined whether the composition of the viewers in the chat (human viewers only, AI viewers only, or both) and the extent to which their opinions agreed with your vote affect your opinion. If participants knew this purpose in advance, we could not measure how they respond to others' opinions. For this reason, the purpose and the following information were not disclosed before your participation.</p>
       <div class="callout">
-        <p><b>Some information in the stream was not real.</b> [Describe exactly what was false, e.g.:
-        all chat messages were prepared in advance by the research team, and the poll results were generated
-        based on your own vote.]</p>
-        <p>We could not tell you this beforehand because knowing it would have changed how you responded.</p>
+        <p><b>Information that was not disclosed in advance</b></p>
+        <p>1. The live-streaming environment you used was developed by the research team for this study. It is not an actual streaming platform.</p>
+        <p>2. All chat messages, including those shown as written by human viewers, were scripted in advance by the research team.</p>
+        <p>3. The poll results (the percentage of votes for each option and the total number of voters) were values set by the research team and did not reflect actual votes.</p>
+        <p>4. Although the broadcast appeared to be live, it was a pre-recorded video, and there were no other viewers.</p>
+        <p>5. Any chat messages you typed were not shown to anyone else.</p>
       </div>
-      <p>Your choice in the poll does not reflect what other people actually think.</p>
-      <p>Now that you know the purpose of the study, you may withdraw your data. You will be paid in either
-      case. Questions: [Researcher name], [email].</p>`,
-    question: 'May we use your responses in our research?',
-    keep: 'Yes, you may use my responses.',
-    withdraw: 'No, please delete my responses.'
+      <p>The opinions in the chat messages were written for research purposes and do not represent the views of the researchers or actual public opinion. To protect the quality of this research, please do not share the details of this study with others who may participate.</p>`,
+    question: '<b>Use of your data</b><br><span style="font-weight:400">Now that you know the full purpose and procedures of this study, please choose whether you allow the researchers to use your data. If you withdraw, your data will be deleted and will not be used in the analysis. Your choice will not affect your compensation.</span>',
+    keep: 'I agree to the use of my data in this study.',
+    withdraw: 'I withdraw. Please delete my data.',
+    after: `
+      <p><b>Contact</b><br>If you have any questions about this study, please contact the researcher, Hyerin Park, by email (hrp0112@g.skku.edu) or through the CloudResearch Connect messaging feature. If you have questions about your rights as a research participant, you may contact the Sungkyunkwan University Institutional Review Board at +82-31-299-6711 or skkuedu@skku.edu.</p>
+      <p>Please click "Next" to return to CloudResearch Connect and complete the study.</p>`,
+    button: 'Next'
   },
 
   /* ── 8. 문항 페이지 ───────────────────────────────────────────
      pre  = 동의 후 · 자극물 전 /  post = 자극물 후 · 디브리핑 전
-     ※ 「라이브스트리밍_설문문항_근거」 엑셀의 합본_1113 시트 기준. 문구는 'Revised (우리 설문에 사용)' 열 그대로.
+     ※ 「라이브스트리밍_설문문항_근거」 엑셀 합본_1113 시트 + Live_Streaming_Survey_IRB.docx 기준.
+       문항 문구는 시트 Revised 열, 지시문(구성개념별)·선별 문항·구간 안내는 IRB 문서 그대로.
        쪽 나눔: 시트의 1~5번page는 그대로, 그 뒤는 시트의 표 구분(종속변수 / 조작점검 / 조절변수 / 통제변수 / 인구통계)대로 한 쪽씩.
 
      페이지: { id, title?, blocks:[…], showIf?: ctx => bool, minSeconds? }
@@ -215,7 +261,19 @@ window.SURVEY_CONFIG = {
      showIf   : ctx => 조건. ctx.group('ai'|'human'|'mixed'), ctx.cong, ctx.answers 사용 가능
      저장되는 열 이름: single/number/textarea = id, likert = id_항목id (rawKeys: true면 항목id 그대로), multi = id_값(1/0) */
   PAGES: {
-    pre: [],
+    pre: [
+      /* ── IRB Screening: No를 고르면 설문 끝으로 (screenedMsg) ── */
+      {
+        id: 'screening',
+        title: 'Screening',
+        blocks: [
+          { type: 'single', id: 'scr_live3m', required: true,
+            text: 'In the past 3 months, have you watched a live stream on a platform such as YouTube Live, Twitch, TikTok LIVE, or Instagram Live?',
+            options: [{ value: '1', label: 'Yes' }, { value: '2', label: 'No' }],
+            screen: { allowed: ['1'] } }
+        ]
+      }
+    ],
 
     post: [
       {
@@ -236,7 +294,9 @@ window.SURVEY_CONFIG = {
       /* ── 1번page. 종속변수: Opinion confidence ── */
       {
         id: 'p1_confidence',
+        title: 'Main Survey',
         blocks: [
+          { type: 'html', html: '<p>Please answer the following questions based on the live stream you just watched.</p>' },
           { type: 'likert', id: 'op_conf', required: true,
             text: `Think back to your vote during the live stream. How confident are you now in the choice you made on the question “Do violent video games contribute to youth violence?”`,
             points: 7, labels: { 1: 'Not at all confident', 7: 'Extremely confident' },
@@ -277,34 +337,52 @@ window.SURVEY_CONFIG = {
       {
         id: 'p4_viewers',
         blocks: [
-          { type: 'likert', id: 'p4', rawKeys: true, required: true,
-            text: 'Think about your experience of watching the live stream with other viewers.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+          { type: 'likert', id: 'sp', rawKeys: true, required: true,
+            text: 'Think about your experience of watching the live stream with other viewers. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'sp_1', text: 'I felt as if the other viewers were there with me.' },
               { id: 'sp_2', text: 'While watching the live stream, I was constantly aware of the other viewers.' },
-              { id: 'sp_3', text: 'I felt as if the other viewers had real emotions.' },
+              { id: 'sp_3', text: 'I felt as if the other viewers had real emotions.' }
+            ] },
+          { type: 'likert', id: 'mind', rawKeys: true, required: true,
+            text: 'Think about how you perceived the other viewers in the live stream you just watched. Please indicate how much you agree with each statement.',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
               { id: 'mind_1', text: 'It seemed to me that the other viewers were capable of thinking.' },
               { id: 'mind_2', text: 'It seemed to me that the other viewers were capable of conveying their thoughts and feelings to others.' },
               { id: 'mind_3', text: 'It seemed to me that the other viewers were capable of understanding how others feel.' },
-              { id: 'mind_4', text: 'It seemed to me that the other viewers were capable of telling right from wrong and trying to do what is right.' },
-              { id: 'sid_1', text: 'The other viewers seemed to share a sense of “we-ness” with me.' },
-              { id: 'sid_2', text: 'The other viewers seemed to share the same identity as me, despite our differences.' },
-              { id: 'sid_3', text: 'The other viewers seemed to feel a sense of unity with me.' },
-              { id: 'ent_1', text: 'The other viewers seemed like a community.' },
-              { id: 'ent_2', text: 'The other viewers seemed like a single unit.' },
-              { id: 'ent_3', text: 'The other viewers felt like a group.' },
-              { id: 'att_1', text: 'If you are reading carefully, please select 6 for this statement.', attention: { correct: '6' } }
+              { id: 'mind_4', text: 'It seemed to me that the other viewers were capable of telling right from wrong and trying to do what is right.' }
             ] },
-          { type: 'likert', id: 'sr', rawKeys: true, required: true,
-            text: 'Think about your views on the issue raised in the poll, and those of the other viewers, while you were watching the live stream.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+          { type: 'likert', id: 'sid', rawKeys: true, required: true,
+            text: 'Think about your relationship with the other viewers in the live stream you just watched. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
-              { id: 'sr_1', text: 'I thought that the other viewers and I were on the same wavelength with regard to video games.' },
-              { id: 'sr_2', text: 'I felt the same way about video games as the other viewers did.' },
-              { id: 'sr_3', text: 'I agreed with the other viewers\' point of view of video games.' },
-              { id: 'sr_4', text: 'The other viewers and I saw video games in the same way.' },
-              { id: 'sr_5', text: 'I agreed with the other viewers\' perception of video games.' }
+              { id: 'sid_1', text: 'The other viewers seemed to share a sense of “we-ness” with me.' },
+              { id: 'sid_2', text: 'The other viewers seemed to share the same identity as me, despite our differences.' },
+              { id: 'sid_3', text: 'The other viewers seemed to feel a sense of unity with me.' }
+            ] },
+          { type: 'likert', id: 'ent', rawKeys: true, required: true,
+            text: 'Think about how the other viewers in the live stream you just watched appeared to you as a whole. Please indicate how much you agree with each statement.',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
+              { id: 'ent_1', text: 'The other viewers seemed like a community.' },
+              { id: 'ent_2', text: 'The other viewers seemed like a single unit.' },
+              { id: 'ent_3', text: 'The other viewers felt like a group.' }
+            ] },
+          { type: 'likert', id: 'att_1', required: true,          // 주의집중 점검 (정답 6)
+            text: 'If you are reading carefully, please select 6 for this statement.',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [{ id: 'x', text: '', attention: { correct: '6' } }] },
+          { type: 'likert', id: 'sr', rawKeys: true, required: true,
+            text: 'Think about your views on the issue raised in the poll, and those of the other viewers, while you were watching the live stream. Please indicate how much you agree with each statement.',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
+              { id: 'sr_1', text: 'I thought that the other viewers and I were on the same wavelength with regard to violent video games.' },
+              { id: 'sr_2', text: 'I felt the same way about violent video games as the other viewers did.' },
+              { id: 'sr_3', text: 'I agreed with the other viewers\' point of view of violent video games.' },
+              { id: 'sr_4', text: 'The other viewers and I saw violent video games in the same way.' },
+              { id: 'sr_5', text: 'I agreed with the other viewers\' perception of violent video games.' }
             ] }
         ]
       },
@@ -318,27 +396,42 @@ window.SURVEY_CONFIG = {
             text: 'How much do you think the general public agrees with the statement “Violent video games contribute to youth violence”?',
             points: 7, labels: { 1: 'The general public strongly disagrees', 7: 'The general public strongly agrees' },
             items: [{ id: 'x', text: '' }] },
-          { type: 'likert', id: 'infl', rawKeys: true, required: true,
-            text: 'Think about how you felt about the comments other viewers posted in the live stream you just watched.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+          { type: 'likert', id: 'inf', rawKeys: true, required: true,
+            text: 'Think about how you felt about the comments other viewers posted in the live stream you just watched. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'inf_1', text: 'My opinion was influenced by the comments.' },
-              { id: 'inf_2', text: 'I was persuaded by the comments and accepted the opinion they expressed.' },
+              { id: 'inf_2', text: 'I was persuaded by the comments and accepted the opinion they expressed.' }
+            ] },
+          { type: 'likert', id: 'nor', rawKeys: true, required: true,
+            text: 'Think about how you responded to the opinions expressed in the comments other viewers posted in the live stream you just watched. Please indicate how much you agree with each statement.',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
               { id: 'nor_1', text: 'I felt like I had to agree with the opinions in the comments.' },
               { id: 'nor_2', text: 'I was not persuaded by the comments, but I still accepted the opinions they expressed.' }
             ] },
-          { type: 'likert', id: 'cmt', rawKeys: true, required: true,
-            text: 'Think about the comments other viewers posted in the live stream you just watched about the issue raised in the poll.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+          { type: 'likert', id: 'manip', rawKeys: true, required: true,
+            text: 'Think about the comments other viewers posted in the live stream you just watched about the issue raised in the poll. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'manip_1', text: 'The comments felt manipulative.' },
               { id: 'manip_2', text: 'The comments seemed to be trying to influence viewers\' judgments in ways I didn\'t like.' },
               { id: 'manip_3', text: 'The comments seemed to be trying to inappropriately control viewers\' judgments.' },
-              { id: 'manip_4', text: 'The comments seemed intentionally designed to influence viewers\' judgments without their awareness.' },
+              { id: 'manip_4', text: 'The comments seemed intentionally designed to influence viewers\' judgments without their awareness.' }
+            ] },
+          { type: 'likert', id: 'thr', rawKeys: true, required: true,
+            text: 'Think about what you thought of the opinions expressed in the comments other viewers posted in the live stream you just watched. Please indicate how much you agree with each statement.',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
               { id: 'thr_1', text: 'The comments seemed to threaten my freedom to form my own opinion.' },
               { id: 'thr_2', text: 'The comments seemed to be trying to make the decision for me.' },
               { id: 'thr_3', text: 'The comments seemed to be trying to manipulate me.' },
-              { id: 'thr_4', text: 'The comments seemed to be pressuring me to hold a particular opinion.' },
+              { id: 'thr_4', text: 'The comments seemed to be pressuring me to hold a particular opinion.' }
+            ] },
+          { type: 'likert', id: 'cred', rawKeys: true, required: true,
+            text: 'Think about the content of the comments other viewers posted in the live stream you just watched. Please indicate how much you agree with each statement.',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
               { id: 'cred_1', text: 'Overall, the comments were accurate.' },
               { id: 'cred_2', text: 'Overall, the comments were authentic.' },
               { id: 'cred_3', text: 'Overall, the comments were believable.' }
@@ -351,7 +444,7 @@ window.SURVEY_CONFIG = {
         id: 'p6_platform',
         blocks: [
           { type: 'likert', id: 'enjoy', rawKeys: true, required: true,
-            text: 'Think about your experience participating in the live stream you just watched.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            text: 'Think about your experience participating in the live stream you just watched. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'enj_1', text: 'I enjoyed participating in the live stream.' },
@@ -359,7 +452,7 @@ window.SURVEY_CONFIG = {
               { id: 'enj_3', text: 'I found participating in the live stream exciting.' }
             ] },
           { type: 'likert', id: 'interest', rawKeys: true, required: true,
-            text: 'Think about how viewers can participate in live streams on the platform you just used.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            text: 'Think about how viewers can participate in live streams on the platform you just used. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'int_1', text: 'I am interested in the way of participating in live streams on this platform.' },
@@ -367,7 +460,7 @@ window.SURVEY_CONFIG = {
               { id: 'int_3', text: 'The way of participating in live streams on this platform gives me a positive impression.' }
             ] },
           { type: 'likert', id: 'future', rawKeys: true, required: true,
-            text: 'Imagine that the platform on which you just watched the live stream were actually available to you.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            text: 'Imagine that the platform on which you just watched the live stream were actually available to you. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'fut_1', text: 'I would use this platform in the future.' },
@@ -401,37 +494,39 @@ window.SURVEY_CONFIG = {
       /* ── 조절변수: Bandwagon heuristic · Personal issue importance · Subjective knowledge · Conformity tendency · Trust in AI ── */
       {
         id: 'p8_traits',
+        title: 'Additional Survey',
         blocks: [
+          { type: 'html', html: '<p>The following questions are about your general beliefs and experiences.</p>' },
           { type: 'likert', id: 'bandwagon', rawKeys: true, required: true,
-            text: 'Think about your general beliefs about the opinions and judgments of groups of people.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            text: 'Think about your general beliefs about the opinions and judgments of groups of people. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'bw_1', text: 'Large groups of people are good at telling which opinions are right, so it is reasonable to trust their judgment.' },
               { id: 'bw_2', text: 'An opinion that many people believe is right is likely to actually be right.' }
             ] },
           { type: 'likert', id: 'importance', rawKeys: true, required: true,
-            text: 'The following statements are about the issue of whether violent video games contribute to youth violence.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            text: 'The following statements are about the issue of whether violent video games contribute to youth violence. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'imp_1', text: 'This issue is personally important to me.' },
               { id: 'imp_2', text: 'I care a great deal about this issue.' }
             ] },
           { type: 'likert', id: 'knowledge', rawKeys: true, required: true,
-            text: 'The following statements are about your knowledge of whether violent video games contribute to youth violence.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            text: 'The following statements are about your knowledge of whether violent video games contribute to youth violence. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'know_1', text: 'I know quite a lot about this issue.' },
               { id: 'know_2', text: 'Among my friends, I am one of the “experts” on this issue.' }
             ] },
           { type: 'likert', id: 'conformity', rawKeys: true, required: true,
-            text: 'Think about how you actually are in most situations.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            text: 'Think about how you actually are in most situations. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'conf_1', text: 'I often rely on others\' advice and follow it.' },
               { id: 'conf_2', text: 'If someone is persuasive, I tend to change my opinion and go along with them.' }
             ] },
           { type: 'likert', id: 'trust_ai', rawKeys: true, required: true,
-            text: 'Think about how much you generally trust AI.<br>Please indicate how much you agree with each statement on a scale from 1 to 7 (1 = Strongly disagree, 7 = Strongly agree).',
+            text: 'Think about how much you generally trust AI. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
             items: [
               { id: 'tai_1', text: 'AI is reliable.' },
@@ -512,8 +607,9 @@ window.SURVEY_CONFIG = {
       /* ── 인구통계 ── */
       {
         id: 'demo',
-        title: 'About you',
+        title: 'Demographics',
         blocks: [
+          { type: 'html', html: '<p>The following questions are about you. Please select one option or fill in the blank.</p>' },
           { type: 'number', id: 'birth_year', required: true, min: 1920, max: 2008,
             text: 'What is your year of birth?' },
           { type: 'single', id: 'gender', required: true, text: 'What is your gender?',
@@ -599,7 +695,8 @@ window.SURVEY_CONFIG = {
     doneSaved: 'Your responses have been saved. You may now close this window.',
     doneCodeLead: 'Your responses have been saved. Enter this completion code on CloudResearch.',
     copy: 'Copy', copied: 'Copied.', copyManual: 'Press Ctrl+C (Cmd+C on Mac) to copy the selected code.',
-    endTitles: { screened: 'Thank you', attention: 'Thank you', full: 'Study full', mobile: 'Computer required' },
+    endTitles: { screened: 'Thank you', attention: 'Thank you', full: 'Study full', mobile: 'Computer required', declined: 'Thank you' },
+    declinedMsg: 'You have chosen not to participate in this study. Thank you for your time. You may now close this window.',   // 동의서에서 비동의 답을 고른 경우
     redirectLink: 'Click here if you are not redirected automatically.',
     errorSave: 'Connection problem while saving. Retrying…'
   }

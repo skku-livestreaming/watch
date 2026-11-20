@@ -18,7 +18,7 @@ CloudResearch Connect → 설문(동의·사전) → 셀 균등 배정 → 조�
 ```
 CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?participantId=…&assignmentId=…&projectId=…
   ① 동의서 (체크해야 Next 활성화)
-  ② 사전 문항 (지금은 없음. 선정 기준 탈락도 없음)
+  ② 선별 문항 (IRB Screening: 최근 3개월 라이브 시청 여부, No → 설문 끝 `screened`)
   ③ 셀 배정 (서버에서 인원이 가장 적은 셀)
   ④ 조건별 설명문 (ai / human / mixed), 항목당 15초·총 45초 뒤 입장 버튼 활성화
   ⑤ 자극물을 설문 화면 안에 띄움  …/watch/?c=셀코드&panel_id=참가자ID
@@ -167,6 +167,7 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 | `cell`, `group`, `cong`, `stim_code` | 배정 조건 |
 | `is_test` | 점검 기록이면 1 |
 | `consent`, `consent_at` | 동의 여부·시각 |
+| `consent_pi`, `consent_future`, `consent_agree` | 동의서 선택: 개인정보 수집(1~3, 3 = 비동의·불참), 추가 연구 활용(1~4), 참여 동의(1 = 동의, 2 = 비동의). 비동의면 `status = declined`로 종료 |
 | `t1_vote`, `t1_conf` | 자극물 투표(A/B)와 확신도. 확신도까지 제출된 경우만 |
 | `t1_submitted` | 투표 제출 여부 (0이면 일치도 조작이 성립하지 않음 → 분석 제외 후보) |
 | `t1_first_choice`, `t1_clicks`, `t1_unsubmitted_choice` | 처음 고른 답, 선택 클릭 수, 제출하지 못한 선택 |
@@ -176,6 +177,7 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 | `op_changed`, `op_why` | 선택이 바뀌었는지(1 = 바뀜, 2 = 그대로)와 그 이유 |
 | `sp_*`, `mind_*`, `sid_*`, `ent_*`, `sr_*`, `inf_*`, `nor_*`, `manip_*`, `thr_*`, `cred_*`, `enj_*`, `int_*`, `fut_*`, `bw_*`, `imp_*`, `know_*`, `conf_*`, `tai_*` | 척도 항목 (변수별 접두어, `fut_3r`은 역문항) |
 | `att_1` | 주의집중 점검 (정답 6) |
+| `scr_live3m` | 선별 문항 (1 = Yes, 2 = No → 종료) |
 | `stim_session_id` | 자극물 DB(Supabase)의 세션 ID → 자극물 데이터와 정확히 합칠 때 사용 |
 | `stim_code_seen` | 자극물이 실제로 받은 조건 코드 (`stim_code`와 같아야 정상) |
 | `stim_end` | complete(정상 종료) / video_failed / navigated / debug_skip / fallback_button |
