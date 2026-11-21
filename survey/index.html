@@ -342,7 +342,9 @@ const keyify = v => String(v).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(
 const secs = t0 => Math.round((Date.now() - t0) / 100) / 10;
 
 function newState(pid){
-  return { pid, stage: 'consent', page: 0, answers: {}, meta: {}, cell: null, pending: {}, att: 0 };
+  // PAGES.screen이 있으면 동의서보다 먼저 선별 문항부터 (동의 전이라 답은 서버로 바로 보내지 않음)
+  const first = (C.PAGES.screen || []).length ? 'screen' : 'consent';
+  return { pid, stage: first, page: 0, answers: {}, meta: {}, cell: null, pending: {}, att: 0 };
 }
 
 function ctx(){
@@ -585,7 +587,7 @@ function render(){
   window.scrollTo(0, 0);
   topBar();
   const fn = {
-    id: viewId, consent: viewConsent, pre: () => viewPage('pre'), assign: viewAssign,
+    id: viewId, screen: () => viewPage('screen'), consent: viewConsent, pre: () => viewPage('pre'), assign: viewAssign,
     intro: viewIntro, stimulus: viewStimulus, post: () => viewPage('post'),
     debrief: viewDebrief, done: viewDone, end: viewEnd, lost: viewLost, loading: viewLoading
   }[S.stage];
@@ -601,7 +603,7 @@ function topBar(){
   const P = T.parts, st = S.stage;
   const frac = part => { const n = (C.PAGES[part] || []).length || 1; return Math.min(S.page, n) / n; };
   const map = {
-    consent: [P.consent, 6], pre: [P.pre, 10 + frac('pre') * 22], assign: [P.stream, 36], intro: [P.stream, 40],
+    screen: [P.screen || P.consent, 3], consent: [P.consent, 6], pre: [P.pre, 10 + frac('pre') * 22], assign: [P.stream, 36], intro: [P.stream, 40],
     stimulus: [P.stream, 48], post: [P.post, 55 + frac('post') * 35], debrief: [P.debrief, 94], done: [P.done, 100]
   }[st];
   top.hidden = false;
@@ -808,6 +810,11 @@ function viewPage(part){
     if (attFail){ S.att += attFail; patch.attention_fails = S.att; }
     // 재투표(t2_vote)가 있는 쪽을 제출할 때 T1→T2 비교값 계산 (쪽 id가 바뀌어도 동작)
     if (page.blocks.some(b => b.id === 't2_vote')) Object.assign(patch, opinionChange(S.meta, patch));
+    if (part === 'screen'){
+      Object.assign(S.meta, patch);
+      if (screened) return end('screened');
+      S.page = i + 1; return render();
+    }
     Object.assign(S.answers, patch);
     if (screened){ save(patch); return end('screened'); }
     if (attFail && C.ATTENTION.action === 'end' && S.att >= C.ATTENTION.maxFails){ save(patch); return end('attention'); }
@@ -857,7 +864,7 @@ function opinionChange(meta, answers){
 }
 
 function finishPart(part){
-  S.stage = part === 'pre' ? 'assign' : 'debrief';
+  S.stage = {screen: 'consent', pre: 'assign'}[part] || 'debrief';
   render();
 }
 
@@ -957,7 +964,8 @@ const BLOCKS = {
       const min = b.min != null ? b.min : (isRequired(b) ? 1 : 0);
       const bad = picked.length < min || (b.max != null && picked.length > b.max);
       mark(el, bad);
-      return {ok: !bad, bad: bad ? el : null, values};
+      const screened = !!(b.screen && b.screen.required && !bad && !b.screen.required.map(String).every(v => picked.includes(v)));
+      return {ok: !bad, bad: bad ? el : null, values, screened};
     }};
   },
 
@@ -1480,7 +1488,8 @@ function debugPanel(){
    화면 아래 막대에서 화면·조건을 고르면 바로 그 화면으로 갑니다. 응답은 저장하지 않습니다. */
 let admOpen = true;
 function admScreens(){
-  const L = [['consent', 'Consent'], ['id', 'Enter ID (no ID in link)']];
+  const L = (C.PAGES.screen || []).map((p, i) => ['screen:' + i, `Screening · ${p.id}`]);
+  L.push(['consent', 'Consent'], ['id', 'Enter ID (no ID in link)']);
   (C.PAGES.pre || []).forEach((p, i) => L.push(['pre:' + i, `Before · ${p.id}${p.showIf ? ' (some conditions)' : ''}`]));
   L.push(['intro', 'Before the stream'], ['stimulus', 'Live stream'], ['stimreturn', 'Live stream · came back after refresh']);
   (C.PAGES.post || []).forEach((p, i) => L.push(['post:' + i, `After · ${p.id}${p.showIf ? ' (some conditions)' : ''}`]));
@@ -1491,7 +1500,7 @@ function admScreens(){
 }
 function admCurrent(){
   if (!S) return 'consent';
-  if (S.stage === 'pre' || S.stage === 'post') return S.stage + ':' + S.page;
+  if (S.stage === 'screen' || S.stage === 'pre' || S.stage === 'post') return S.stage + ':' + S.page;
   if (S.stage === 'end') return 'end:' + (S.meta.end_reason || 'screened');
   if (S.stage === 'stimulus') return stimOpened ? 'stimulus' : 'stimreturn';
   return S.stage;
@@ -1505,7 +1514,7 @@ function admGo(key, cellId){
   S.cell = cell;
   Object.assign(S.meta, {is_test: 1, cell: cell.id, group: cell.group, cong: cell.cong, stim_code: cell.code});
   const [st, arg] = key.split(':');
-  if (st === 'pre' || st === 'post'){ S.stage = st; S.page = Number(arg); }
+  if (st === 'screen' || st === 'pre' || st === 'post'){ S.stage = st; S.page = Number(arg); }
   else if (st === 'end'){ S.stage = 'end'; S.meta.end_reason = arg; }
   else if (st === 'stimulus'){ S.stage = 'stimulus'; stimOpened = true; }
   else if (st === 'stimreturn'){ S.stage = 'stimulus'; stimOpened = false; }

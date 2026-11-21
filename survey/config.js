@@ -190,14 +190,14 @@ window.SURVEY_CONFIG = {
         aiRows: [1, 1, 1, 1]          // 미리보기 채팅 줄마다 AI 배지 여부
       },
       human: {
-        headline: 'The other viewers in this stream are <span class="hl">people</span> watching at the same time as you.',
-        sub: 'Every chat message is written by a person.',
+        headline: '<span class="hl">All</span> other viewers in this stream are <span class="hl">people</span>.',
+        sub: 'Every chat message is written by people.',
         aiRows: [0, 0, 0, 0]
       },
       mixed: {
         // 비율(반반)은 말하지 않고, AI와 사람이 함께 있는 공간이라고만 안내
-        headline: 'This stream is a space where <span class="hl">AI</span> and <span class="hl">people</span> watch together.',
-        sub: 'Messages written by AI are marked with an <span class="aib">AI</span> label.',
+        headline: 'Other viewers in this stream are both <span class="hl">AI</span> and <span class="hl">people</span>.',
+        sub: 'Some chat messages are written by AI, and others by people. Messages written by AI are marked with an <span class="aib">AI</span> label.',
         aiRows: [1, 0, 0, 1]
       }
     },
@@ -238,7 +238,7 @@ window.SURVEY_CONFIG = {
   },
 
   /* ── 8. 문항 페이지 ───────────────────────────────────────────
-     pre  = 동의 후 · 자극물 전 /  post = 자극물 후 · 디브리핑 전
+     screen = 동의 전 선별 (답은 동의할 때 함께 저장, 탈락하면 상태만) / pre = 동의 후 · 자극물 전 / post = 자극물 후 · 디브리핑 전
      ※ 「라이브스트리밍_설문문항_근거」 엑셀 합본_1113 시트 + Live_Streaming_Survey_IRB.docx 기준.
        문항 문구는 시트 Revised 열, 지시문(구성개념별)·선별 문항·구간 안내는 IRB 문서 그대로.
        쪽 나눔: 시트의 1~5번page는 그대로, 그 뒤는 시트의 표 구분(종속변수 / 조작점검 / 조절변수 / 통제변수 / 인구통계)대로 한 쪽씩.
@@ -253,7 +253,7 @@ window.SURVEY_CONFIG = {
        number    : 숫자 (키보드로만 입력, 숫자 외 글자는 자동으로 지움)  { id, text, min?, max? }
        select    : 드롭다운          { id, text, options }
      options: ['문구', …] 또는 [{value:'코드', label:'문구', other:true(기타 입력칸)}]
-     screen   : { allowed:['값', …] }  → 그 외를 고르면 선정 기준 탈락으로 종료
+     screen   : single = { allowed:['값', …] } 그 외를 고르면 탈락 / multi = { required:['값', …] } 그 값을 다 골라야 통과
      attention: { correct:'값' }       → 틀리면 ATTENTION 규칙 적용 (likert는 항목에 붙임)
      dependsOn: '같은 쪽 single 문항 id' + textByAnswer: { 값: '질문' }
                 → 그 문항에 답하기 전엔 숨기고, 고른 답에 맞는 질문으로 바꿔 보여 줌 (3번 쪽 주관식)
@@ -261,19 +261,31 @@ window.SURVEY_CONFIG = {
      showIf   : ctx => 조건. ctx.group('ai'|'human'|'mixed'), ctx.cong, ctx.answers 사용 가능
      저장되는 열 이름: single/number/textarea = id, likert = id_항목id (rawKeys: true면 항목id 그대로), multi = id_값(1/0) */
   PAGES: {
-    pre: [
-      /* ── IRB Screening: No를 고르면 설문 끝으로 (screenedMsg) ── */
+    // 동의서보다 먼저 나오는 선별 문항 (팀 피드백 대안 2). 3번(실시간 라이브 시청)을 안 고르면 설문 끝(screened)
+    screen: [
       {
         id: 'screening',
         title: 'Screening',
         blocks: [
-          { type: 'single', id: 'scr_live3m', required: true,
-            text: 'In the past 3 months, have you watched a live stream on a platform such as YouTube Live, Twitch, TikTok LIVE, or Instagram Live?',
-            options: [{ value: '1', label: 'Yes' }, { value: '2', label: 'No' }],
-            screen: { allowed: ['1'] } }
+          { type: 'multi', id: 'scr_online', required: true, min: 1,
+            text: 'In the past 3 months, which of the following have you done online? (Select all that apply)',
+            options: [
+              { value: '1', label: 'Posted a photo or video on social media' },
+              { value: '2', label: 'Watched a movie or TV series on a streaming service' },
+              { value: '3', label: 'Watched a live stream in real time (e.g., on Twitch, YouTube Live, TikTok LIVE, Instagram Live, Kick)' },
+              { value: '4', label: 'Listened to a podcast' },
+              { value: '5', label: 'Played an online multiplayer game' },
+              { value: '6', label: 'Shopped online' },
+              { value: '7', label: 'Joined a video call (e.g., Zoom, FaceTime)' },
+              { value: '8', label: 'Read news on a website or app' },
+              { value: '9', label: 'None of the above' }
+            ],
+            screen: { required: ['3'] } }
         ]
       }
     ],
+
+    pre: [],
 
     post: [
       {
@@ -482,7 +494,7 @@ window.SURVEY_CONFIG = {
               { value: '3', label: 'Almost all other viewers voted differently from me.' }
             ] },
           { type: 'single', id: 'mc_comp', required: true,
-            text: 'Who were the viewers of the live stream you just watched?',
+            text: 'Who were the other viewers of the live stream you just watched, excluding yourself?',
             options: [
               { value: '1', label: 'Only AI viewers' },
               { value: '2', label: 'Both human and AI viewers' },
@@ -626,10 +638,11 @@ window.SURVEY_CONFIG = {
               { value: '1', label: 'Less than high school' },
               { value: '2', label: 'High school graduate' },
               { value: '3', label: 'Some college' },
-              { value: '4', label: 'College graduate (4-year degree)' },
-              { value: '5', label: 'Master\'s degree' },
-              { value: '6', label: 'Doctoral or professional degree' },
-              { value: '7', label: 'Prefer not to say' }
+              { value: '4', label: 'Associate degree / 2-year college degree' },
+              { value: '5', label: 'College graduate (4-year degree)' },
+              { value: '6', label: 'Master\'s degree' },
+              { value: '7', label: 'Doctoral or professional degree' },
+              { value: '8', label: 'Prefer not to say' }
             ] },
           { type: 'single', id: 'employment', required: true,
             text: 'What is your current employment status?',
@@ -655,7 +668,7 @@ window.SURVEY_CONFIG = {
     finish: 'Finish',
     studyName: 'Research Study',               // 상단 바 왼쪽 이름
     parts: {                                    // 상단 바 오른쪽 단계 이름
-      consent: 'Part 1 of 4 · Consent', pre: 'Part 1 of 4 · About you', stream: 'Part 2 of 4 · Live stream',
+      screen: 'Part 1 of 4 · Screening', consent: 'Part 1 of 4 · Consent', pre: 'Part 1 of 4 · About you', stream: 'Part 2 of 4 · Live stream',
       post: 'Part 3 of 4 · After the stream', debrief: 'Part 4 of 4 · About this study', done: 'Complete'
     },
     questionFmt: n => `Question ${n}`,
