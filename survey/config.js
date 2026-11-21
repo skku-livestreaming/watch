@@ -9,8 +9,8 @@ window.SURVEY_CONFIG = {
 
   // Apps Script 웹 앱 주소(…/exec). 비어 있으면 일반 참가자는 진행할 수 없습니다.
   API_URL: 'https://script.google.com/macros/s/AKfycbxGM2u9Di-sO1XJtU0hk-tn68JNAXz9CtF_5jn3yThhVYNGMmDZqPZTldr2Y4lpNFDWrQ/exec',
-  // 실제 저장·완료 주소와 연구 안내를 채우고 파일럿을 확인한 뒤 true로 변경합니다.
-  PARTICIPANT_OPEN: false,
+  // 참가자 진행을 허용합니다. 완료 URL/코드 등 필수 설정 검사는 별도로 적용됩니다.
+  PARTICIPANT_OPEN: true,
   ASSET_VERSION: '2026-11-21-chat-nickname-v1',
 
   // 자극물 주소. 끝에 ?c=셀코드&panel_id=참가자ID 가 자동으로 붙습니다.

@@ -29,10 +29,10 @@ def fixture(browser, base, initial=None, configured=True, randomized=False, miss
     errors = []
     page.on('pageerror', lambda e:errors.append(str(e)))
     config = (ROOT / 'survey/config.js').read_text(encoding='utf-8')
+    config = re.sub(r'PARTICIPANT_OPEN:\s*(?:true|false)', 'PARTICIPANT_OPEN: ' + ('true' if configured else 'false'), config, count=1)
     if configured:
         config, replacements = re.subn(r"API_URL:\s*'[^']*'", "API_URL: 'https://script.google.com/macros/s/QA/exec'", config, count=1)
         assert replacements == 1, 'API fixture must replace the configured endpoint'
-        config = config.replace('PARTICIPANT_OPEN: false', 'PARTICIPANT_OPEN: true')
         config = config.replace("COMPLETION_CODE: ''", "COMPLETION_CODE: 'QA_COMPLETE'")
         config = config.replace("STIMULUS_EXTRA: {intro: 'off'}", "STIMULUS_EXTRA: {intro:'off',preview:'1',label:'human',ratio:'0'}")
         for token in ['[N]','[Amount]','[XXXX]','[Researcher name]','[email]']:
