@@ -19,7 +19,7 @@ CloudResearch Connect → 설문(동의·사전) → 셀 균등 배정 → 조�
 CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?participantId=…&assignmentId=…&projectId=…
   ⓪ 선별 문항 (동의서보다 먼저, 지난 3개월 온라인 활동 중 실시간 라이브 시청을 안 고르면 종료 `screened`)
   ① 동의서 (IRB 동의서, 개인정보·추가 활용·참여 동의를 골라야 Next 활성화)
-  ② 동의서 다음은 사전 문항 (지금은 없음)
+  ② 채팅 닉네임 만들기 (`nickname`, 영문·숫자·밑줄 2~20자, 참가자 ID 사용 불가) → 자극물 주소에 `&nick=`으로 넘김
   ③ 셀 배정 (서버에서 인원이 가장 적은 셀)
   ④ 조건별 설명문 (ai / human / mixed), 항목당 15초·총 45초 뒤 입장 버튼 활성화
   ⑤ 자극물을 설문 화면 안에 띄움  …/watch/?c=셀코드&panel_id=참가자ID
@@ -173,6 +173,7 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 | `t1_submitted` | 투표 제출 여부 (0이면 일치도 조작이 성립하지 않음 → 분석 제외 후보) |
 | `t1_first_choice`, `t1_clicks`, `t1_unsubmitted_choice` | 처음 고른 답, 선택 클릭 수, 제출하지 못한 선택 |
 | `t1_read` | 자극물에서 T1을 읽었는지 |
+| `nickname` | 채팅 닉네임 (자극물에 `nick`으로 넘김) |
 | `op_conf` | 방송 중 투표한 선택에 대한 지금의 확신도 (1~7) |
 | `t2_vote` | 사후 재투표 (A = Yes, B = No) |
 | `op_changed`, `op_why` | 선택이 바뀌었는지(1 = 바뀜, 2 = 그대로)와 그 이유 |

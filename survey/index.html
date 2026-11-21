@@ -78,6 +78,8 @@
   .opt input.other{height:40px}
   textarea{width:100%;height:auto;min-height:120px;padding:12px 14px;resize:vertical}
   input[type=number],input.num{width:160px}
+  input.txt{width:100%;max-width:360px}
+  .block .help{color:var(--muted);font-size:15px;margin-top:-4px}
   select{min-width:240px}
   .block.missing input[type=text],.block.missing input[type=number],.block.missing textarea,.block.missing select{border:2px solid var(--bad)}
 
@@ -908,6 +910,7 @@ function blockMsg(b){
   if (b.type === 'likert') return (b.items.length === 1 && !b.items[0].text) ? M.scale : M.likert;
   if (b.type === 'number') return (b.min != null && b.max != null) ? M.rangeFmt(b.min, b.max) : M.number;
   if (b.type === 'textarea') return b.minChars ? M.minCharsFmt(b.minChars) : M.text;
+  if (b.type === 'text') return b.msg || M.text;
   return M.single;
 }
 function div(html){ const d = document.createElement('div'); d.innerHTML = html; return d; }
@@ -1009,6 +1012,21 @@ const BLOCKS = {
     }};
   },
 
+  /* 한 줄 입력: { id, text, help?, pattern?, maxLength?, msg?, notPid? }
+     pattern = 허용 형식(정규식 문자열), notPid = 참가자 ID와 같으면 안 됨 (닉네임에 ID를 쓰지 않도록) */
+  text(b){
+    const el = div(qHead(b) + `<input type="text" class="txt" autocomplete="off" spellcheck="false" maxlength="${b.maxLength || 40}" aria-labelledby="${b.id}_q">`
+      + (b.help ? `<div class="help">${interp(b.help)}</div>` : ''));
+    return {el, collect(){
+      const v = el.querySelector('input').value.trim();
+      let bad = isRequired(b) && !v;
+      if (v && b.pattern && !new RegExp(b.pattern).test(v)) bad = true;
+      if (v && b.notPid && S && S.pid && v.toLowerCase() === String(S.pid).toLowerCase()) bad = true;
+      mark(el, bad);
+      return {ok: !bad, bad: bad ? el : null, values: {[b.id]: v}};
+    }};
+  },
+
   textarea(b){
     const el = div(qHead(b) + `<textarea aria-labelledby="${b.id}_q"></textarea>`);
     return {el, collect(){
@@ -1098,6 +1116,8 @@ function stimulusUrl(){
   for (const [k, v] of Object.entries(C.STIMULUS_EXTRA || {})) u.searchParams.set(k, v);
   u.searchParams.set('c', S.cell.code);
   u.searchParams.set('panel_id', S.pid);
+  // 채팅 닉네임: 자극물이 이 값을 내 채팅 이름으로 씀 (참가자 ID 대신). 이름은 config의 NICK_PARAM
+  if (C.NICK_PARAM && S.answers && S.answers.nickname) u.searchParams.set(C.NICK_PARAM, S.answers.nickname);
   if (S.meta.assignment_id) u.searchParams.set('assignment_id', S.meta.assignment_id);
   u.searchParams.set('intro', 'off');
   u.searchParams.set('v', C.ASSET_VERSION || '2026-11-14-storage-pilot-v1');

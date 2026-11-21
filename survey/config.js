@@ -19,6 +19,8 @@ window.SURVEY_CONFIG = {
   STIMULUS_URL: new URL('../', window.location.href).href.split('?')[0],
   // 자극물에 추가로 넘길 값. 예: 자극물 자체 안내 화면을 끄려면 { intro: 'off' }
   STIMULUS_EXTRA: {intro: 'off'},
+  // 채팅 닉네임을 자극물에 넘길 때 쓰는 주소 값 이름 (자극물 쪽과 맞출 것)
+  NICK_PARAM: 'nick',
 
   /* 자극물을 설문 페이지 안에 띄우는 방식(true).
      참가자가 [Finish participation]을 누르면 설문이 감지해 사후 문항으로 넘어갑니다.
@@ -251,6 +253,7 @@ window.SURVEY_CONFIG = {
        multi     : 여러 개 선택      { id, text, options, min?, max? }
        likert    : 척도 묶음         { id, text, items:[{id,text,attention?}], points, labels:{1:'..',7:'..'}, randomize?, rawKeys? }
        textarea  : 주관식           { id, text, minChars? }
+       text      : 한 줄 입력        { id, text, help?, pattern?, maxLength?, msg?, notPid? }
        number    : 숫자 (키보드로만 입력, 숫자 외 글자는 자동으로 지움)  { id, text, min?, max? }
        select    : 드롭다운          { id, text, options }
      options: ['문구', …] 또는 [{value:'코드', label:'문구', other:true(기타 입력칸)}]
@@ -286,7 +289,20 @@ window.SURVEY_CONFIG = {
       }
     ],
 
-    pre: [],
+    pre: [
+      /* ── 채팅 닉네임 (팀 피드백: 채팅에 참가자 ID 대신 이 이름이 보이도록)
+            자극물 주소에 &nick=…으로 넘김. 자극물이 nick을 읽어야 화면에 반영됨 ── */
+      {
+        id: 'nickname',
+        blocks: [
+          { type: 'text', id: 'nickname', required: true, notPid: true, maxLength: 20,
+            pattern: '^[A-Za-z0-9_]{2,20}$',
+            text: 'Please create a username to use in the live stream chat.',
+            help: 'This name will be shown next to your messages in the chat.<br>Do not use your real name or any personal information.',
+            msg: 'Please use 2–20 letters, numbers, or underscores (no spaces), and do not use your participant ID.' }
+        ]
+      }
+    ],
 
     post: [
       {
