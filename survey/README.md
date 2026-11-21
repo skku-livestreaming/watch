@@ -25,7 +25,7 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
   ⑤ 자극물을 설문 화면 안에 띄움  …/watch/?c=셀코드&panel_id=참가자ID
        투표 + 확신도(T1)는 자극물이 자체 DB(Supabase)에 저장
        [Finish participation] → 설문이 감지해 자극물을 닫고 ⑥으로
-  ⑥ 본조사 시작 안내 → 사후 문항 (「설문문항_근거」 엑셀 합본_1113 순서: 1번 확신도 → 2번 재투표(T2) → 3번 변화 여부+이유 → 4·5번 매개변수 → 종속변수 → 조작점검 → 조절변수 → 통제변수 → 인구통계)
+  ⑥ 본조사 시작 안내 → 사후 문항 (「설문문항_근거」 엑셀 합본_1113 순서: 재투표(T2) + 방금 고른 답 확신도 → 변화 여부+이유 → 시청자 지각 → 여론·영향 → 즐거움·관심·이용 의도 → 조작 지각·자유 위협·신뢰 → 조작점검 → 조절변수 → 통제변수 → 인구통계)
   ⑦ 디브리핑 + 데이터 사용 동의/철회
   ⑧ CloudResearch 완료 주소로 이동
 ```
@@ -173,8 +173,7 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 | `t1_submitted` | 투표 제출 여부 (0이면 일치도 조작이 성립하지 않음 → 분석 제외 후보) |
 | `t1_first_choice`, `t1_clicks`, `t1_unsubmitted_choice` | 처음 고른 답, 선택 클릭 수, 제출하지 못한 선택 |
 | `t1_read` | 자극물에서 T1을 읽었는지 |
-| `op_conf` | 방송 중 투표한 선택에 대한 지금의 확신도 (1~7) |
-| `t2_vote` | 사후 재투표 (A = Yes, B = No) |
+| `t2_vote`, `t2_conf` | 사후 재투표 (A = Yes, B = No)와 방금 고른 답에 대한 확신도 (1~7). T1 선택과 같으면 +t2_conf, 다르면 −t2_conf로 부호를 붙여 T1 확신도와 비교 |
 | `op_changed`, `op_why` | 선택이 바뀌었는지(1 = 바뀜, 2 = 그대로)와 그 이유 |
 | `sp_*`, `mind_*`, `sid_*`, `ent_*`, `sr_*`, `inf_*`, `nor_*`, `manip_*`, `thr_*`, `cred_*`, `enj_*`, `int_*`, `fut_*`, `bw_*`, `imp_*`, `know_*`, `conf_*`, `tai_*` | 척도 항목 (변수별 접두어, `fut_3r`은 역문항) |
 | `att_1` | 주의집중 점검 (정답 6) |

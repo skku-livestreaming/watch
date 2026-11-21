@@ -241,7 +241,8 @@ window.SURVEY_CONFIG = {
      screen = 동의 전 선별 (답은 동의할 때 함께 저장, 탈락하면 상태만) / pre = 동의 후 · 자극물 전 / post = 자극물 후 · 디브리핑 전
      ※ 「라이브스트리밍_설문문항_근거」 엑셀 합본_1113 시트 + Live_Streaming_Survey_IRB.docx 기준.
        문항 문구는 시트 Revised 열, 지시문(구성개념별)·선별 문항·구간 안내는 IRB 문서 그대로.
-       쪽 나눔: 시트의 1~5번page는 그대로, 그 뒤는 시트의 표 구분(종속변수 / 조작점검 / 조절변수 / 통제변수 / 인구통계)대로 한 쪽씩.
+       쪽 순서: 재투표+확신도 → 변화 여부 → 시청자 지각 → 여론·영향 → 즐거움·관심·이용 의도 → 조작 지각·자유 위협·신뢰 → 조작점검 → 조절변수 → 통제변수 → 인구통계
+       (11/21 팀 피드백: 재투표 먼저 하고 방금 고른 답의 확신도, 조작·압박 문항은 즐거움·이용 의도 뒤로)
 
      페이지: { id, title?, blocks:[…], showIf?: ctx => bool, minSeconds? }
      블록 type
@@ -303,32 +304,26 @@ window.SURVEY_CONFIG = {
         blocks: []
       },
 
-      /* ── 1번page. 종속변수: Opinion confidence ── */
+      /* ── 1번page. 종속변수: 재투표(T2) → 방금 고른 답에 대한 확신도 (방송 안 투표 → 확신도 순서와 같음)
+            분석: T1 선택과 같으면 +t2_conf, 다르면 −t2_conf로 부호를 붙여 T1 확신도와 비교 ── */
       {
-        id: 'p1_confidence',
+        id: 'p1_revote',
         title: 'Main Survey',
         blocks: [
           { type: 'html', html: '<p>Please answer the following questions based on the live stream you just watched.</p>' },
-          { type: 'likert', id: 'op_conf', required: true,
-            text: `Think back to your vote during the live stream. How confident are you now in the choice you made on the question “Do violent video games contribute to youth violence?”`,
+          { type: 'single', id: 't2_vote', required: true,
+            text: `If you could go back and vote in the poll again, what would you choose now? Please vote again.<br><i>“Do violent video games contribute to youth violence?”</i>`,
+            options: 'TOPIC' },    // 'TOPIC' = 자극물 투표와 같은 A/B 코드 (A = Yes, B = No) → t1_vote와 바로 비교
+          { type: 'likert', id: 't2_conf', required: true,
+            text: 'How confident are you in the choice you just made?',
             points: 7, labels: { 1: 'Not at all confident', 7: 'Extremely confident' },
             items: [{ id: 'x', text: '' }] }
         ]
       },
 
-      /* ── 2번page. 종속변수: Opinion change (re-vote) ── */
-      {
-        id: 'p2_revote',
-        blocks: [
-          { type: 'single', id: 't2_vote', required: true,
-            text: `If you could go back and vote in the poll again, what would you choose now? Please vote again.<br><i>“Do violent video games contribute to youth violence?”</i>`,
-            options: 'TOPIC' }     // 'TOPIC' = 자극물 투표와 같은 A/B 코드 (A = Yes, B = No) → t1_vote와 바로 비교
-        ]
-      },
-
       /* ── 3번page. 종속변수: Opinion change (self-report) + 이유(주관식) ── */
       {
-        id: 'p3_change',
+        id: 'p2_change',
         blocks: [
           { type: 'single', id: 'op_changed', required: true,
             text: 'Is your choice now different from the one you made during the live stream, or is it the same?',
@@ -347,7 +342,7 @@ window.SURVEY_CONFIG = {
       /* ── 4번page. 매개변수: Social presence · Mind perception · Shared social identity · Group entitativity
             (+ 주의집중 점검) / Shared reality ── */
       {
-        id: 'p4_viewers',
+        id: 'p3_viewers',
         blocks: [
           { type: 'likert', id: 'sp', rawKeys: true, required: true,
             text: 'Think about your experience of watching the live stream with other viewers. Please indicate how much you agree with each statement.',
@@ -399,10 +394,9 @@ window.SURVEY_CONFIG = {
         ]
       },
 
-      /* ── 5번page. 매개변수: Perceived public opinion / Informational · Normative influence /
-            Perceived manipulation · Threat to freedom · Message credibility ── */
+      /* ── 5번page. 매개변수: Perceived public opinion / Informational · Normative influence ── */
       {
-        id: 'p5_comments',
+        id: 'p4_comments',
         blocks: [
           { type: 'likert', id: 'pub_op', required: true,
             text: 'How much do you think the general public agrees with the statement “Violent video games contribute to youth violence”?',
@@ -421,7 +415,46 @@ window.SURVEY_CONFIG = {
             items: [
               { id: 'nor_1', text: 'I felt like I had to agree with the opinions in the comments.' },
               { id: 'nor_2', text: 'I was not persuaded by the comments, but I still accepted the opinions they expressed.' }
+            ] }
+        ]
+      },
+
+      /* ── 종속변수: Enjoyment / Live-streaming interest / Platform future use intention ── */
+      {
+        id: 'p5_platform',
+        blocks: [
+          { type: 'likert', id: 'enjoy', rawKeys: true, required: true,
+            text: 'Think about your experience participating in the live stream you just watched. Please indicate how much you agree with each statement.',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
+              { id: 'enj_1', text: 'I enjoyed participating in the live stream.' },
+              { id: 'enj_2', text: 'I had fun participating in the live stream.' },
+              { id: 'enj_3', text: 'I found participating in the live stream exciting.' }
             ] },
+          { type: 'likert', id: 'interest', rawKeys: true, required: true,
+            text: 'Think about how viewers can participate in live streams on the platform you just used. Please indicate how much you agree with each statement.',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
+              { id: 'int_1', text: 'I am interested in the way of participating in live streams on this platform.' },
+              { id: 'int_2', text: 'I like the way of participating in live streams on this platform.' },
+              { id: 'int_3', text: 'The way of participating in live streams on this platform gives me a positive impression.' }
+            ] },
+          { type: 'likert', id: 'future', rawKeys: true, required: true,
+            text: 'Imagine that the platform on which you just watched the live stream were actually available to you. Please indicate how much you agree with each statement.',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
+              { id: 'fut_1', text: 'I would use this platform in the future.' },
+              { id: 'fut_2', text: 'I would choose this platform over other platforms.' },
+              { id: 'fut_3r', text: 'If possible, I would avoid using this platform in the future.' }   // 역문항
+            ] }
+        ]
+      },
+
+      /* ── 매개변수: Perceived manipulation · Threat to freedom · Message credibility
+            (팀 피드백: 조작·압박을 묻는 문항이 즐거움·이용 의도 응답에 영향을 주지 않도록 그 뒤로) ── */
+      {
+        id: 'p6_comments_eval',
+        blocks: [
           { type: 'likert', id: 'manip', rawKeys: true, required: true,
             text: 'Think about the comments other viewers posted in the live stream you just watched about the issue raised in the poll. Please indicate how much you agree with each statement.',
             points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
@@ -447,37 +480,6 @@ window.SURVEY_CONFIG = {
               { id: 'cred_1', text: 'Overall, the comments were accurate.' },
               { id: 'cred_2', text: 'Overall, the comments were authentic.' },
               { id: 'cred_3', text: 'Overall, the comments were believable.' }
-            ] }
-        ]
-      },
-
-      /* ── 종속변수: Enjoyment / Live-streaming interest / Platform future use intention ── */
-      {
-        id: 'p6_platform',
-        blocks: [
-          { type: 'likert', id: 'enjoy', rawKeys: true, required: true,
-            text: 'Think about your experience participating in the live stream you just watched. Please indicate how much you agree with each statement.',
-            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
-            items: [
-              { id: 'enj_1', text: 'I enjoyed participating in the live stream.' },
-              { id: 'enj_2', text: 'I had fun participating in the live stream.' },
-              { id: 'enj_3', text: 'I found participating in the live stream exciting.' }
-            ] },
-          { type: 'likert', id: 'interest', rawKeys: true, required: true,
-            text: 'Think about how viewers can participate in live streams on the platform you just used. Please indicate how much you agree with each statement.',
-            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
-            items: [
-              { id: 'int_1', text: 'I am interested in the way of participating in live streams on this platform.' },
-              { id: 'int_2', text: 'I like the way of participating in live streams on this platform.' },
-              { id: 'int_3', text: 'The way of participating in live streams on this platform gives me a positive impression.' }
-            ] },
-          { type: 'likert', id: 'future', rawKeys: true, required: true,
-            text: 'Imagine that the platform on which you just watched the live stream were actually available to you. Please indicate how much you agree with each statement.',
-            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
-            items: [
-              { id: 'fut_1', text: 'I would use this platform in the future.' },
-              { id: 'fut_2', text: 'I would choose this platform over other platforms.' },
-              { id: 'fut_3r', text: 'If possible, I would avoid using this platform in the future.' }   // 역문항
             ] }
         ]
       },
