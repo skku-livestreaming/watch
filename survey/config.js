@@ -241,8 +241,8 @@ window.SURVEY_CONFIG = {
      screen = 동의 전 선별 (답은 동의할 때 함께 저장, 탈락하면 상태만) / pre = 동의 후 · 자극물 전 / post = 자극물 후 · 디브리핑 전
      ※ 「라이브스트리밍_설문문항_근거」 엑셀 합본_1113 시트 + Live_Streaming_Survey_IRB.docx 기준.
        문항 문구는 시트 Revised 열, 지시문(구성개념별)·선별 문항·구간 안내는 IRB 문서 그대로.
-       쪽 순서: 재투표+확신도 → 변화 여부 → 시청자 지각 → 여론·영향 → 즐거움·관심·이용 의도 → 조작 지각·자유 위협·신뢰 → 조작점검 → 조절변수 → 통제변수 → 인구통계
-       (11/21 팀 피드백: 재투표 먼저 하고 방금 고른 답의 확신도, 조작·압박 문항은 즐거움·이용 의도 뒤로)
+       쪽 순서: 확신도 → 재투표 → 변화 여부 → 시청자 지각 → 여론·영향 → 즐거움·관심·이용 의도 → 조작 지각·자유 위협·신뢰 → 조작점검 → 조절변수 → 통제변수 → 인구통계
+       (11/21 팀 피드백: 조작·압박 문항은 즐거움·이용 의도 뒤로. 확신도·재투표 순서와 여론 지각 위치는 그대로)
 
      페이지: { id, title?, blocks:[…], showIf?: ctx => bool, minSeconds? }
      블록 type
@@ -304,26 +304,32 @@ window.SURVEY_CONFIG = {
         blocks: []
       },
 
-      /* ── 1번page. 종속변수: 재투표(T2) → 방금 고른 답에 대한 확신도 (방송 안 투표 → 확신도 순서와 같음)
-            분석: T1 선택과 같으면 +t2_conf, 다르면 −t2_conf로 부호를 붙여 T1 확신도와 비교 ── */
+      /* ── 1번page. 종속변수: Opinion confidence ── */
       {
-        id: 'p1_revote',
+        id: 'p1_confidence',
         title: 'Main Survey',
         blocks: [
           { type: 'html', html: '<p>Please answer the following questions based on the live stream you just watched.</p>' },
-          { type: 'single', id: 't2_vote', required: true,
-            text: `If you could go back and vote in the poll again, what would you choose now? Please vote again.<br><i>“Do violent video games contribute to youth violence?”</i>`,
-            options: 'TOPIC' },    // 'TOPIC' = 자극물 투표와 같은 A/B 코드 (A = Yes, B = No) → t1_vote와 바로 비교
-          { type: 'likert', id: 't2_conf', required: true,
-            text: 'How confident are you in the choice you just made?',
+          { type: 'likert', id: 'op_conf', required: true,
+            text: `Think back to your vote during the live stream. How confident are you now in the choice you made on the question “Do violent video games contribute to youth violence?”`,
             points: 7, labels: { 1: 'Not at all confident', 7: 'Extremely confident' },
             items: [{ id: 'x', text: '' }] }
         ]
       },
 
+      /* ── 2번page. 종속변수: Opinion change (re-vote) ── */
+      {
+        id: 'p2_revote',
+        blocks: [
+          { type: 'single', id: 't2_vote', required: true,
+            text: `If you could go back and vote in the poll again, what would you choose now? Please vote again.<br><i>“Do violent video games contribute to youth violence?”</i>`,
+            options: 'TOPIC' }     // 'TOPIC' = 자극물 투표와 같은 A/B 코드 (A = Yes, B = No) → t1_vote와 바로 비교
+        ]
+      },
+
       /* ── 3번page. 종속변수: Opinion change (self-report) + 이유(주관식) ── */
       {
-        id: 'p2_change',
+        id: 'p3_change',
         blocks: [
           { type: 'single', id: 'op_changed', required: true,
             text: 'Is your choice now different from the one you made during the live stream, or is it the same?',
@@ -342,7 +348,7 @@ window.SURVEY_CONFIG = {
       /* ── 4번page. 매개변수: Social presence · Mind perception · Shared social identity · Group entitativity
             (+ 주의집중 점검) / Shared reality ── */
       {
-        id: 'p3_viewers',
+        id: 'p4_viewers',
         blocks: [
           { type: 'likert', id: 'sp', rawKeys: true, required: true,
             text: 'Think about your experience of watching the live stream with other viewers. Please indicate how much you agree with each statement.',
@@ -396,7 +402,7 @@ window.SURVEY_CONFIG = {
 
       /* ── 5번page. 매개변수: Perceived public opinion / Informational · Normative influence ── */
       {
-        id: 'p4_comments',
+        id: 'p5_comments',
         blocks: [
           { type: 'likert', id: 'pub_op', required: true,
             text: 'How much do you think the general public agrees with the statement “Violent video games contribute to youth violence”?',
@@ -421,7 +427,7 @@ window.SURVEY_CONFIG = {
 
       /* ── 종속변수: Enjoyment / Live-streaming interest / Platform future use intention ── */
       {
-        id: 'p5_platform',
+        id: 'p6_platform',
         blocks: [
           { type: 'likert', id: 'enjoy', rawKeys: true, required: true,
             text: 'Think about your experience participating in the live stream you just watched. Please indicate how much you agree with each statement.',
@@ -453,7 +459,7 @@ window.SURVEY_CONFIG = {
       /* ── 매개변수: Perceived manipulation · Threat to freedom · Message credibility
             (팀 피드백: 조작·압박을 묻는 문항이 즐거움·이용 의도 응답에 영향을 주지 않도록 그 뒤로) ── */
       {
-        id: 'p6_comments_eval',
+        id: 'p7_comments_eval',
         blocks: [
           { type: 'likert', id: 'manip', rawKeys: true, required: true,
             text: 'Think about the comments other viewers posted in the live stream you just watched about the issue raised in the poll. Please indicate how much you agree with each statement.',
@@ -486,7 +492,7 @@ window.SURVEY_CONFIG = {
 
       /* ── 조작점검 ── */
       {
-        id: 'p7_manip',
+        id: 'p8_manip',
         blocks: [
           { type: 'single', id: 'mc_match', required: true,
             text: 'How closely do you think the other viewers\' opinions matched your vote during the live stream?',
@@ -507,7 +513,7 @@ window.SURVEY_CONFIG = {
 
       /* ── 조절변수: Bandwagon heuristic · Personal issue importance · Subjective knowledge · Conformity tendency · Trust in AI ── */
       {
-        id: 'p8_traits',
+        id: 'p9_traits',
         title: 'Additional Survey',
         blocks: [
           { type: 'html', html: '<p>The following questions are about your general beliefs and experiences.</p>' },
@@ -551,7 +557,7 @@ window.SURVEY_CONFIG = {
 
       /* ── 통제변수 ── */
       {
-        id: 'p9_controls',
+        id: 'p10_controls',
         blocks: [
           { type: 'multi', id: 'genres', required: true, min: 1,
             text: 'What kinds of live streams do you enjoy watching the most? (Choose all that apply)',
