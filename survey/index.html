@@ -1153,7 +1153,7 @@ function viewIntro(){
       <div class="ir-txt">${head(2, I.actions.heading)}
         <p class="ir-main">${interp(I.actions.headline)}</p><p class="ir-sub">${interp(I.actions.sub)}</p></div>
       <figure><div class="dk ctl" aria-hidden="true">
-          <div class="ctl-feed"><span class="sent"><span class="cp-nm">${esc(S.pid || I.actions.demoName)}</span>${esc(I.actions.demoMessage)}</span></div>
+          <div class="ctl-feed"><span class="sent"><span class="cp-nm">${esc(I.actions.demoName)}</span>${esc(I.actions.demoMessage)}</span></div>
           <div class="ctl-row"><span class="ctl-in"><span>${esc(I.actions.demoMessage)}</span></span><span class="ctl-send">Chat</span></div>
           <div class="ctl-row"><span class="pill like">${ICONS.like}Like</span><span class="pill">${ICONS.sub}Subscribe</span></div>
         </div><figcaption>${esc(I.actions.caption)}</figcaption></figure>
