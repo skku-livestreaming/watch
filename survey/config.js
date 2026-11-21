@@ -173,7 +173,7 @@ window.SURVEY_CONFIG = {
       headline: 'You can freely watch the stream and type in the chat.',
       sub: 'You can also use the like and subscribe buttons. Chatting is optional.',
       demoMessage: 'great stream!',        // 그림 속 입력칸에 타이핑 → 전송되는 예시. 주제와 관련 없는 말만
-      demoName: 'You',
+      demoName: 'You',                     // 그림 속 내 채팅 이름. 참가자 ID는 보여 주지 않음
       caption: 'Example: the controls under the video'
     },
     finish: {
