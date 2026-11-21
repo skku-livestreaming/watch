@@ -18,7 +18,7 @@ const BEHAVIOR_HEADERS = [
   'first_next_video_latency_ms', 'first_next_video_visible_latency_ms', 'seen_supported',
   'seen_ai_congruent', 'seen_ai_incongruent', 'seen_human_congruent', 'seen_human_incongruent',
   'visible_ms_ai_congruent', 'visible_ms_ai_incongruent',
-  'visible_ms_human_congruent', 'visible_ms_human_incongruent'
+  'visible_ms_human_congruent', 'visible_ms_human_incongruent', 'nickname'
 ];
 
 function behaviorRow_(event, session) {
@@ -27,8 +27,13 @@ function behaviorRow_(event, session) {
   const kinds = p.shown_by_identity || {};
   const seen = d.seen_by_identity || {};
   const opinions = k => kinds[k] ? Number(kinds[k].cong || 0) + Number(kinds[k].incong || 0) : null;
+  // The final event is authoritative for standalone entrants who choose a name
+  // after the session opens. Preserve blank names in legacy data, never use PID.
+  const nickname = d.nickname !== undefined ? d.nickname : c.nickname;
   const row = Object.assign({}, d, {
     session_id:session.id, pid:session.pid, event_id:event.id, synced_at:new Date().toISOString(),
+    nickname:nickname === undefined ? null : typeof nickname === 'string'
+      ? nickname.replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]/g, '').trim().slice(0,40) || 'You' : 'You',
     started_at:session.started_at, stimulus_version:c.stimulus_version,
     code:c.code, cong:c.cong, label:c.label, ratio:c.ratio,
     submitted:p.submitted, scroll_up_events:s.up_events,

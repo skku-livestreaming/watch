@@ -43,7 +43,7 @@ def prepare(browser, base, code='t8', width=1440, height=1000, extra=''):
     page.route('**/*', lambda route: route.fulfill(status=204) if route.request.url.endswith('/stream.mp4') else
                (route.continue_() if route.request.url.startswith(base) else route.abort()))
     page.goto(f'{base}/?c={code}&debug=1{extra}')
-    page.locator('#pidEmail').fill('QA001')
+    page.locator('#chatNickname').fill('QA001')
     page.locator('#introGo').click()
     page.evaluate(STUB_CLOCK)
     return page, errors
@@ -498,12 +498,12 @@ def main():
             page.close()
         print('PASS: missing confidence, no answer, deadline submission, confidence reset on answer change')
 
-        # Linked participant IDs retain case in both chat surfaces.
-        for extra, expected in [('', 'qa001'), ('&panel_id=Pnl_42', 'Pnl_42')]:
+        # Nicknames display independently of linked participant IDs in both chat surfaces.
+        for extra, expected in [('', 'QA001'), ('&panel_id=Pnl_42', 'You')]:
             if not extra:
                 page, errors = prepare(browser, base, 'k3')
             else:
-                # Panel entrants skip the ID field, so prepare() cannot fill it.
+                # A linked entrant can leave the optional nickname blank.
                 page = browser.new_page(viewport={'width': 1440, 'height': 1000})
                 errors = []
                 page.on('pageerror', lambda error: errors.append(str(error)))
@@ -532,7 +532,7 @@ def main():
             }'''), 'Overlay nickname colour must match too'
             assert not errors, errors
             page.close()
-        print('PASS: participant IDs display consistently in chat and on-video chat, with linked-ID case preserved')
+        print('PASS: nicknames and You fallback display consistently in chat and on-video chat')
 
         # Native media end can fire before the next loop tick; it must also hide/log the result.
         page, errors = prepare(browser, base)

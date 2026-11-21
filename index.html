@@ -864,14 +864,14 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
 <div class="wrap">
 
   <!-- ══ 탐색 화면 ══ -->
-  <!-- ══ 안내 페이지 — 참가자 코드 입력 + 종료 방법 ══ -->
+  <!-- ══ 안내 페이지 — 채팅 닉네임 입력 + 종료 방법 ══ -->
   <section class="intro" id="intro"><!-- .intro는 기본이 display:none — hidden 속성을 쓰면 .on이 덮이지 않는다 -->
-    <!-- 참가자 식별. 설문 응답과 로그를 묶는 열쇠입니다. -->
+    <!-- 표시 이름은 기록 연결용 참가자 ID와 별도로 받습니다. -->
     <div class="intro-id" id="introId">
-      <label for="pidEmail">Enter your participant code (or your email address if you do not have a code).</label>
-      <input id="pidEmail" type="text" autocomplete="off"
-             placeholder="e.g. P017 or example@gmail.com" spellcheck="false">
-      <span class="id-note" id="idNote"></span><!-- 입력 오류가 있을 때만 안내가 뜹니다 -->
+      <label for="chatNickname">Choose a nickname for the chat (optional).</label>
+      <input id="chatNickname" type="text" autocomplete="off" maxlength="40"
+             placeholder="e.g. StreamFan" spellcheck="false" aria-describedby="idNote">
+      <span class="id-note" id="idNote">Leave blank to appear as You. Please do not enter your real name or email address.</span>
     </div>
     <!-- 종료 안내. 버튼을 안 누르고 창을 닫으면 정상 종료로 기록되지 않습니다(via: closed). -->
     <div class="intro-exit">
@@ -1079,7 +1079,7 @@ const ConditionRouter = (() => {
     intro:'on'            // 자극물 전 안내 페이지 표시 여부
   };
   /* 조건 코드. 주소에 cong=half처럼 그대로 쓰면 참가자가 보고 조작을 알아챕니다.
-     설문 플랫폼에서는 ?pid=P017&c=k3 형태로 넘기고, 여기서 조건으로 풉니다.
+     설문 플랫폼에서는 ?panel_id=P017&c=k3 형태로 넘기고, 여기서 조건으로 풉니다.
      코드는 의미가 드러나지 않게 섞어 두었습니다. */
   const CODES = {
     q7: {cong:'all',  label:'mixed'},
@@ -1115,9 +1115,8 @@ const ConditionRouter = (() => {
     if (!Number.isFinite(c.seed) || c.seed<1) c.seed = DEF.seed;
     // 전원 사람 조건에서는 AI 비율이 의미가 없습니다
     if (c.label === 'human') c.ratio = 0;
-    /* 엠브레인 패널 ID. 끝날 때 받은 값 그대로 돌려줘야 매칭되므로 소문자로 바꾸지 않습니다.
-       형식이 어긋나면 없는 것으로 보고 안내 페이지에서 코드를 받습니다(리다이렉트 없음). */
-    const panel = (q.get('panel_id') || '').trim();
+    // CloudResearch ID는 받은 대소문자 그대로 유지하며 닉네임으로 덮어쓰지 않습니다.
+    const panel = (q.get('participantId') || q.get('panel_id') || '').trim();
     c.panel_id = /^[A-Za-z0-9_-]{1,64}$/.test(panel) ? panel : null;
     if (c.panel_id) c.pid = c.panel_id;
     const assignment = q.get('assignment_id') || '';
@@ -1135,6 +1134,20 @@ const ConditionRouter = (() => {
 })();
 
 let cond = ConditionRouter.read();
+
+function normalizeNickname(value){
+  if (typeof value !== 'string') return 'You';
+  return value.replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]/g, '').trim().slice(0, 40) || 'You';
+}
+const nicknameKey = 'watch_chat_nickname_' + cond.pid;
+try {
+  const nicknameQuery = new URLSearchParams(location.search);
+  const nicknameParam = nicknameQuery.get('nickname') ?? nicknameQuery.get('nick');
+  cond.nickname = normalizeNickname(nicknameParam !== null ? nicknameParam : sessionStorage.getItem(nicknameKey));
+} catch { cond.nickname = 'You'; }
+function participantChatName(){
+  try { return normalizeNickname(cond.nickname); } catch { return 'You'; }
+}
 
 /* ── 2. 발화 풀 ───────────────────────────── */
 /* Backlog only: an ordered conversation from before the viewer joined.
@@ -3327,7 +3340,7 @@ function enter(){
   if (entered) return;
   entered = true;
   syncBehaviorTime(false);
-  Logger.add('watch_start');
+  Logger.add('watch_start', {nickname:participantChatName()});
   watch.classList.add('on');
   const isAI = cond.label === 'mixed';
   /* 시청 화면에서는 AI 비율을 띄우지 않습니다. 정체성은 채팅 각 줄의
@@ -3537,46 +3550,20 @@ function showIntro(){
   /* 안내 페이지는 플랫폼 화면이 아니라 지시문입니다. 헤더가 같이 보이면
      안내문이 사이트의 일부처럼 읽혀서 감춥니다. */
   $('siteBar').style.display = 'none';
-  /* 엠브레인 링크로 들어오면 ID가 이미 있으므로 입력란을 감춥니다.
-     다른 값을 치면 돌려줄 ID와 로그의 ID가 어긋납니다. */
-  $('introId').style.display = cond.panel_id ? 'none' : '';   // .intro-id가 display:flex라 hidden이 안 먹습니다
+  $('introId').style.display = '';
+  $('chatNickname').value = participantChatName() === 'You' ? '' : participantChatName();
 
   /* 입장 안내문과 조건 정보(방송·시청자 수·시청자 구성)는 설문 화면에서 이미 안내하므로
-     여기서는 참가자 코드와 종료 방법만 받습니다. */
+     여기서는 채팅 닉네임과 종료 방법만 안내합니다. */
   Logger.add('intro_shown', {viewers: cond.viewers,
     identity: !isAI ? 'human' : cond.ratio >= 100 ? 'ai' : 'mixed'});
 }
 
-/* 고유 코드 또는 이메일 둘 다 받습니다. @가 들어 있으면 이메일로 보고 형식을 보고,
-   아니면 코드로 봅니다. 형식을 깐깐하게 잡으면 멀쩡한 값이 막힙니다. */
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
 function introGo(){
-  if (cond.panel_id){
-    // 세션 행은 Logger.start()에서 이미 이 ID로 만들어졌습니다
-    Logger.add('participant_id', {value: cond.panel_id, kind: 'panel'});
-    Logger.add('intro_done', {at: +((Date.now() - Logger.t0) / 1000).toFixed(2)});
-    $('intro').classList.remove('on');
-    $('siteBar').style.display = '';
-    enter();
-    return;
-  }
-  const el = $('pidEmail');
-  const v = el.value.trim().toLowerCase();
-  const bad = v.includes('@') ? !EMAIL_RE.test(v) : v.length < 2;
-  if (bad){
-    el.classList.add('bad');
-    $('idNote').textContent = v.includes('@')
-      ? 'Please check your email address.' : 'Enter your participant code or email address.';
-    $('idNote').classList.add('bad');
-    el.focus();
-    return;
-  }
-  el.classList.remove('bad');
-  $('idNote').classList.remove('bad');
-  cond.pid = v;
-  Sink.setPid(v);
-  Logger.add('participant_id', {value: v, kind: v.includes('@') ? 'email' : 'code'});
+  try { cond.nickname = normalizeNickname($('chatNickname').value); }
+  catch { cond.nickname = 'You'; }
+  try { sessionStorage.setItem(nicknameKey, cond.nickname); } catch {}
+  if (cond.panel_id) Logger.add('participant_id', {value: cond.panel_id, kind: 'panel'});
   Logger.add('intro_done', {at: +((Date.now() - Logger.t0) / 1000).toFixed(2)});
   $('intro').classList.remove('on');
   $('siteBar').style.display = '';
@@ -4067,6 +4054,7 @@ let left = false;
 function leaveSummary(via){
   return {
     ...behaviorTimeSummary(),
+    nickname: participantChatName(),
     via,
     dwell_sec: +Math.max(0, tick - VIDEO_TRIM).toFixed(2),   // 영상 시각에서 잘라낸 앞부분을 뺀 시청 시간
     // 방송 종료 화면에서 머문 시간. dwell_sec는 영상 시계라 종료 뒤로는 늘지 않습니다.
@@ -4218,9 +4206,8 @@ function send(){
   const el = $('say');
   const v = el.value.trim().slice(0, 1000);
   if (!v) return;
-  // Keep the linked participant ID's case; manual email entry displays its local part.
-  Renderer.push({kind: 'me', name: String(cond.panel_id || cond.pid).split('@')[0], text: v});
-  Logger.add('user_comment', {text: v});
+  Renderer.push({kind: 'me', name: participantChatName(), text: v});
+  Logger.add('user_comment', {text: v, nickname:participantChatName()});
   ctx.lastUserMessage = v;
   el.value = '';
 }
@@ -4300,12 +4287,7 @@ $('introGo').addEventListener('click', introGo);
 document.querySelectorAll('input[name=confidence]').forEach(el => {
   el.addEventListener('change', () => setConfidence(Number(el.value)));
 });
-$('pidEmail').addEventListener('keydown', e => { if (e.key === 'Enter') introGo(); });
-$('pidEmail').addEventListener('input', () => {
-  $('pidEmail').classList.remove('bad');
-  $('idNote').classList.remove('bad');
-  $('idNote').textContent = '';
-});
+$('chatNickname').addEventListener('keydown', e => { if (e.key === 'Enter') introGo(); });
 $('videoOut').addEventListener('click', () => leave('video_failed'));
 $('voteSubmit').addEventListener('click', submitVote);
 $('subBtn').addEventListener('click', () => toggleSub('header'));

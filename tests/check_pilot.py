@@ -9,7 +9,7 @@ from http.server import ThreadingHTTPServer
 
 from playwright.sync_api import sync_playwright
 from check_stimulus import ROOT, QuietHandler, STUB_CLOCK, advance
-from check_participant import fixture
+from check_participant import fixture, screening, nickname
 
 
 PID = 'TEST_STORAGE_QA'
@@ -26,8 +26,9 @@ def fill_page(page):
       }
       const boxes=new Set();
       for(const box of form.querySelectorAll('input[type=checkbox]')){
-        if(boxes.has(box.name))continue;
-        boxes.add(box.name);box.checked=true;
+        const group=box.closest('[role=group]');
+        if(boxes.has(group))continue;
+        boxes.add(group);box.checked=true;
         box.dispatchEvent(new Event('change',{bubbles:true}));
       }
       for(const el of form.querySelectorAll('textarea'))el.value='Researcher storage test answer.';
@@ -59,12 +60,15 @@ def main():
         ctx,page,control,errors=fixture(browser,base,configured=False)
         outgoing=[];page.on('request',lambda req:outgoing.append(req.url))
         page.goto(base+'/survey/?pilot=1&participantId='+PID)
-        page.get_by_role('heading',name='Researcher storage test').wait_for()
+        page.get_by_role('heading',name='Screening',exact=True).wait_for()
         assert page.evaluate('SURVEY_CONFIG.PARTICIPANT_OPEN') is False
         assert '[XXXX]' not in page.locator('#app').inner_text()
         assert page.locator('#pilotNotice').is_visible()
         page.evaluate('SURVEY_CONFIG.INTRO_MIN_SECONDS=0.03')
+        screening(page)
+        page.get_by_role('heading',name='Researcher storage test').wait_for()
         page.locator('#agree').check();page.locator('#next').click()
+        nickname(page)
         page.locator('#enter').click(timeout=8000)
         child=page.locator('#stimWrap iframe').element_handle().content_frame()
         child.locator('#watch.on').wait_for()
@@ -81,14 +85,24 @@ def main():
         page.wait_for_function("!document.getElementById('stimWrap')")
         for _ in range(30):
             if page.locator('#fin').count():break
+            before=page.evaluate('(k)=>{const s=JSON.parse(localStorage.getItem(k));return [s.stage,s.page]}',KEY)
             if page.locator('form').count():fill_page(page)
             page.locator('#next').click()
+            after=page.evaluate('(k)=>{const s=JSON.parse(localStorage.getItem(k));return [s.stage,s.page]}',KEY)
+            assert after!=before, page.locator('#app').inner_text()
         page.locator('#fin').wait_for()
         saved=page.evaluate('(k)=>JSON.parse(localStorage.getItem(k))',KEY)
         assert saved['stage']=='debrief'
         assert saved['meta']['t1_vote']=='B' and saved['meta']['t1_conf']==6
         assert saved['meta']['stim_session_id']
-        assert saved['answers']['mc_author']=='1'
+        assert saved['answers']['mc_comp']=='1'
+        assert saved['meta']['scr_online_3']==1
+        assert saved['answers']['nickname']=='QAUser'
+        assert saved['answers']['op_conf']==1
+        assert saved['answers']['t1_t2_conf_delta']==''
+        assert 't2_conf' not in saved['answers']
+        assert saved['answers']['sp_1']==1 and saved['answers']['sr_5']==1
+        assert saved['answers']['op_why']=='Researcher storage test answer.'
         assert saved['answers']['t1_t2_comparable']==1
         assert saved['answers']['t1_t2_vote_changed']==1
         # Even future completion settings must not escape the test path.

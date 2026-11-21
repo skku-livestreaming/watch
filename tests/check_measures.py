@@ -110,36 +110,38 @@ def main():
         page.close()
         print('PASS: cumulative 1-second exposure, AI/human x stance cells, two-surface deduplication, background arrivals, missing votes and unsupported observation')
 
-        for submitted, choice, confidence, changed, delta in [
-            (1,'A',4,1,-2), (1,'B',6,0,0), (0,'A',4,'','')
+        for submitted, choice, changed in [
+            (1,'A',1), (1,'B',0), (0,'A','')
         ]:
-            initial=state('post',1)
+            initial=state('post',2)
             initial['meta'].update(t1_vote='B',t1_conf=6,t1_submitted=submitted)
+            initial['answers']['op_conf']='4'
             ctx,page,control,errors=fixture(browser,base,initial)
             start(page,base)
             page.locator(f'input[name=t2_vote][value={choice}]').check()
-            page.locator(f'input[name=t2_conf][value="{confidence}"]').check()
+            assert not page.locator('input[name=t2_conf]').count()
             page.locator('#next').click()
             page.wait_for_function("JSON.parse(localStorage.getItem('lsv_livestream-ai-chat-2026_pid_QA_PARTICIPANT')).answers.t1_t2_comparable !== undefined")
             answers=stored(page)['answers']
             assert answers['t1_t2_comparable']==submitted
             assert answers['t1_t2_vote_changed']==changed
-            assert answers['t1_t2_conf_delta']==delta
+            assert answers['t1_t2_conf_delta']==''
+            assert answers['op_conf']=='4'
             assert not errors,errors
             ctx.close()
-        initial=state('post',10)
+        initial=state('post',7)
         ctx,page,control,errors=fixture(browser,base,initial)
         start(page,base)
-        assert page.locator('input[name=mc_author]').count()==4
-        page.get_by_text('Both humans and AI',exact=True).wait_for()
-        page.locator('input[name=mc_author][value="3"]').check()
+        assert page.locator('input[name=mc_comp]').count()==3
+        page.get_by_text('Both human and AI viewers',exact=True).wait_for()
+        page.locator('input[name=mc_comp][value="2"]').check()
         page.locator('input[name=mc_match][value="2"]').check()
         page.locator('#next').click()
-        assert stored(page)['answers']['mc_author']=='3'
+        assert stored(page)['answers']['mc_comp']=='2'
         assert not errors,errors
         ctx.close()
         browser.close()
-        print('PASS: T1/T2 change and signed confidence delta save with missingness intact; mixed-condition manipulation check has a valid answer')
+        print('PASS: T1/T2 vote change preserves missingness; op_conf stays separate from unavailable T2 confidence; mixed-condition composition check saves')
     server.shutdown()
 
 

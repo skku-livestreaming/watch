@@ -38,10 +38,10 @@ def fixture(browser, base, initial=None, configured=True, randomized=False, miss
         for token in ['[N]','[Amount]','[XXXX]','[Researcher name]','[email]']:
             config = config.replace(token,'QA')
     if randomized:
-        config = config.replace("id: 'shared', required: true", "id: 'shared', required: true, randomize: true")
+        config = config.replace("id: 'sr', rawKeys: true, required: true", "id: 'sr', rawKeys: true, required: true, randomize: true")
     if missing=='api':config=re.sub(r"API_URL:\s*'[^']*'", "API_URL: ''", config, count=1)
     if missing=='completion':config=config.replace("COMPLETION_CODE: 'QA_COMPLETE'", "COMPLETION_CODE: ''")
-    if missing=='consent':config=config.replace('Research Consent','[XXXX] Research Consent')
+    if missing=='consent':config=config.replace('Research Participant Consent Form','[XXXX] Research Participant Consent Form')
     if missing=='t1':config=config.replace('READ_T1: true','READ_T1: false')
     if missing=='origin':config=config.replace("STIMULUS_URL: new URL('../', window.location.href).href.split('?')[0]", "STIMULUS_URL: 'https://example.com/'")
     def route(r):
@@ -82,6 +82,23 @@ def stored(page):
     return page.evaluate('(key)=>JSON.parse(localStorage.getItem(key))', KEY)
 
 
+def consent(page, personal='2', future='3', agree='1'):
+    page.locator(f'input[name=consent_pi][value="{personal}"]').check()
+    page.locator(f'input[name=consent_future][value="{future}"]').check()
+    page.locator(f'input[name=consent_agree][value="{agree}"]').check()
+    page.locator('#next').click()
+
+
+def screening(page, answer='1'):
+    page.locator('#q_screening_0 input[value="' + ('3' if answer == '1' else '1') + '"]').check()
+    page.locator('#next').click()
+
+
+def nickname(page, value='QAUser'):
+    page.locator('#q_nickname_0 input').fill(value)
+    page.locator('#next').click()
+
+
 def stream(page, base):
     start(page,base)
     page.locator('#back').click()
@@ -119,7 +136,7 @@ def main():
         print('PASS: opening recruitment still requires API, completion, consent, T1 and same-origin setup')
         broken=state('post');broken['page']=-1
         ctx,p,c,errors=fixture(browser,base,broken)
-        start(p,base);p.locator('#agree').wait_for()
+        start(p,base);p.locator('#q_screening_0').wait_for()
         assert not errors,errors
         ctx.close()
         print('PASS: corrupt cached participant progress recovers without a script error')
@@ -154,19 +171,45 @@ def main():
 
         ctx,p,c,errors = fixture(browser,base)
         p.goto(base+'/survey/?debug=1&participantId='+PID)
-        p.locator('#agree').check();p.locator('#next').click()
+        screening(p);consent(p);nickname(p)
         p.wait_for_timeout(100)
         assert not c['requests']
         assert p.evaluate("!!localStorage.getItem('lsv_livestream-ai-chat-2026_debug')")
         start(p,base)
+        screening(p)
         assert p.locator('#agree').is_visible() and p.locator('#dbg').is_hidden()
-        p.locator('#agree').check();p.locator('#next').click()
+        p.locator('#agree').check()
+        assert p.locator('#next').is_disabled()
+        assert stored(p)['stage']=='consent' and not c['requests']
+        consent(p)
+        assert stored(p)['meta']['consent_pi']=='2'
+        assert stored(p)['meta']['consent_future']=='3'
+        assert stored(p)['meta']['consent_agree']=='1'
+        assert not any(r['action']=='assign' for r in c['requests'])
+        nickname(p)
         p.locator('#ir1').wait_for()
         assert any(r['action']=='assign' for r in c['requests'])
         assert all(not r.get('data',{}).get('is_test') for r in c['requests'])
         assert not errors,errors
         ctx.close()
         print('PASS: debug preview never writes and cannot overwrite participant progress')
+
+        for personal,agree,reason in [('3','1','declined'),('2','2','declined'),('2','1','screened')]:
+            ctx,p,c,errors=fixture(browser,base)
+            start(p,base)
+            if reason=='screened':
+                screening(p,'2')
+                assert stored(p)['stage']=='end' and stored(p)['meta']['end_reason']==reason
+            else:
+                screening(p)
+                p.locator(f'input[name=consent_pi][value="{personal}"]').check()
+                p.locator('input[name=consent_future][value="3"]').check()
+                p.locator(f'input[name=consent_agree][value="{agree}"]').check()
+                assert p.locator('#next').is_disabled() and stored(p)['stage']=='consent'
+            assert not any(r['action']=='assign' for r in c['requests'])
+            assert not p.locator('iframe').count() and not errors,errors
+            ctx.close()
+        print('PASS: incomplete consent is blocked; declining consent and failed screening exit before assignment')
 
         initial=state('assign');initial['cell']=None
         ctx,p,c,errors = fixture(browser,base,initial)

@@ -144,13 +144,16 @@ props.set('SUPABASE_SERVICE_ROLE_KEY','sb_publishable_test');
 assert.throws(()=>run("supabaseRead_('sessions?select=id')"),/server-side/);
 props.set('SUPABASE_SERVICE_ROLE_KEY','server-test-key');failNetwork=false;
 console.log('PASS: 500 mocked participants, grid expansion, paged sync, deduplication, completion precedence, retry after partial failure, withdrawal, formula escaping, server-key validation');
-run("save_({pid:'P1',data:{status:'complete',answer:'retained'}})");
+run("save_({pid:'P1',data:{status:'complete',answer:'retained',nickname:'ChatFan_42'}})");
 run("save_({pid:'P1',data:{status:'assigned'}})");
 const resultRow = () => sheets.responses.data.find(r=>r[0]==='P1');
 const resultField = name => resultRow()[sheets.responses.data[0].indexOf(name)];
 assert.equal(resultField('status'),'complete');
+assert.equal(resultField('nickname'),'ChatFan_42');
+assert.equal(resultField('pid'),'P1');
 run("save_({pid:'P1',data:{status:'withdrawn',withdraw:'yes'}})");
 assert.equal(resultField('answer'),'');
+assert.equal(resultField('nickname'),'');
 run("save_({pid:'P1',data:{status:'complete',answer:'must not return'}})");
 assert.equal(resultField('status'),'withdrawn');
 assert.equal(resultField('answer'),'');
@@ -185,7 +188,7 @@ legacy.data = [legacyHeaders,
   legacyHeaders.map(h=>h==='research_note'?'keep A':a[h]),
   legacyHeaders.map(h=>h==='research_note'?'keep B':b[h])];
 sheets.behavior = legacy;
-events.push({id:504,session_id:sessions[499].id,data:{via:'end_button',
+events.push({id:504,session_id:sessions[499].id,data:{via:'end_button',nickname:'StandaloneFan',
   behavior_version:'2026-11-14-v1',visible_watch_sec:0,hidden_playback_sec:3,
   visible_postpoll_sec:0,visible_after_end_sec:1.2,next_video_selected:true,
   first_next_video_index:0,first_next_video_latency_ms:3000,
@@ -196,18 +199,20 @@ run('syncBehaviorMeasures()');
 const upgraded = legacy.data[0];
 const migratedRow = sid => legacy.data.find(r=>r[upgraded.indexOf('session_id')]===sid);
 const upgradedField = (sid,name) => migratedRow(sid)[upgraded.indexOf(name)];
-assert.equal(upgraded.length,59); // 58 measured columns + preserved researcher note.
+assert.equal(upgraded.length,60); // 59 exported columns + preserved researcher note.
 assert.deepEqual(upgraded.slice(0,41),legacyHeaders.slice(0,41));
 assert.equal(upgradedField(sessions[499].id,'research_note'),'keep A');
 assert.equal(upgradedField(sessions[499].id,'visible_watch_sec'),0);
 assert.equal(upgradedField(sessions[499].id,'first_next_video_index'),0);
 assert.equal(upgradedField(sessions[499].id,'next_video_selected'),1);
+assert.equal(upgradedField(sessions[499].id,'nickname'),'StandaloneFan');
 assert.equal(upgradedField(sessions[499].id,'seen_ai_congruent'),1);
 assert.equal(upgradedField(sessions[499].id,'seen_ai_incongruent'),0);
 assert.equal(upgradedField(sessions[499].id,'visible_ms_human_incongruent'),1800);
 assert.equal(upgradedField(sessions[498].id,'research_note'),'keep B');
 assert.equal(upgradedField(sessions[498].id,'visible_watch_sec'),'');
 assert.equal(upgradedField(sessions[498].id,'seen_supported'),'');
+assert.equal(upgradedField(sessions[498].id,'nickname'),'');
 assert(legacy.writes.every(w=>w.c>2 || w.c+w.nc<=2), 'Researcher column must never be rewritten, including formula cells');
 events.push({...events[events.length-1],id:505,data:{...events[events.length-1].data,visible_watch_sec:12}});
 legacy.failColumn=3;
@@ -222,7 +227,19 @@ assert.equal(props.get('BEHAVIOR_EVENT_CURSOR'),'505');
 run("purgeBehavior_('P499')");
 assert(!legacy.data.some(r=>r[upgraded.indexOf('pid')]==='P499'));
 assert.equal(upgradedField(sessions[498].id,'research_note'),'keep B');
-console.log('PASS: legacy sheet upgrades by name to 58 measures, preserves custom columns, retains zero vs missing values, repairs partial column writes and purges the correct PID');
+console.log('PASS: legacy sheet upgrades by name to 59 exported columns, preserves custom columns, retains zero vs missing values, repairs partial column writes and purges the correct PID');
+
+const nameField = (data,condition={}) => {
+  ctx.nicknameEvent={data};ctx.nicknameSession={id:'nick-session',pid:'KEEP_PID',condition};
+  return run('behaviorRow_(nicknameEvent,nicknameSession)[BEHAVIOR_HEADERS.indexOf("nickname")]');
+};
+assert.equal(nameField({nickname:'StandaloneFan'},{nickname:'You'}),'StandaloneFan');
+assert.equal(nameField({},{nickname:'SessionFan'}),'SessionFan');
+assert.equal(nameField({nickname:''}),'You');
+assert.equal(nameField({nickname:{invalid:true}}),'You');
+assert.equal(nameField({}),'');
+assert.equal(nameField({nickname:'=SUM(A1:A2)'}),"'=SUM(A1:A2)");
+console.log('PASS: nickname is saved separately from PID, event names override stale session names, legacy names stay blank, formulas are escaped and withdrawal clears names');
 
 props.delete('SPREADSHEET_ID');
 assert.throws(()=>run("sheet_('responses',['pid'])"),/Configure SPREADSHEET_ID/);
