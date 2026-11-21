@@ -19,6 +19,8 @@ window.SURVEY_CONFIG = {
   STIMULUS_URL: new URL('../', window.location.href).href.split('?')[0],
   // 자극물에 추가로 넘길 값. 예: 자극물 자체 안내 화면을 끄려면 { intro: 'off' }
   STIMULUS_EXTRA: {intro: 'off'},
+  // 채팅 닉네임을 자극물에 넘길 때 쓰는 주소 값 이름 (자극물 쪽과 맞출 것)
+  NICK_PARAM: 'nick',
 
   /* 자극물을 설문 페이지 안에 띄우는 방식(true).
      참가자가 [Finish participation]을 누르면 설문이 감지해 사후 문항으로 넘어갑니다.
@@ -190,14 +192,14 @@ window.SURVEY_CONFIG = {
         aiRows: [1, 1, 1, 1]          // 미리보기 채팅 줄마다 AI 배지 여부
       },
       human: {
-        headline: 'The other viewers in this stream are <span class="hl">people</span> watching at the same time as you.',
-        sub: 'Every chat message is written by a person.',
+        headline: '<span class="hl">All</span> other viewers in this stream are <span class="hl">people</span>.',
+        sub: 'Every chat message is written by people.',
         aiRows: [0, 0, 0, 0]
       },
       mixed: {
         // 비율(반반)은 말하지 않고, AI와 사람이 함께 있는 공간이라고만 안내
-        headline: 'This stream is a space where <span class="hl">AI</span> and <span class="hl">people</span> watch together.',
-        sub: 'Messages written by AI are marked with an <span class="aib">AI</span> label.',
+        headline: 'Other viewers in this stream are both <span class="hl">AI</span> and <span class="hl">people</span>.',
+        sub: 'Some chat messages are written by AI, and others by people. Messages written by AI are marked with an <span class="aib">AI</span> label.',
         aiRows: [1, 0, 0, 1]
       }
     },
@@ -238,10 +240,11 @@ window.SURVEY_CONFIG = {
   },
 
   /* ── 8. 문항 페이지 ───────────────────────────────────────────
-     pre  = 동의 후 · 자극물 전 /  post = 자극물 후 · 디브리핑 전
+     screen = 동의 전 선별 (답은 동의할 때 함께 저장, 탈락하면 상태만) / pre = 동의 후 · 자극물 전 / post = 자극물 후 · 디브리핑 전
      ※ 「라이브스트리밍_설문문항_근거」 엑셀 합본_1113 시트 + Live_Streaming_Survey_IRB.docx 기준.
        문항 문구는 시트 Revised 열, 지시문(구성개념별)·선별 문항·구간 안내는 IRB 문서 그대로.
-       쪽 나눔: 시트의 1~5번page는 그대로, 그 뒤는 시트의 표 구분(종속변수 / 조작점검 / 조절변수 / 통제변수 / 인구통계)대로 한 쪽씩.
+       쪽 순서: 확신도 → 재투표 → 변화 여부 → 시청자 지각 → 여론·영향 → 즐거움·관심·이용 의도 → 조작 지각·자유 위협·신뢰 → 조작점검 → 조절변수 → 통제변수 → 인구통계
+       (11/21 팀 피드백: 조작·압박 문항은 즐거움·이용 의도 뒤로. 확신도·재투표 순서와 여론 지각 위치는 그대로)
 
      페이지: { id, title?, blocks:[…], showIf?: ctx => bool, minSeconds? }
      블록 type
@@ -250,10 +253,11 @@ window.SURVEY_CONFIG = {
        multi     : 여러 개 선택      { id, text, options, min?, max? }
        likert    : 척도 묶음         { id, text, items:[{id,text,attention?}], points, labels:{1:'..',7:'..'}, randomize?, rawKeys? }
        textarea  : 주관식           { id, text, minChars? }
+       text      : 한 줄 입력        { id, text, help?, pattern?, maxLength?, msg?, notPid? }
        number    : 숫자 (키보드로만 입력, 숫자 외 글자는 자동으로 지움)  { id, text, min?, max? }
        select    : 드롭다운          { id, text, options }
      options: ['문구', …] 또는 [{value:'코드', label:'문구', other:true(기타 입력칸)}]
-     screen   : { allowed:['값', …] }  → 그 외를 고르면 선정 기준 탈락으로 종료
+     screen   : single = { allowed:['값', …] } 그 외를 고르면 탈락 / multi = { required:['값', …] } 그 값을 다 골라야 통과
      attention: { correct:'값' }       → 틀리면 ATTENTION 규칙 적용 (likert는 항목에 붙임)
      dependsOn: '같은 쪽 single 문항 id' + textByAnswer: { 값: '질문' }
                 → 그 문항에 답하기 전엔 숨기고, 고른 답에 맞는 질문으로 바꿔 보여 줌 (3번 쪽 주관식)
@@ -261,16 +265,41 @@ window.SURVEY_CONFIG = {
      showIf   : ctx => 조건. ctx.group('ai'|'human'|'mixed'), ctx.cong, ctx.answers 사용 가능
      저장되는 열 이름: single/number/textarea = id, likert = id_항목id (rawKeys: true면 항목id 그대로), multi = id_값(1/0) */
   PAGES: {
-    pre: [
-      /* ── IRB Screening: No를 고르면 설문 끝으로 (screenedMsg) ── */
+    // 동의서보다 먼저 나오는 선별 문항 (팀 피드백 대안 2). 3번(실시간 라이브 시청)을 안 고르면 설문 끝(screened)
+    screen: [
       {
         id: 'screening',
         title: 'Screening',
         blocks: [
-          { type: 'single', id: 'scr_live3m', required: true,
-            text: 'In the past 3 months, have you watched a live stream on a platform such as YouTube Live, Twitch, TikTok LIVE, or Instagram Live?',
-            options: [{ value: '1', label: 'Yes' }, { value: '2', label: 'No' }],
-            screen: { allowed: ['1'] } }
+          { type: 'multi', id: 'scr_online', required: true, min: 1,
+            text: 'In the past 3 months, which of the following have you done online? (Select all that apply)',
+            options: [
+              { value: '1', label: 'Posted a photo or video on social media' },
+              { value: '2', label: 'Watched a movie or TV series on a streaming service' },
+              { value: '3', label: 'Watched a live stream in real time (e.g., on Twitch, YouTube Live, TikTok LIVE, Instagram Live, Kick)' },
+              { value: '4', label: 'Listened to a podcast' },
+              { value: '5', label: 'Played an online multiplayer game' },
+              { value: '6', label: 'Shopped online' },
+              { value: '7', label: 'Joined a video call (e.g., Zoom, FaceTime)' },
+              { value: '8', label: 'Read news on a website or app' },
+              { value: '9', label: 'None of the above' }
+            ],
+            screen: { required: ['3'] } }
+        ]
+      }
+    ],
+
+    pre: [
+      /* ── 채팅 닉네임 (팀 피드백: 채팅에 참가자 ID 대신 이 이름이 보이도록)
+            자극물 주소에 &nick=…으로 넘김. 자극물이 nick을 읽어야 화면에 반영됨 ── */
+      {
+        id: 'nickname',
+        blocks: [
+          { type: 'text', id: 'nickname', required: true, notPid: true, maxLength: 20,
+            pattern: '^[A-Za-z0-9_]{2,20}$',
+            text: 'Please create a username to use in the live stream chat.',
+            help: 'This name will be shown next to your messages in the chat.<br>Do not use your real name or any personal information.',
+            msg: 'Please use 2–20 letters, numbers, or underscores (no spaces), and do not use your participant ID.' }
         ]
       }
     ],
@@ -387,8 +416,7 @@ window.SURVEY_CONFIG = {
         ]
       },
 
-      /* ── 5번page. 매개변수: Perceived public opinion / Informational · Normative influence /
-            Perceived manipulation · Threat to freedom · Message credibility ── */
+      /* ── 5번page. 매개변수: Perceived public opinion / Informational · Normative influence ── */
       {
         id: 'p5_comments',
         blocks: [
@@ -409,32 +437,6 @@ window.SURVEY_CONFIG = {
             items: [
               { id: 'nor_1', text: 'I felt like I had to agree with the opinions in the comments.' },
               { id: 'nor_2', text: 'I was not persuaded by the comments, but I still accepted the opinions they expressed.' }
-            ] },
-          { type: 'likert', id: 'manip', rawKeys: true, required: true,
-            text: 'Think about the comments other viewers posted in the live stream you just watched about the issue raised in the poll. Please indicate how much you agree with each statement.',
-            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
-            items: [
-              { id: 'manip_1', text: 'The comments felt manipulative.' },
-              { id: 'manip_2', text: 'The comments seemed to be trying to influence viewers\' judgments in ways I didn\'t like.' },
-              { id: 'manip_3', text: 'The comments seemed to be trying to inappropriately control viewers\' judgments.' },
-              { id: 'manip_4', text: 'The comments seemed intentionally designed to influence viewers\' judgments without their awareness.' }
-            ] },
-          { type: 'likert', id: 'thr', rawKeys: true, required: true,
-            text: 'Think about what you thought of the opinions expressed in the comments other viewers posted in the live stream you just watched. Please indicate how much you agree with each statement.',
-            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
-            items: [
-              { id: 'thr_1', text: 'The comments seemed to threaten my freedom to form my own opinion.' },
-              { id: 'thr_2', text: 'The comments seemed to be trying to make the decision for me.' },
-              { id: 'thr_3', text: 'The comments seemed to be trying to manipulate me.' },
-              { id: 'thr_4', text: 'The comments seemed to be pressuring me to hold a particular opinion.' }
-            ] },
-          { type: 'likert', id: 'cred', rawKeys: true, required: true,
-            text: 'Think about the content of the comments other viewers posted in the live stream you just watched. Please indicate how much you agree with each statement.',
-            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
-            items: [
-              { id: 'cred_1', text: 'Overall, the comments were accurate.' },
-              { id: 'cred_2', text: 'Overall, the comments were authentic.' },
-              { id: 'cred_3', text: 'Overall, the comments were believable.' }
             ] }
         ]
       },
@@ -470,9 +472,43 @@ window.SURVEY_CONFIG = {
         ]
       },
 
+      /* ── 매개변수: Perceived manipulation · Threat to freedom · Message credibility
+            (팀 피드백: 조작·압박을 묻는 문항이 즐거움·이용 의도 응답에 영향을 주지 않도록 그 뒤로) ── */
+      {
+        id: 'p7_comments_eval',
+        blocks: [
+          { type: 'likert', id: 'manip', rawKeys: true, required: true,
+            text: 'Think about the comments other viewers posted in the live stream you just watched about the issue raised in the poll. Please indicate how much you agree with each statement.',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
+              { id: 'manip_1', text: 'The comments felt manipulative.' },
+              { id: 'manip_2', text: 'The comments seemed to be trying to influence viewers\' judgments in ways I didn\'t like.' },
+              { id: 'manip_3', text: 'The comments seemed to be trying to inappropriately control viewers\' judgments.' },
+              { id: 'manip_4', text: 'The comments seemed intentionally designed to influence viewers\' judgments without their awareness.' }
+            ] },
+          { type: 'likert', id: 'thr', rawKeys: true, required: true,
+            text: 'Think about what you thought of the opinions expressed in the comments other viewers posted in the live stream you just watched. Please indicate how much you agree with each statement.',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
+              { id: 'thr_1', text: 'The comments seemed to threaten my freedom to form my own opinion.' },
+              { id: 'thr_2', text: 'The comments seemed to be trying to make the decision for me.' },
+              { id: 'thr_3', text: 'The comments seemed to be trying to manipulate me.' },
+              { id: 'thr_4', text: 'The comments seemed to be pressuring me to hold a particular opinion.' }
+            ] },
+          { type: 'likert', id: 'cred', rawKeys: true, required: true,
+            text: 'Think about the content of the comments other viewers posted in the live stream you just watched. Please indicate how much you agree with each statement.',
+            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
+            items: [
+              { id: 'cred_1', text: 'Overall, the comments were accurate.' },
+              { id: 'cred_2', text: 'Overall, the comments were authentic.' },
+              { id: 'cred_3', text: 'Overall, the comments were believable.' }
+            ] }
+        ]
+      },
+
       /* ── 조작점검 ── */
       {
-        id: 'p7_manip',
+        id: 'p8_manip',
         blocks: [
           { type: 'single', id: 'mc_match', required: true,
             text: 'How closely do you think the other viewers\' opinions matched your vote during the live stream?',
@@ -482,7 +518,7 @@ window.SURVEY_CONFIG = {
               { value: '3', label: 'Almost all other viewers voted differently from me.' }
             ] },
           { type: 'single', id: 'mc_comp', required: true,
-            text: 'Who were the viewers of the live stream you just watched?',
+            text: 'Who were the other viewers of the live stream you just watched, excluding yourself?',
             options: [
               { value: '1', label: 'Only AI viewers' },
               { value: '2', label: 'Both human and AI viewers' },
@@ -493,7 +529,7 @@ window.SURVEY_CONFIG = {
 
       /* ── 조절변수: Bandwagon heuristic · Personal issue importance · Subjective knowledge · Conformity tendency · Trust in AI ── */
       {
-        id: 'p8_traits',
+        id: 'p9_traits',
         title: 'Additional Survey',
         blocks: [
           { type: 'html', html: '<p>The following questions are about your general beliefs and experiences.</p>' },
@@ -537,7 +573,7 @@ window.SURVEY_CONFIG = {
 
       /* ── 통제변수 ── */
       {
-        id: 'p9_controls',
+        id: 'p10_controls',
         blocks: [
           { type: 'multi', id: 'genres', required: true, min: 1,
             text: 'What kinds of live streams do you enjoy watching the most? (Choose all that apply)',
@@ -626,10 +662,11 @@ window.SURVEY_CONFIG = {
               { value: '1', label: 'Less than high school' },
               { value: '2', label: 'High school graduate' },
               { value: '3', label: 'Some college' },
-              { value: '4', label: 'College graduate (4-year degree)' },
-              { value: '5', label: 'Master\'s degree' },
-              { value: '6', label: 'Doctoral or professional degree' },
-              { value: '7', label: 'Prefer not to say' }
+              { value: '4', label: 'Associate degree / 2-year college degree' },
+              { value: '5', label: 'College graduate (4-year degree)' },
+              { value: '6', label: 'Master\'s degree' },
+              { value: '7', label: 'Doctoral or professional degree' },
+              { value: '8', label: 'Prefer not to say' }
             ] },
           { type: 'single', id: 'employment', required: true,
             text: 'What is your current employment status?',
@@ -655,7 +692,7 @@ window.SURVEY_CONFIG = {
     finish: 'Finish',
     studyName: 'Research Study',               // 상단 바 왼쪽 이름
     parts: {                                    // 상단 바 오른쪽 단계 이름
-      consent: 'Part 1 of 4 · Consent', pre: 'Part 1 of 4 · About you', stream: 'Part 2 of 4 · Live stream',
+      screen: 'Part 1 of 4 · Screening', consent: 'Part 1 of 4 · Consent', pre: 'Part 1 of 4 · About you', stream: 'Part 2 of 4 · Live stream',
       post: 'Part 3 of 4 · After the stream', debrief: 'Part 4 of 4 · About this study', done: 'Complete'
     },
     questionFmt: n => `Question ${n}`,
