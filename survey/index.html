@@ -1342,7 +1342,15 @@ function viewStimulus(){
       const link = d.getElementById('returnLink');
       // 참가자는 저장 확인 뒤에만 진행합니다. 대기 후에도 미완료면 재시도 버튼을 표시합니다.
       const saved = d.getElementById('done').dataset.saveState === 'saved';
+      // 투표(T1)를 제출하지 않은 참가자: 일치 조작을 못 봐서 분석 제외 대상(t1_submitted = 0)이지만,
+      // 저장 확인을 기다리다 멈추지 않도록 대기 시간이 지나면 설문으로 넘깁니다 (파일럿 결정: 끝까지 진행 + 보상).
+      const p1 = t1 && t1.ps && t1.ps[0];
+      const noVote = !(p1 && p1.l);
       if (saved || (link && !link.hidden) || (DEBUG && Date.now() - doneAt > C.STIM_FLUSH_WAIT_MS)) finish(endKind);
+      else if (noVote && Date.now() - doneAt > C.STIM_FLUSH_WAIT_MS){
+        S.meta.stim_save_pending = 1; save({stim_save_pending: 1});
+        finish(endKind);
+      }
       else if (Date.now() - doneAt > C.STIM_FLUSH_WAIT_MS && !cover.querySelector('#stimSaveRetry')){
         cover.innerHTML = '<div style="padding:24px;text-align:center"><p>Your stream responses have not finished saving. Please keep this page open.</p><button id="stimSaveRetry" type="button">Try saving again</button></div>';
         cover.querySelector('#stimSaveRetry').onclick = async e => {
