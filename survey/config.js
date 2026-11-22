@@ -72,8 +72,9 @@ window.SURVEY_CONFIG = {
 
   /* ── 4. 이동 주소 (CloudResearch Connect에서 받은 값) ─────── */
   REDIRECTS: {
-    complete: '',              // 완료 리다이렉트 주소. 비우면 아래 완료 코드를 화면에 보여 줍니다
-    screenedOut: '',           // 선정 기준 탈락
+    // Connect 파일럿 프로젝트(Online Media Experiences Survey, 2026-11) 주소. 본 연구를 새 프로젝트로 열면 바꿀 것
+    complete: 'https://connect.cloudresearch.com/participant/project/5339FAA3CE/complete',      // 완료 (Manual review)
+    screenedOut: 'https://connect.cloudresearch.com/participant/project/3D79EC9870/complete',   // 선별 탈락 (Partial complete $0.13)
     attentionFail: '',         // 주의 점검 탈락 (ATTENTION.action이 'end'일 때만)
     full: ''                   // 모든 셀 마감
   },
@@ -717,7 +718,7 @@ window.SURVEY_CONFIG = {
     idBody: 'We could not find your CloudResearch ID. Please enter it below.',
     idInvalid: 'Please enter a valid ID (letters, numbers, - or _).',
     mobileBlocked: 'This study must be completed on a computer (desktop or laptop). Please return the study.',
-    screenedMsg: 'Thank you. Unfortunately you are not eligible for this study. You may now close this window.',
+    screenedMsg: 'Thank you. Unfortunately you are not eligible for this study. Redirecting you to CloudResearch…',
     attentionMsg: 'Thank you. Unfortunately, your responses did not meet the study\'s quality requirements.',
     fullMsg: 'This study is now full. Thank you for your interest.',
     returnStream: 'It looks like you have not finished the stream yet. Click below to go back to it.',
