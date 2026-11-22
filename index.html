@@ -51,6 +51,7 @@
   --stance-b-bg:rgba(224,49,39,.12);
   --stance-b-ink:#c22a21;
   --msg-hover:rgba(22,24,28,.045);  /* 채팅 한 줄에 커서 — 실제 플랫폼의 행 강조 */
+  --human-msg-bg:#f7f7f7;          /* 사람 채팅 뒤의 아주 옅은 회색 */
   --chip:#eef0f4;                   /* 카테고리·언어 태그 */
   --chip-ink:#4b5260;
   --chip-line:#e2e5eb;
@@ -107,6 +108,7 @@
   --badge-bg:rgba(0,0,0,.72);
   --badge-ink:#ffffff;
   --msg-hover:rgba(255,255,255,.055);
+  --human-msg-bg:#1d1e20;
   --chip:transparent;
   --chip-ink:#c4c6cc;
   --chip-line:#3d3f45;
@@ -747,6 +749,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
   font-size:16px;line-height:1.5;word-break:break-word;animation:in .18s ease-out;
   padding:4px 8px;border-radius:7px;
 }
+.feed > .msg:where(:has(> .nm.human), :has(> .nm.me)){background:var(--human-msg-bg)}
 .msg:hover{background:var(--msg-hover)}
 @keyframes in{from{opacity:0;transform:translateY(5px)}}
 .msg .nm{font-weight:700;margin-right:4px;letter-spacing:-.01em}

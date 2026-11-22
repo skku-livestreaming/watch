@@ -11,7 +11,7 @@ window.SURVEY_CONFIG = {
   API_URL: 'https://script.google.com/macros/s/AKfycbxGM2u9Di-sO1XJtU0hk-tn68JNAXz9CtF_5jn3yThhVYNGMmDZqPZTldr2Y4lpNFDWrQ/exec',
   // 참가자 진행을 허용합니다. 완료 URL/코드 등 필수 설정 검사는 별도로 적용됩니다.
   PARTICIPANT_OPEN: true,
-  ASSET_VERSION: '2026-11-22-storage-rls-v1',
+  ASSET_VERSION: '2026-11-22-human-chat-bg-v1',
 
   // 자극물 주소. 끝에 ?c=셀코드&panel_id=참가자ID 가 자동으로 붙습니다.
   // 현재 설문과 같은 사이트의 상위 폴더에서 방송을 띄웁니다. 로컬 확인도 같은 경로를 사용합니다.
