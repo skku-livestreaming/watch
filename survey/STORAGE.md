@@ -71,8 +71,13 @@ Google 시트와 Apps Script 웹 앱 배포 주소가 준비되어 `config.js`�
 - 서버 조건 배정에 실패하면 재시도 화면에서 기다립니다. 실제 참가자에게 임의 조건을 배정하지 않습니다.
 - 설문 완료 코드와 복귀 링크는 서버 저장 확인 뒤에만 표시합니다. 실패한 응답은 브라우저에 유지하고 다시 보낼 수 있습니다. 현재 자극물의 종료 로그도 저장을 확인한 후 사후 문항으로 이동합니다. 6초가 지나도 미완료면 재시도 버튼이 나옵니다.
 - 자극물 요청은 전송 전에 재시도 큐에 보관하고 큰 이벤트 묶음은 약 48KiB로 나눕니다. 세션 재전송은 같은 UUID를 중복 생성하지 않으며, 예전 세션의 실패가 새 참가자 저장을 막지 않습니다. 저장소가 차면 해당 페이지의 메모리에서 재시도하므로 저장 성공 전에는 페이지를 닫지 않도록 안내합니다.
+- 세션은 `return=minimal` 일반 INSERT로 저장합니다. 서버가 저장한 뒤 응답만 끊긴 경우에는 같은 UUID를 재전송하고, `409 / 23505 / sessions_pkey` 충돌만 이미 저장된 세션으로 인정합니다. 다른 중복 제약·RLS 오류는 실패로 유지합니다. `on_conflict=id`를 쓰면 `id` SELECT 정책도 검사되어 INSERT-only RLS에서 `42501`이 발생할 수 있으므로 사용하지 않습니다. 이를 해결하려고 참가자에게 SELECT 정책을 추가할 필요는 없습니다.
 - iframe 로드 실패는 재시도할 수 있으며, 참가자용 수동 건너뛰기는 제공하지 않습니다. 영상 재생이 반복 실패하면 기술 오류로 종료하고 정상 완료로 처리하지 않습니다.
 - 서버의 늦은 요청이 완료 상태를 이전 단계로 되돌리거나 철회한 응답을 다시 저장하지 못하게 했습니다.
 
 검증 명령: `python tests/check_stimulus.py`, `python tests/check_revision.py`, `python tests/check_participant.py`, `python tests/check_sink.py`, `node tests/check_behavior.cjs`, `python tests/check_media.py` (실제 MP4, 미리보기 8배속).
 브라우저 검사는 실제 외부 요청을 차단합니다. 일반 회귀검사는 모의 API·미디어를 사용하고, `check_media.py`는 저장소의 실제 MP4를 디코딩해 시작·종료를 확인합니다. 실제 API 배포, Google 계정 권한/CORS, 실제 영상 디코딩·네트워크 성능과 동시 모집 부하는 운영 파일럿에서 확인해야 합니다.
+
+`42501: new row violates row-level security policy for table "sessions"`가 나오면 실제 정책은 [읽기 전용 점검 SQL](../supabase_storage_audit.sql)로 확인합니다. 이 오류만으로 INSERT 정책 누락을 단정하지 않습니다. INSERT 권한·정책이 있어도 기존의 `on_conflict=id` 요청이 읽기 정책 검사에 걸릴 수 있습니다. 실제 INSERT 정책이 없다면 프런트 수정만으로 해결되지 않으므로 점검 결과에 따라 별도로 복구합니다.
+
+RLS 회귀검사 `node tests/check_storage_rls.cjs`는 격리된 메모리 PostgreSQL(PGlite)에 저장소의 스키마를 설치해 기존 요청의 `42501`, 일반 INSERT, 응답 유실 후 세션 재전송, 익명 읽기 차단과 실제 INSERT 정책 누락을 확인합니다. `@electric-sql/pglite`가 필요하며 별도 QA 폴더에 설치했다면 `PGLITE_MODULE`을 해당 모듈 경로로 지정합니다. 연구 DB나 실제 참가자 데이터는 사용하지 않습니다.

@@ -30,6 +30,8 @@ def fixture(browser, base, initial=None, configured=True, randomized=False, miss
     page.on('pageerror', lambda e:errors.append(str(e)))
     config = (ROOT / 'survey/config.js').read_text(encoding='utf-8')
     config = re.sub(r'PARTICIPANT_OPEN:\s*(?:true|false)', 'PARTICIPANT_OPEN: ' + ('true' if configured else 'false'), config, count=1)
+    # Use a test completion code regardless of the deployed Connect redirect URLs.
+    config = re.sub(r"(?m)^(    (?:complete|screenedOut|attentionFail|full):\s*)'[^']*'", r"\1''", config)
     if configured:
         config, replacements = re.subn(r"API_URL:\s*'[^']*'", "API_URL: 'https://script.google.com/macros/s/QA/exec'", config, count=1)
         assert replacements == 1, 'API fixture must replace the configured endpoint'
@@ -277,29 +279,30 @@ def main():
         ctx.close()
         print('PASS: missing iframe can be retried, cannot bypass the stream, and participant parameters stay locked')
 
-        ctx,p,c,errors = fixture(browser,base,state('stimulus'))
-        child=stream(p,base)
-        advance(child,177.03);child.locator('#pollOpts button[data-v=B]').click()
-        child.locator('input[name=confidence][value="6"]').check();child.locator('#voteSubmit').click()
-        child.evaluate('''async()=>{
-          await Sink.flush(false);
-          Object.defineProperty(navigator,'webdriver',{get:()=>false,configurable:true});
-          window.fetch=async()=>({ok:false,status:503});
-          await Sink.open('QA_PARTICIPANT',cond);
-        }''')
-        advance(child,244.77);child.locator('#leave').click()
-        p.locator('#stimSaveRetry').wait_for(timeout=10000)
-        assert stored(p)['stage']=='stimulus'
-        assert child.evaluate("JSON.parse(localStorage.getItem('stim_retry_q')).length>0")
-        child.evaluate('window.fetch=async()=>({ok:true})')
-        p.locator('#stimSaveRetry').click()
-        p.wait_for_function("!document.getElementById('stimWrap')")
-        s=stored(p)
-        assert s['stage']=='post' and s['meta']['t1_conf']==6 and s['meta']['t1_vote']=='B'
-        assert s['meta']['stim_session_id'] and s['meta']['stim_code_seen']=='t8'
-        assert not errors,errors
-        ctx.close()
-        print('PASS: stream logs stay journaled on failure and questionnaire waits for a successful retry')
+        for recovery in ['manual','automatic']:
+            ctx,p,c,errors = fixture(browser,base,state('stimulus'))
+            child=stream(p,base)
+            advance(child,177.03);child.locator('#pollOpts button[data-v=B]').click()
+            child.locator('input[name=confidence][value="6"]').check();child.locator('#voteSubmit').click()
+            child.evaluate('''async()=>{
+              await Sink.flush(false);
+              Object.defineProperty(navigator,'webdriver',{get:()=>false,configurable:true});
+              window.fetch=async()=>({ok:false,status:503});
+              await Sink.open('QA_PARTICIPANT',cond);
+            }''')
+            advance(child,244.77);child.locator('#leave').click()
+            p.locator('#stimSaveRetry').wait_for(timeout=10000)
+            assert stored(p)['stage']=='stimulus'
+            assert child.evaluate("JSON.parse(localStorage.getItem('stim_retry_q')).length>0")
+            child.evaluate('window.fetch=async()=>({ok:true})')
+            if recovery=='manual':p.locator('#stimSaveRetry').click()
+            p.wait_for_function("!document.getElementById('stimWrap')",timeout=10000)
+            s=stored(p)
+            assert s['stage']=='post' and s['meta']['t1_conf']==6 and s['meta']['t1_vote']=='B'
+            assert s['meta']['stim_session_id'] and s['meta']['stim_code_seen']=='t8'
+            assert not errors,errors
+            ctx.close()
+            print('PASS: questionnaire waits for successful',recovery,'stream save recovery')
 
         ctx,p,c,errors = fixture(browser,base,state('stimulus'))
         child=stream(p,base)
