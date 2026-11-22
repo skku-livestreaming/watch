@@ -80,6 +80,7 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 - **Survey link**: `https://skku-livestreaming.github.io/watch/survey/` (Connect가 `participantId` 등을 뒤에 붙여 줘요)
 - **Completion**: Connect의 완료 리다이렉트 주소 → `config.js`의 `REDIRECTS.complete`. 완료 코드를 쓰려면 `complete`를 비우고 `COMPLETION_CODE`에 넣어요.
 - 탈락용 주소가 따로 있으면 `REDIRECTS`의 나머지 칸에 넣어요. 비워 두면 안내 문구만 보여요.
+- 현재 파일럿의 완료·선별 탈락 URL, 코드, 승인 방식과 부분 보상 조건은 [Connect 설정 기록](STORAGE.md#cloudresearch-connect-완료선별-탈락-설정)에 정리했어요.
 
 ## 점검 모드
 
@@ -92,7 +93,7 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 | 패널의 `reset` | 처음부터 다시 |
 | `STIMULUS_EXTRA: { preview: '1' }` | 자극물의 연구자 미리보기(구간 이동 버튼, 기록 안 함). **참가자용으로는 절대 켜지 말 것** |
 
-- `PARTICIPANT_OPEN`은 현재 true입니다. 완료 URL/코드가 비어 있어 일반 참가자 진행은 필수 설정 검사에서 차단됩니다. 연구자 미리보기와 저장 테스트는 사용할 수 있습니다.
+- `PARTICIPANT_OPEN`은 현재 true이며 Connect 파일럿 완료·선별 탈락 URL이 연결되어 있습니다. 연구자 미리보기와 저장 테스트도 사용할 수 있습니다.
 - 점검·관리자 모드에서는 방송이 자극물의 연구자 미리보기(`preview=1`)로 열려요. 구간 이동 버튼이 있고 자극물 DB에 기록되지 않아요.
 - 관리자·debug 미리보기는 설문 시트와 자극물 DB에 전송하지 않아요.
 - 점검 중 실제 자극물을 보면 자극물 DB에도 `TEST_…` ID로 기록되니, 분석 전에 걸러 주세요.

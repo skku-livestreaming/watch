@@ -379,7 +379,7 @@ python tests/check_stimulus.py
 추가 검증: `python tests/check_revision.py` (34개 댓글·지연·배치·설문 복귀),
 `node tests/check_behavior.cjs` (500명 모의 동기화·재시도·철회). 모든 브라우저 검사는 외부 요청을 차단합니다.
 
-현재 설문은 `PARTICIPANT_OPEN: true`입니다. 완료 주소/코드가 비어 있어 일반 참가자 진행은 필수 설정 검사에서 차단됩니다. 실제 모집 전 완료 정보를 설정하고 파일럿을 확인합니다. 연구자 화면은 `/survey/?admin=1`이며 조건 전환·쪽 이동·빠른 미리보기를 유지하고 응답을 전송하지 않습니다.
+현재 설문은 `PARTICIPANT_OPEN: true`이며 Connect 파일럿 완료·선별 탈락 URL이 연결되어 있습니다. URL, 코드, 승인 방식과 부분 보상 조건은 [Connect 설정 기록](survey/STORAGE.md#cloudresearch-connect-완료선별-탈락-설정)을 참고하세요. 실제 모집 전 파일럿을 확인합니다. 연구자 화면은 `/survey/?admin=1`이며 조건 전환·쪽 이동·빠른 미리보기를 유지하고 응답을 전송하지 않습니다.
 
 ## 2026-11-18 수정 내역
 

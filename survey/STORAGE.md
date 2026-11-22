@@ -1,6 +1,19 @@
 # 응답·행동 지표 저장 연결
 
-Google 시트와 Apps Script 웹 앱 배포 주소가 준비되어 `config.js`의 `API_URL`에 연결했습니다. 2026-11-14에 로그인 없는 GET 요청에서 HTTP 200과 `{"ok":true,"msg":"survey backend is running"}`을 확인했습니다. 이는 웹 앱 접근 확인이며, 실제 조건 배정·응답 저장·행동 동기화·부하 검증은 별도로 해야 합니다. 2026-11-21 사용자 요청으로 `PARTICIPANT_OPEN`은 true로 변경했습니다. 완료 URL/코드는 아직 비어 있어 일반 참가자 진행은 필수 설정 검사에서 차단됩니다.
+Google 시트와 Apps Script 웹 앱 배포 주소가 준비되어 `config.js`의 `API_URL`에 연결했습니다. 2026-11-14에 로그인 없는 GET 요청에서 HTTP 200과 `{"ok":true,"msg":"survey backend is running"}`을 확인했습니다. 이는 웹 앱 접근 확인이며, 실제 조건 배정·응답 저장·행동 동기화·부하 검증은 별도로 해야 합니다. 2026-11-21 사용자 요청으로 `PARTICIPANT_OPEN`은 true로 변경했습니다. 현재 Connect 파일럿의 완료·선별 탈락 URL도 연결되어 있으며, 아래에 설정을 기록했습니다.
+
+## CloudResearch Connect 완료·선별 탈락 설정
+
+2026-11-22 사용자 제공 목록을 기준으로 기록했습니다. 대상은 현재 파일럿 프로젝트(Online Media Experiences Survey, 2026-11)이며, 아래 두 URL은 `config.js`의 현재 값과 일치합니다. Connect 대시보드의 처리 조건을 직접 조회한 기록은 아닙니다.
+
+| 구분 | Redirect URL | Code | Connect 처리 | 설문 설정 위치 |
+|---|---|---|---|---|
+| Default (완료) | `https://connect.cloudresearch.com/participant/project/5339FAA3CE/complete` | `5339FAA3CE` | Manual review: 데이터 대조 후 직접 승인/거절. 14일이 지나면 자동 승인 | `config.js` → `REDIRECTS.complete` |
+| Screened out (선별 탈락) | `https://connect.cloudresearch.com/participant/project/3D79EC9870/complete` | `3D79EC9870` | Partial complete: **$0.13 (1분)**, 최대 **60명** | `config.js` → `REDIRECTS.screenedOut` |
+
+- 현재 설문은 Redirect URL로 복귀하며, `COMPLETION_CODE`는 빈 값으로 유지합니다. 표의 Code는 운영 참고 기록입니다.
+- 수동 승인·거절, 14일 후 자동 승인, 선별 탈락 보상과 최대 인원은 Connect에서 관리하는 설정입니다. 설문 코드가 별도로 집행하는 조건은 아닙니다.
+- 본 연구를 새 Connect 프로젝트로 개설하면 두 Redirect URL과 이 기록을 함께 갱신합니다.
 
 ## 데이터 흐름
 
@@ -30,7 +43,7 @@ Google 시트와 Apps Script 웹 앱 배포 주소가 준비되어 `config.js`�
 6. Apps Script를 **웹 앱**, 실행 계정 **나**, 접근 **모든 사용자**로 배포하고 `…/exec` 주소를 `survey/config.js`의 `API_URL`에 넣습니다. 이후 코드 변경은 새 버전으로 다시 배포합니다.
 7. CloudResearch의 완료 주소 또는 코드를 `REDIRECTS.complete` / `COMPLETION_CODE`에 설정합니다. 동의서·디브리핑의 기존 자리표시자도 실제 연구 정보로 채웁니다.
 
-8. 연구자 화면(`/survey/?admin=1`)의 **Participant setup** 항목을 확인합니다. `PARTICIPANT_OPEN: true`로 설정되어 있어도 완료 URL/코드 등 필수 설정과 실제 파일럿 확인이 필요합니다. 현재는 완료 정보가 없어 일반 참가자에게 모집 중지 안내가 나옵니다.
+8. 연구자 화면(`/survey/?admin=1`)의 **Participant setup** 항목을 확인합니다. `PARTICIPANT_OPEN: true`로 설정되어 있어도 완료 URL/코드 등 필수 설정과 실제 파일럿 확인이 필요합니다. 현재 완료·선별 탈락 URL은 위 Connect 파일럿 설정으로 연결되어 있습니다.
 
 참가자 배포 링크는 `/survey/?v=2026-11-14-storage-pilot-v1&participantId=[ID]`를 기준으로 설정합니다. 관리자·debug·pilot 파라미터는 실제 참가자 링크에 포함하지 않습니다. 새 배포에서 파일 구성이 바뀌면 `ASSET_VERSION`과 HTML의 config.js 버전도 함께 갱신합니다.
 
