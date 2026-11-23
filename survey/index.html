@@ -277,7 +277,7 @@
 <main id="app"></main>
 <div id="net" hidden></div>
 <div id="dbg" hidden></div>
-<script src="config.js?v=2026-11-22-watch-frequency-v1"></script>
+<script src="config.js?v=2026-11-23-completion-status-v1"></script>
 <script>
 (() => {
 'use strict';
@@ -395,7 +395,7 @@ async function api(action, body){
 /* 저장: 바뀐 값만 모아 두었다가 보냅니다. 실패하면 브라우저에 남겨 두고 다시 보냅니다. */
 let flushing = null, retryTimer = null, retryDelay = 2000;
 function save(patch){
-  patch = Object.assign({}, patch, {nickname:chatNickname()});
+  patch = Object.assign({}, patch, {nickname:chatNickname(),is_mobile:isMobileDevice() ? 1 : 0});
   if (PILOT) patch = Object.assign({},patch,{is_test:1,storage_test:1});
   Object.assign(S.pending, patch);
   store.set();
@@ -415,7 +415,17 @@ function flush(){
     while (Object.keys(S.pending).length){
       const batch = Object.assign({}, S.pending);
       try {
-        await api('save', {pid:S.pid, data:batch});
+        const result = await api('save', {pid:S.pid, data:batch});
+        if (result.status === 'withdrawn' && batch.status !== 'withdrawn') {
+          S.answers={}; S.pending={}; delete S.draft;
+          S.meta.withdraw='yes'; S.stage='done';
+          store.set(); setTimeout(render, 0); return true;
+        }
+        if (applyTerminalStatus(result.status)) {
+          store.set(); setTimeout(render, 0); return true;
+        }
+        if (batch.status === 'complete' && result.status !== 'complete')
+          throw new Error('The server has not confirmed completion.');
         for (const k of Object.keys(batch)) if (S.pending[k] === batch[k]) delete S.pending[k];
         store.set();
       } catch (e){
@@ -509,6 +519,7 @@ function init(){
   let pid = incoming || lastPid;
   if (!pid && DEBUG) pid = (saved && saved.pid && saved.pid.startsWith('TEST_')) ? saved.pid : 'TEST_' + rand(6);
   if (saved && saved.pid && (!pid || saved.pid === pid)){
+    if (saved.stage === 'end' && saved.meta.end_reason === 'mobile' && !isMobileDevice()) return start(saved.pid);
     if (!DEBUG && ['intro','stimulus','post','debrief','done'].includes(saved.stage)) return resumeAssignment(saved);
     S = saved; return render();
   }
@@ -523,6 +534,7 @@ async function resumeAssignment(saved){
     const result = await api('get',{pid:saved.pid});
     if (version !== viewVersion) return;
     S = saved;
+    if (applyTerminalStatus(result.status)){ store.set(); return render(); }
     const same = result.found && ASSIGNMENT_ID_RE.test(result.assignment_id || '') && result.cell && S.cell &&
       ['id','code','group','cong'].every(k => result.cell[k] === S.cell[k]);
     if (!same || (S.meta.assignment_id && S.meta.assignment_id !== result.assignment_id)){
@@ -543,6 +555,20 @@ async function resumeAssignment(saved){
   }
 }
 
+function applyTerminalStatus(status){
+  if (status === 'mobile' && !isMobileDevice()) return false;
+  if (!['screened','attention_fail','technical','full','mobile','declined'].includes(status)) return false;
+  S.pending={}; delete S.draft;
+  S.stage='end';
+  S.meta.end_reason=status === 'attention_fail' ? 'attention' : status;
+  return true;
+}
+
+function isMobileDevice(){
+  const ipad = /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1;
+  return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || ipad || Math.min(screen.width, screen.height) < 600;
+}
+
 function start(pid){
   participantKey(pid);
   if (!DEBUG){ try { sessionStorage.setItem(STATE_SCOPE + '_last_pid', pid); } catch {} }
@@ -555,8 +581,7 @@ function start(pid){
   m.user_agent = navigator.userAgent;
   m.viewport = innerWidth + 'x' + innerHeight;
   // 휴대폰·태블릿 판정: 기기 종류와 화면 크기로만 봅니다(PC에서 창을 좁힌 것은 막지 않음). iPad는 Mac처럼 보여서 터치로 구분.
-  const ipad = /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1;
-  const mobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || ipad || Math.min(screen.width, screen.height) < 600;
+  const mobile = isMobileDevice();
   m.is_mobile = mobile ? 1 : 0;
   if (C.BLOCK_MOBILE && mobile){ return end('mobile'); }
   store.set();
@@ -1115,6 +1140,7 @@ async function viewAssign(){
     S.meta.withdraw=res.status==='withdrawn' ? 'yes' : 'no';
     S.stage='done';return render();
   }
+  if (res && applyTerminalStatus(res.status)){ store.set(); return render(); }
   save(Object.assign({status: 'assigned'}, S.meta));
   S.stage = 'intro'; render();
 }
@@ -1434,6 +1460,7 @@ async function viewDone(){
   paper('', spinner(T.saving));
   const saved = await flushWithin(SAVE_WAIT_MS * 2);
   if (version !== viewVersion) return;
+  if (S.stage !== 'done') return;
   if (!saved || Object.keys(S.pending).length) return saveRetry(viewDone);
   if (PILOT) return doneCard('Storage test saved',
     `<p>The test survey responses have been saved${S.meta.withdraw === 'yes' ? ' as withdrawn' : ''}.</p>

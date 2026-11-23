@@ -63,7 +63,7 @@ def fixture(browser, base, initial=None, configured=True, randomized=False, miss
                 return r.fulfill(json={'ok':True,'found':True,'cell':CELL,'assignment_id':ASSIGNMENT_ID,
                                       'status':control['assign_status'],'is_test':req['pid'].startswith('TEST_')})
             if control['save_fail']: return r.fulfill(status=503,body='unavailable')
-            return r.fulfill(json={'ok':True})
+            return r.fulfill(json={'ok':True,'status':control.get('save_status',req.get('data',{}).get('status','assigned'))})
         if url.startswith(base + '/?') and control['frame_fail']:
             return r.fulfill(status=404,content_type='text/html',body='Not found')
         if url.endswith('/stream.mp4'): return r.fulfill(status=204)

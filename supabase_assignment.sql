@@ -149,7 +149,7 @@ begin
   select status into previous from public.study_assignments where study_id = p_study and pid = p_pid;
   if not found then return jsonb_build_object('ok',true,'found',false); end if;
   if previous = 'withdrawn' or (p_status <> 'withdrawn' and
-      (previous in ('complete','screened','attention_fail','technical','full','mobile') or
+      (previous in ('complete','screened','attention_fail','technical','full') or
        coalesce(array_position(progression,p_status),99) < coalesce(array_position(progression,previous),0))) then
     next_status := previous;
   end if;

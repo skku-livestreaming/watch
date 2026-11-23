@@ -71,6 +71,8 @@ async function main(){
     await status('SAME_PID','withdrawn');await status('SAME_PID','complete');
     assert.equal((await get('SAME_PID')).status,'withdrawn');
     assert.equal((await status('NOT_ASSIGNED','consented')).found,false);
+    await status('P0','mobile');
+    assert.equal((await status('P0','consented')).status,'consented');
     await assert.rejects(()=>status('P0','unknown'),{code:'22023'});
     console.log('PASS: test exclusion, ordered status updates, sticky completion/withdrawal and pre-assignment consent');
 

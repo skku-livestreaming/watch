@@ -1,5 +1,14 @@
 # 응답·행동 지표 저장 연결
 
+## 2026-11-23 완료 상태 확인
+
+- `Code.gs`와 설문 사이트를 함께 반영한다. Apps Script는 기존 배포 관리에서 새 버전으로 갱신해야 한다.
+- 저장 API는 실제 저장된 `status`를 반환한다. 설문은 최종 저장에 `complete`가 확인된 뒤에만 완료 안내와 Connect 복귀를 제공한다. 구버전 API가 상태를 반환하지 않으면 완료 안내 대신 저장 재시도를 표시한다.
+- `mobile`로 차단된 ID는 PC에서 다시 접속하면 같은 ID로 참여할 수 있다. 저장 요청의 `is_mobile=0`과 진행 상태를 확인해 기존 모바일 종료 표시를 해제한다. Supabase의 `set_condition_status`도 수정된 SQL로 갱신해야 한다.
+- `screened`, `attention_fail`, `technical`, `full`, `declined`로 종료된 ID는 추가 저장을 차단한다. 철회 요청은 허용하며 철회된 ID는 복구하지 않는다.
+- 완료 시 서버 시각으로 `completed_at`을 저장하며, 재시도 시 최초 완료 시각을 보존한다. 기존 기록을 소급 수정하지 않는다.
+- 테스트 재시작에는 새 `TEST_` ID를 사용한다. 현재 저장 구조는 참가자 ID당 한 행이므로 같은 ID를 새 시도로 재사용하지 않는다.
+
 Google 시트와 Apps Script 웹 앱 배포 주소가 준비되어 `config.js`의 `API_URL`에 연결했습니다. 2026-11-14에 로그인 없는 GET 요청에서 HTTP 200과 `{"ok":true,"msg":"survey backend is running"}`을 확인했습니다. 이는 웹 앱 접근 확인이며, 실제 조건 배정·응답 저장·행동 동기화·부하 검증은 별도로 해야 합니다. 2026-11-21 사용자 요청으로 `PARTICIPANT_OPEN`은 true로 변경했습니다. 현재 Connect 파일럿의 완료·선별 탈락 URL도 연결되어 있으며, 아래에 설정을 기록했습니다.
 
 ## CloudResearch Connect 완료·선별 탈락 설정
