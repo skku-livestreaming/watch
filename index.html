@@ -358,7 +358,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
   background:var(--chip);border:1px solid var(--chip-line);color:var(--chip-ink);
   border-radius:4px;padding:1px 7px;font-size:13px;font-weight:600;
 }
-.acts-r{display:flex;align-items:center;gap:8px;margin-left:auto}
+.video-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:12px 6px 0;flex-wrap:wrap}
 /* Finish participation. 방송이 끝나면 종료 화면 가운데에 빨간 버튼으로 뜹니다. 놓치면 참여가
    완료로 기록되지 않으므로 눈에 띄게 둡니다. */
 .leave{
@@ -987,6 +987,20 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
       </div>
       </div>
 
+          <div class="video-actions">
+          <!-- 반응 버튼. 누르라고 유도하지 않고 자리만 둡니다 — 노트의
+               "명시적으로 행동을 강요하지말고" 반영. -->
+          <span class="reacts">
+            <button class="react" id="reactUp" aria-pressed="false" aria-label="Like" title="Like">
+              <svg class="th" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h3.5v11H3a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z"/><path d="M8.5 21V10.4l3.8-6.8a1.5 1.5 0 0 1 2.8.9L14.3 9h5.4a1.9 1.9 0 0 1 1.85 2.3l-1.6 7.5A2 2 0 0 1 18 21H8.5z"/></svg><span class="rc" id="rcUp"></span>
+            </button>
+            <button class="react down" id="reactDown" aria-pressed="false" aria-label="Dislike" title="Dislike">
+              <svg class="th" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h3.5v11H3a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z"/><path d="M8.5 21V10.4l3.8-6.8a1.5 1.5 0 0 1 2.8.9L14.3 9h5.4a1.9 1.9 0 0 1 1.85 2.3l-1.6 7.5A2 2 0 0 1 18 21H8.5z"/></svg><span class="rc" id="rcDown"></span>
+            </button>
+          </span>
+          <button class="sub" id="subBtn" aria-pressed="false">Subscribe</button>
+          </div>
+
       <div class="info">
         <h2 id="streamTitle">just hanging out</h2>
         <div class="meta">
@@ -1001,19 +1015,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{
               <span class="who">Haru</span>
             </span>
           </span>
-          <span class="acts-r">
-          <!-- 반응 버튼. 누르라고 유도하지 않고 자리만 둡니다 — 노트의
-               "명시적으로 행동을 강요하지말고" 반영. -->
-          <span class="reacts">
-            <button class="react" id="reactUp" aria-pressed="false" aria-label="Like" title="Like">
-              <svg class="th" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h3.5v11H3a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z"/><path d="M8.5 21V10.4l3.8-6.8a1.5 1.5 0 0 1 2.8.9L14.3 9h5.4a1.9 1.9 0 0 1 1.85 2.3l-1.6 7.5A2 2 0 0 1 18 21H8.5z"/></svg><span class="rc" id="rcUp"></span>
-            </button>
-            <button class="react down" id="reactDown" aria-pressed="false" aria-label="Dislike" title="Dislike">
-              <svg class="th" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10h3.5v11H3a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z"/><path d="M8.5 21V10.4l3.8-6.8a1.5 1.5 0 0 1 2.8.9L14.3 9h5.4a1.9 1.9 0 0 1 1.85 2.3l-1.6 7.5A2 2 0 0 1 18 21H8.5z"/></svg><span class="rc" id="rcDown"></span>
-            </button>
-          </span>
-          <button class="sub" id="subBtn" aria-pressed="false">Subscribe</button>
-          </span>
+
         </div>
       </div>
 
