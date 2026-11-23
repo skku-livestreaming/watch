@@ -99,7 +99,7 @@ window.SURVEY_CONFIG = {
     // 맨 위 요약 칸 (비우면 표시하지 않음). 본문 값과 같게 맞출 것
     facts: [
       { label: 'Time', value: 'About 10 minutes' },
-      { label: 'Payment', value: '$3' },
+      { label: 'Payment', value: '$1.67' },
       { label: 'Device', value: 'Computer only' }
     ],
     sections: [
@@ -123,7 +123,7 @@ window.SURVEY_CONFIG = {
         <p><b>6. Participant Responsibilities</b><br>If you agree to participate, you will complete a survey for this study. Please answer the survey questions sincerely.</p>
         <p><b>7. Study Period and Number of Participants</b><br>This study is scheduled to be conducted from November 2026 to November 2027 with a total of 450 participants.</p>
         <p><b>8.</b> There are no additional costs for participating in this study.</p>
-        <p><b>9. Compensation and Benefits</b><br>Participants who complete the survey will receive $3 through CloudResearch Connect. Withdrawing the use of your data in the debriefing will not affect your compensation.</p>
+        <p><b>9. Compensation and Benefits</b><br>Participants who complete the survey will receive $1.67 through CloudResearch Connect. Withdrawing the use of your data in the debriefing will not affect your compensation.</p>
         <p><b>10. Voluntary Participation and Freedom to Decline or Withdraw</b><br>Your participation in this study is entirely voluntary. If you do not wish to participate, you do not have to consent. Even after consenting, if you change your mind, you may stop participating at any time by closing your browser window, and you may request the deletion of your data through the CloudResearch Connect messaging feature or by emailing the researcher.</p>
         <p><b>11. Confidentiality</b><br>Your personal information will be kept confidential in any reports or publications resulting from this study and will be protected by law.</p>
         <p><b>12. Consent to Additional Use of Data</b><br>If this study goes well, your data may also be used in other future studies to achieve better results. Please indicate one of the following regarding the use of your data in other future studies.</p>` },
