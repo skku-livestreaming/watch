@@ -519,7 +519,8 @@ function init(){
   let pid = incoming || lastPid;
   if (!pid && DEBUG) pid = (saved && saved.pid && saved.pid.startsWith('TEST_')) ? saved.pid : 'TEST_' + rand(6);
   if (saved && saved.pid && (!pid || saved.pid === pid)){
-    if (saved.stage === 'end' && saved.meta.end_reason === 'mobile' && !isMobileDevice()) return start(saved.pid);
+    if (saved.stage === 'end' && (saved.meta.end_reason === 'full' ||
+        (saved.meta.end_reason === 'mobile' && !isMobileDevice()))) return start(saved.pid);
     if (!DEBUG && ['intro','stimulus','post','debrief','done'].includes(saved.stage)) return resumeAssignment(saved);
     S = saved; return render();
   }
@@ -557,7 +558,7 @@ async function resumeAssignment(saved){
 
 function applyTerminalStatus(status){
   if (status === 'mobile' && !isMobileDevice()) return false;
-  if (!['screened','attention_fail','technical','full','mobile','declined'].includes(status)) return false;
+  if (!['screened','attention_fail','technical','mobile','declined'].includes(status)) return false;
   S.pending={}; delete S.draft;
   S.stage='end';
   S.meta.end_reason=status === 'attention_fail' ? 'attention' : status;

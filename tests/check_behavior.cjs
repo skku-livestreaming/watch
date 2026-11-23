@@ -166,6 +166,8 @@ assert.equal(JSON.stringify(sheets.responses.data),terminalBefore);
 assert.equal(run("save_({pid:'TERMINAL_MOBILE',data:{status:'consented',is_mobile:0}})").status,'consented');
 assert.equal(run("save_({pid:'TERMINAL_MOBILE',data:{status:'complete',is_mobile:0}})").status,'complete');
 run("save_({pid:'TERMINAL_SCREENED',data:{status:'screened'}})");
+run("save_({pid:'REOPENED_FULL',data:{status:'full',end_reason:'full'}})");
+assert.equal(run("save_({pid:'REOPENED_FULL',data:{status:'consented',is_mobile:0}})").status,'consented');
 assert.equal(run("save_({pid:'TERMINAL_SCREENED',data:{status:'consented',is_mobile:0}})").status,'screened');
 const completion = run("save_({pid:'FRESH_COMPLETE',data:{status:'complete',completed_at:'client supplied'}})");
 assert.equal(completion.status,'complete');

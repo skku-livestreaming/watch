@@ -281,7 +281,7 @@ function save_(req) {
       .getValues()[0];
 
     const status = previous[headers.indexOf('status')];
-    const desktopResume = status === 'mobile' && data.is_mobile === 0 &&
+    const desktopResume = (status === 'full' || (status === 'mobile' && data.is_mobile === 0)) &&
       ['consented', 'assigned', 'stimulus', 'returned', 'complete'].includes(data.status);
     if (desktopResume) {
       data.end_reason = '';

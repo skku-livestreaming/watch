@@ -5,7 +5,8 @@
 - `Code.gs`와 설문 사이트를 함께 반영한다. Apps Script는 기존 배포 관리에서 새 버전으로 갱신해야 한다.
 - 저장 API는 실제 저장된 `status`를 반환한다. 설문은 최종 저장에 `complete`가 확인된 뒤에만 완료 안내와 Connect 복귀를 제공한다. 구버전 API가 상태를 반환하지 않으면 완료 안내 대신 저장 재시도를 표시한다.
 - `mobile`로 차단된 ID는 PC에서 다시 접속하면 같은 ID로 참여할 수 있다. 저장 요청의 `is_mobile=0`과 진행 상태를 확인해 기존 모바일 종료 표시를 해제한다. Supabase의 `set_condition_status`도 수정된 SQL로 갱신해야 한다.
-- `screened`, `attention_fail`, `technical`, `full`, `declined`로 종료된 ID는 추가 저장을 차단한다. 철회 요청은 허용하며 철회된 ID는 복구하지 않는다.
+- `full`은 모집 재개 후 재시도 가능한 상태다. 재접속 시 초기 화면부터 다시 진행하고 조건 배정 시 현재 모집 설정을 확인한다. `Code.gs`와 `supabase_mobile_resume.sql`도 함께 갱신한다.
+- `screened`, `attention_fail`, `technical`, `declined`로 종료된 ID는 추가 저장을 차단한다. 철회 요청은 허용하며 철회된 ID는 복구하지 않는다.
 - 완료 시 서버 시각으로 `completed_at`을 저장하며, 재시도 시 최초 완료 시각을 보존한다. 기존 기록을 소급 수정하지 않는다.
 - 테스트 재시작에는 새 `TEST_` ID를 사용한다. 현재 저장 구조는 참가자 ID당 한 행이므로 같은 ID를 새 시도로 재사용하지 않는다.
 

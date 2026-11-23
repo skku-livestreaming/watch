@@ -27,6 +27,7 @@ async function check(status, expectedStage, expectedPending, withdraw, mobile=tr
   await check('returned','done',1);
   await check('mobile','end',0);
   await check('mobile','done',1,false,false);
+  await check('full','done',1);
   await check('withdrawn','done',0,true);
   console.log('PASS: final saving requires confirmed completion; terminal and withdrawn server states are respected');
 })().catch(error=>{console.error(error);process.exitCode=1;});
