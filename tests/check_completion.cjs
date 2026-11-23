@@ -22,6 +22,17 @@ async function check(status, expectedStage, expectedPending, withdraw, mobile=tr
   if (status==='mobile' && mobile) assert.equal(context.S.meta.end_reason,'mobile');
 }
 (async()=>{
+  const assignmentCode = source.slice(source.indexOf('async function viewAssign(){'),source.indexOf('function stimulusUrl(){'));
+  for (const reason of ['closed','total_quota','cell_quota',undefined]) {
+    const notices=[];
+    const context=vm.createContext({S:{pid:'TEST_ASSIGN',meta:{},cell:null},C:{API_URL:'test',CELLS:[]},
+      DEBUG:false,Q:new URLSearchParams(),viewVersion:1,ASSIGNMENT_ID_RE:/^[a-f0-9-]+$/,
+      spinner:()=>'',paper:(title)=>{notices.push(title);return {querySelector:()=>({})};},
+      api:async()=>({ok:true,full:true,reason}),render(){},end(){throw new Error('Must not persist a full exit');}});
+    await vm.runInContext(assignmentCode+'\nviewAssign()',context);
+    assert.equal(notices.at(-1),reason==='closed' ? 'Recruitment is currently closed' : 'Unable to continue');
+  }
+  console.log('PASS: only explicit enrollment closure displays a recruitment notice; quota errors remain retryable');
   await check('complete','done',0);
   await check(undefined,'done',1);
   await check('returned','done',1);

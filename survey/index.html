@@ -1118,7 +1118,18 @@ async function viewAssign(){
     }
   }
   if (version !== viewVersion) return;
-  if (res && res.full) return end('full');
+  if (res && res.full){
+    // Only an explicit server-side recruitment closure is an enrollment notice.
+    // Do not persist a terminal state: recruitment can reopen on the next visit.
+    if (res.reason === 'closed'){
+      const el = paper('Recruitment is currently closed',
+        '<p>The researcher has paused enrollment. Please try again later.</p>',
+        '<button id="enrollmentRetry" type="button">Try again</button>');
+      el.querySelector('#enrollmentRetry').onclick = () => render();
+      return;
+    }
+    res = null;
+  }
   if (!DEBUG && (!res || !res.cell || !ASSIGNMENT_ID_RE.test(res.assignment_id || '') || !C.CELLS.some(c =>
       c.id === res.cell.id && c.code === res.cell.code && c.group === res.cell.group && c.cong === res.cell.cong))){
     const el = paper('Unable to continue', '<p>We could not connect to the study. Please check your connection and try again.</p>',
