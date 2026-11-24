@@ -12,18 +12,27 @@
 
 Google 시트와 Apps Script 웹 앱 배포 주소가 준비되어 `config.js`의 `API_URL`에 연결했습니다. 2026-11-14에 로그인 없는 GET 요청에서 HTTP 200과 `{"ok":true,"msg":"survey backend is running"}`을 확인했습니다. 이는 웹 앱 접근 확인이며, 실제 조건 배정·응답 저장·행동 동기화·부하 검증은 별도로 해야 합니다. 2026-11-21 사용자 요청으로 `PARTICIPANT_OPEN`은 true로 변경했습니다. 현재 Connect 파일럿의 완료·선별 탈락 URL도 연결되어 있으며, 아래에 설정을 기록했습니다.
 
-## CloudResearch Connect 완료·선별 탈락 설정
+## CloudResearch Connect 완료·부분 보상 설정
 
-2026-11-22 사용자 제공 목록을 기준으로 기록했습니다. 대상은 현재 파일럿 프로젝트(Online Media Experiences Survey, 2026-11)이며, 아래 두 URL은 `config.js`의 현재 값과 일치합니다. Connect 대시보드의 처리 조건을 직접 조회한 기록은 아닙니다.
+### 본조사 프로젝트 (현재 `config.js` 값)
+
+2026-11-24 사용자 제공 값을 기준으로 기록했습니다. 공개 이름 Live-Streaming Viewing Experiences Survey, 미국·데스크톱, 성별 Quota(Male 225 / Female 225), 파일럿 프로젝트 참가자 제외. Connect 대시보드의 처리 조건을 직접 조회한 기록은 아닙니다.
 
 | 구분 | Redirect URL | Code | Connect 처리 | 설문 설정 위치 |
 |---|---|---|---|---|
-| Default (완료) | `https://connect.cloudresearch.com/participant/project/5339FAA3CE/complete` | `5339FAA3CE` | Manual review: 데이터 대조 후 직접 승인/거절. 14일이 지나면 자동 승인 | `config.js` → `REDIRECTS.complete` |
-| Screened out (선별 탈락) | `https://connect.cloudresearch.com/participant/project/3D79EC9870/complete` | `3D79EC9870` | Partial complete: **$0.13 (1분)**, 최대 **60명** | `config.js` → `REDIRECTS.screenedOut` |
+| Default (완료) | `https://connect.cloudresearch.com/participant/project/81EDD2E3E3/complete` | `81EDD2E3E3` | Manual review, $1.67. 14일이 지나면 자동 승인 | `config.js` → `REDIRECTS.complete` |
+| Did not vote (방송 중 투표 안 함) | `https://connect.cloudresearch.com/participant/project/80D1FF30AC/complete` | `80D1FF30AC` | Partial complete: **$0.78 (6분)**, 최대 **60명** | `config.js` → `REDIRECTS.noVote` |
+
+### 파일럿 프로젝트 (Online Media Experiences Survey, 2026-11, 종료)
+
+| 구분 | Redirect URL | Code | Connect 처리 |
+|---|---|---|---|
+| Default (완료) | `https://connect.cloudresearch.com/participant/project/5339FAA3CE/complete` | `5339FAA3CE` | Manual review |
+| Screened out (선별 탈락) | `https://connect.cloudresearch.com/participant/project/3D79EC9870/complete` | `3D79EC9870` | Partial complete: $0.13 (1분), 최대 60명 |
 
 - 현재 설문은 Redirect URL로 복귀하며, `COMPLETION_CODE`는 빈 값으로 유지합니다. 표의 Code는 운영 참고 기록입니다.
-- 수동 승인·거절, 14일 후 자동 승인, 선별 탈락 보상과 최대 인원은 Connect에서 관리하는 설정입니다. 설문 코드가 별도로 집행하는 조건은 아닙니다.
-- 본 연구를 새 Connect 프로젝트로 개설하면 두 Redirect URL과 이 기록을 함께 갱신합니다.
+- 수동 승인·거절, 14일 후 자동 승인, 부분 보상 금액과 최대 인원은 Connect에서 관리하는 설정입니다. 설문 코드가 별도로 집행하는 조건은 아닙니다.
+- Connect 프로젝트를 새로 열면 두 Redirect URL과 이 기록을 함께 갱신합니다. 부분 보상 금액을 바꾸면 `NO_VOTE_PAY`와 동의서 2번·9번도 같이 맞춥니다.
 
 ## 데이터 흐름
 

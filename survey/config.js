@@ -72,12 +72,11 @@ window.SURVEY_CONFIG = {
 
   /* ── 4. 이동 주소 (CloudResearch Connect에서 받은 값) ─────── */
   REDIRECTS: {
-    // Connect 파일럿 프로젝트(Online Media Experiences Survey, 2026-11) 주소. 본 연구를 새 프로젝트로 열면 바꿀 것
-    complete: 'https://connect.cloudresearch.com/participant/project/5339FAA3CE/complete',      // 완료 (Manual review)
-    screenedOut: 'https://connect.cloudresearch.com/participant/project/3D79EC9870/complete',   // 선별 탈락 (Partial complete $0.13). 선별 문항을 없애서 지금은 안 쓰임
-    // 방송 중 투표 안 함 → 부분 보상으로 종료 (NO_VOTE_EXIT). 파일럿의 Partial complete 분기 주소를 임시로 씀.
-    // ※ Connect에서 이 분기의 시간을 6분, 금액을 NO_VOTE_PAY($0.78 = 6분 × 최소 분당 $0.13)로 바꿀 것. 본조사 프로젝트를 새로 열면 새 분기 주소로
-    noVote: 'https://connect.cloudresearch.com/participant/project/3D79EC9870/complete',
+    // Connect 본조사 프로젝트(공개 이름 Live-Streaming Viewing Experiences Survey) 주소. 파일럿 주소는 STORAGE.md 기록 참고
+    complete: 'https://connect.cloudresearch.com/participant/project/81EDD2E3E3/complete',      // 완료 (Default, Manual review, $1.67)
+    screenedOut: '',           // 선별 문항을 없애서 안 씀 (본조사 프로젝트에는 선별 탈락 분기 없음)
+    // 방송 중 투표 안 함 → 부분 보상으로 종료 (NO_VOTE_EXIT). Partial complete 분기 'Did not vote': 6분, NO_VOTE_PAY($0.78), 최대 60명
+    noVote: 'https://connect.cloudresearch.com/participant/project/80D1FF30AC/complete',
     attentionFail: '',         // 주의 점검 탈락 (ATTENTION.action이 'end'일 때만)
     full: ''                   // 모든 셀 마감
   },
