@@ -165,7 +165,7 @@ CloudResearch 링크  https://skku-livestreaming.github.io/watch/survey/?partici
 | 열 | 뜻 |
 |---|---|
 | `pid` | CloudResearch participantId (= 자극물의 panel_id) |
-| `status` | consented → assigned → stimulus → returned → complete / withdrawn / screened / attention_fail |
+| `status` | consented → assigned → stimulus → returned → complete / withdrawn / screened / attention_fail (방송 중 투표를 안 해서 끝난 경우도 attention_fail, `end_reason = novote`) |
 | `cell`, `group`, `cong`, `stim_code` | 배정 조건 |
 | `is_test` | 점검 기록이면 1 |
 | `consent`, `consent_at` | 동의 여부·시각 |
