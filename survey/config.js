@@ -99,7 +99,8 @@ window.SURVEY_CONFIG = {
   /* Live_Streaming_Survey_IRB.docx 동의서 그대로. 바꾼 곳 두 군데:
      ① 2. Procedures 끝에 주의집중 점검 문항 안내 문장 추가 (IRB 요청)
      ② 4. 개인정보 보호의 참가자 ID 사용 범위를 10번(삭제 요청)과 맞춤
-     ③ 2. Procedures·9. Compensation에 투표 필수·부분 보상 문장 추가 (본조사 결정, IRB 확인 필요). 금액은 NO_VOTE_PAY와 같게
+     ③ 2. Procedures·9. Compensation에 부분 보상 문장 추가 (본조사 결정, IRB 확인 필요). 금액은 NO_VOTE_PAY와 같게.
+        방송 전에는 투표를 미리 알리지 않으려고 "방송 중 안내를 따르라"로만 씀 (실제 조건은 방송 중 투표 안 함)
      sections: { html } = 본문 / { choice: { id, text, options:[{value,label,decline?}] } } = 하나 고르는 문항.
      decline: true인 답을 고르면 참여하지 않는 것으로 보고 종료 화면(declined)으로 갑니다.
      choice 답은 응답 시트에 id 이름 열로 저장됩니다 (consent_pi, consent_future, consent_agree). */
@@ -116,10 +117,10 @@ window.SURVEY_CONFIG = {
       { html: `
         <p><b>Project Title:</b> A Study on Live-Streaming Viewing Experiences</p>
         <p><b>1. Background</b><br>AI viewers, which are labeled as AI, have recently begun to participate in the chat on live-streaming platforms. This study aims to understand what experiences and perceptions viewers have while watching live streams.</p>
-        <p><b>2. Procedures</b><br>If you agree to participate, you will watch a short video in a live-streaming format. While watching, you may use the chat, like, and subscribe features only if you wish. You will then respond to a survey. Due to the nature of this study, some details will be explained in a debriefing after your participation. The entire study will take about 10 minutes. During the live stream, you will be asked to vote in a poll. If you do not vote in the poll, your participation will end after the stream and you will receive a partial payment of $0.78 for your time.
+        <p><b>2. Procedures</b><br>If you agree to participate, you will join a live stream. While watching, you may use the chat, like, and subscribe features only if you wish. You will then respond to a survey. Due to the nature of this study, some details will be explained in a debriefing after your participation. The entire study will take about 10 minutes. Please follow the instructions shown during the live stream. If you do not follow them, your participation may end after the stream and you will receive a partial payment of $0.78 for your time.
         The survey includes an attention-check question that asks you to select a specific answer to confirm that you are reading the questions carefully. Responses that do not pass this check may be excluded from the analysis.</p>
         <p><b>3. Benefits of Participation</b><br>You will not receive any direct benefit from participating in this study. The knowledge gained from this study may be published in academic papers so that it is available to everyone, and the results of the study may develop into commercial value, such as royalties, in the future. However, such future benefits will not be provided directly to you.</p>
-        <p><b>4. Confidentiality of Personal Information</b><br>This study does not collect directly identifying information, such as your name, contact information, address, or email address, or any sensitive information. The information collected in this study includes your CloudResearch participant ID, demographic information (gender, year of birth, education, and employment status), your survey responses, and records of your activity while watching the broadcast (votes, chat messages you type, likes, and whether you subscribed). Your CloudResearch participant ID will be used only to confirm compensation and to process requests to delete your data, and it will be stored separately from the analysis data. The collected data will be kept for 3 years after the study ends and then destroyed.</p>` },
+        <p><b>4. Confidentiality of Personal Information</b><br>This study does not collect directly identifying information, such as your name, contact information, address, or email address, or any sensitive information. The information collected in this study includes your CloudResearch participant ID, demographic information (gender, year of birth, education, and employment status), your survey responses, and records of your activity while watching the broadcast (your responses during the stream, chat messages you type, likes, and whether you subscribed). Your CloudResearch participant ID will be used only to confirm compensation and to process requests to delete your data, and it will be stored separately from the analysis data. The collected data will be kept for 3 years after the study ends and then destroyed.</p>` },
       { choice: {
         id: 'consent_pi',
         text: '* Consent to the collection of personal information (please check one)',
@@ -133,7 +134,7 @@ window.SURVEY_CONFIG = {
         <p><b>6. Participant Responsibilities</b><br>If you agree to participate, you will complete a survey for this study. Please answer the survey questions sincerely.</p>
         <p><b>7. Study Period and Number of Participants</b><br>This study is scheduled to be conducted from November 2026 to November 2027 with a total of 450 participants.</p>
         <p><b>8.</b> There are no additional costs for participating in this study.</p>
-        <p><b>9. Compensation and Benefits</b><br>Participants who complete the survey will receive $1.67 through CloudResearch Connect. Participants who do not vote in the poll during the live stream will receive a partial payment of $0.78 instead. Withdrawing the use of your data in the debriefing will not affect your compensation.</p>
+        <p><b>9. Compensation and Benefits</b><br>Participants who complete the survey will receive $1.67 through CloudResearch Connect. Participants whose participation ends early because they did not follow the instructions during the live stream will receive a partial payment of $0.78 instead. Withdrawing the use of your data in the debriefing will not affect your compensation.</p>
         <p><b>10. Voluntary Participation and Freedom to Decline or Withdraw</b><br>Your participation in this study is entirely voluntary. If you do not wish to participate, you do not have to consent. Even after consenting, if you change your mind, you may stop participating at any time by closing your browser window, and you may request the deletion of your data through the CloudResearch Connect messaging feature or by emailing the researcher.</p>
         <p><b>11. Confidentiality</b><br>Your personal information will be kept confidential in any reports or publications resulting from this study and will be protected by law.</p>
         <p><b>12. Consent to Additional Use of Data</b><br>If this study goes well, your data may also be used in other future studies to achieve better results. Please indicate one of the following regarding the use of your data in other future studies.</p>` },
@@ -287,15 +288,15 @@ window.SURVEY_CONFIG = {
         id: 'before_stream',
         title: 'Before the live stream',
         blocks: [
-          { type: 'html', html: `<p>Please give this study your full attention. The live stream lasts about 4 minutes.</p>
+          { type: 'html', html: `<p>You are about to join a live stream. Please give this study your full attention.</p>
             <ul>
-              <li>During the live stream, the streamer will open a poll. <b>Please vote in the poll</b> and rate how confident you are in your choice.</li>
-              <li>If you do not take part properly (for example, if you do not vote in the poll), <b>the study may end early and you will receive a reduced payment</b> instead of the full payment.</li>
+              <li>Please watch the live stream carefully and <b>follow any instructions shown during the stream</b>.</li>
+              <li>If you do not take part properly (for example, if you do not follow the instructions shown during the stream), <b>the study may end early and you will receive a reduced payment</b> instead of the full payment.</li>
               <li>The questionnaire after the stream includes an attention-check question. Responses that do not pass it may be excluded from the analysis.</li>
             </ul>` },
           { type: 'single', id: 'notice_ack', required: true,
             text: 'Please confirm that you have read the instructions above.',
-            options: [ { value: '1', label: 'I understand. I will watch the stream and vote in the poll.' } ] }
+            options: [ { value: '1', label: 'I understand. I will watch the stream carefully and follow the instructions.' } ] }
         ]
       },
       /* ── 채팅 닉네임 (팀 피드백: 채팅에 참가자 ID 대신 이 이름이 보이도록)
