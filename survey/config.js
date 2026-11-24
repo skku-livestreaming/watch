@@ -424,7 +424,8 @@ window.SURVEY_CONFIG = {
         ]
       },
 
-      /* ── 5번page. 매개변수: Perceived public opinion / Informational · Normative influence ── */
+      /* ── 5번page. 매개변수: Perceived public opinion / Informational influence
+            (Normative influence nor_1~2는 파일럿에서 두 문항이 묶이지 않아(α = .04) 본조사에서 뺌) ── */
       {
         id: 'p5_comments',
         blocks: [
@@ -438,13 +439,6 @@ window.SURVEY_CONFIG = {
             items: [
               { id: 'inf_1', text: 'My opinion was influenced by the comments.' },
               { id: 'inf_2', text: 'I was persuaded by the comments and accepted the opinion they expressed.' }
-            ] },
-          { type: 'likert', id: 'nor', rawKeys: true, required: true,
-            text: 'Think about how you responded to the opinions expressed in the comments other viewers posted in the live stream you just watched. Please indicate how much you agree with each statement.',
-            points: 7, labels: { 1: 'Strongly disagree', 7: 'Strongly agree' },
-            items: [
-              { id: 'nor_1', text: 'I felt like I had to agree with the opinions in the comments.' },
-              { id: 'nor_2', text: 'I was not persuaded by the comments, but I still accepted the opinions they expressed.' }
             ] }
         ]
       },
