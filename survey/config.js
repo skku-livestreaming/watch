@@ -74,7 +74,10 @@ window.SURVEY_CONFIG = {
   REDIRECTS: {
     // Connect 파일럿 프로젝트(Online Media Experiences Survey, 2026-11) 주소. 본 연구를 새 프로젝트로 열면 바꿀 것
     complete: 'https://connect.cloudresearch.com/participant/project/5339FAA3CE/complete',      // 완료 (Manual review)
-    screenedOut: 'https://connect.cloudresearch.com/participant/project/3D79EC9870/complete',   // 선별 탈락 (Partial complete $0.13)
+    screenedOut: 'https://connect.cloudresearch.com/participant/project/3D79EC9870/complete',   // 선별 탈락 (Partial complete $0.13). 선별 문항을 없애서 지금은 안 쓰임
+    // 방송 중 투표 안 함 → 부분 보상으로 종료 (NO_VOTE_EXIT). 파일럿의 Partial complete 분기 주소를 임시로 씀.
+    // ※ Connect에서 이 분기의 시간을 6분, 금액을 NO_VOTE_PAY($0.78 = 6분 × 최소 분당 $0.13)로 바꿀 것. 본조사 프로젝트를 새로 열면 새 분기 주소로
+    noVote: 'https://connect.cloudresearch.com/participant/project/3D79EC9870/complete',
     attentionFail: '',         // 주의 점검 탈락 (ATTENTION.action이 'end'일 때만)
     full: ''                   // 모든 셀 마감
   },
@@ -84,12 +87,19 @@ window.SURVEY_CONFIG = {
   // ※ 연구계획서·동의서의 문구와 반드시 같게 맞출 것
   ATTENTION: { maxFails: 2, action: 'flag' },
 
+  // 방송 중 투표(T1: 선택 + 확신도)를 끝내지 않은 참가자 처리. true면 방송 직후 설문 없이 종료하고 REDIRECTS.noVote로 보냄.
+  // 상태는 attention_fail로 저장 (배정 자리는 다시 채워짐), end_reason = novote. 파일럿에서는 39명 중 4명 (방송 끝까지 약 6.4분)
+  NO_VOTE_EXIT: true,
+  // 투표 안 한 참가자에게 주는 부분 보상. 종료 문구({{novote_pay}})에 쓰임 (방송 전 안내에는 금액 안 씀). Connect 분기 금액·동의서 2번·9번과 같게 맞출 것
+  NO_VOTE_PAY: '$0.78',
+
   INTRO_MIN_SECONDS: 45,       // 조건별 설명문 강제 체류 시간(초). 항목 3개가 이 시간을 3등분해 하나씩 나타납니다 (45초 = 항목당 15초)
 
   /* ── 5. 동의서 ─────────────────────────────────────────────── */
   /* Live_Streaming_Survey_IRB.docx 동의서 그대로. 바꾼 곳 두 군데:
      ① 2. Procedures 끝에 주의집중 점검 문항 안내 문장 추가 (IRB 요청)
      ② 4. 개인정보 보호의 참가자 ID 사용 범위를 10번(삭제 요청)과 맞춤
+     ③ 2. Procedures·9. Compensation에 투표 필수·부분 보상 문장 추가 (본조사 결정, IRB 확인 필요). 금액은 NO_VOTE_PAY와 같게
      sections: { html } = 본문 / { choice: { id, text, options:[{value,label,decline?}] } } = 하나 고르는 문항.
      decline: true인 답을 고르면 참여하지 않는 것으로 보고 종료 화면(declined)으로 갑니다.
      choice 답은 응답 시트에 id 이름 열로 저장됩니다 (consent_pi, consent_future, consent_agree). */
@@ -106,7 +116,7 @@ window.SURVEY_CONFIG = {
       { html: `
         <p><b>Project Title:</b> A Study on Live-Streaming Viewing Experiences</p>
         <p><b>1. Background</b><br>AI viewers, which are labeled as AI, have recently begun to participate in the chat on live-streaming platforms. This study aims to understand what experiences and perceptions viewers have while watching live streams.</p>
-        <p><b>2. Procedures</b><br>If you agree to participate, you will watch a short video in a live-streaming format. While watching, you may use the chat, like, and subscribe features only if you wish. You will then respond to a survey. Due to the nature of this study, some details will be explained in a debriefing after your participation. The entire study will take about 10 minutes.
+        <p><b>2. Procedures</b><br>If you agree to participate, you will watch a short video in a live-streaming format. While watching, you may use the chat, like, and subscribe features only if you wish. You will then respond to a survey. Due to the nature of this study, some details will be explained in a debriefing after your participation. The entire study will take about 10 minutes. During the live stream, you will be asked to vote in a poll. If you do not vote in the poll, your participation will end after the stream and you will receive a partial payment of $0.78 for your time.
         The survey includes an attention-check question that asks you to select a specific answer to confirm that you are reading the questions carefully. Responses that do not pass this check may be excluded from the analysis.</p>
         <p><b>3. Benefits of Participation</b><br>You will not receive any direct benefit from participating in this study. The knowledge gained from this study may be published in academic papers so that it is available to everyone, and the results of the study may develop into commercial value, such as royalties, in the future. However, such future benefits will not be provided directly to you.</p>
         <p><b>4. Confidentiality of Personal Information</b><br>This study does not collect directly identifying information, such as your name, contact information, address, or email address, or any sensitive information. The information collected in this study includes your CloudResearch participant ID, demographic information (gender, year of birth, education, and employment status), your survey responses, and records of your activity while watching the broadcast (votes, chat messages you type, likes, and whether you subscribed). Your CloudResearch participant ID will be used only to confirm compensation and to process requests to delete your data, and it will be stored separately from the analysis data. The collected data will be kept for 3 years after the study ends and then destroyed.</p>` },
@@ -123,7 +133,7 @@ window.SURVEY_CONFIG = {
         <p><b>6. Participant Responsibilities</b><br>If you agree to participate, you will complete a survey for this study. Please answer the survey questions sincerely.</p>
         <p><b>7. Study Period and Number of Participants</b><br>This study is scheduled to be conducted from November 2026 to November 2027 with a total of 450 participants.</p>
         <p><b>8.</b> There are no additional costs for participating in this study.</p>
-        <p><b>9. Compensation and Benefits</b><br>Participants who complete the survey will receive $1.67 through CloudResearch Connect. Withdrawing the use of your data in the debriefing will not affect your compensation.</p>
+        <p><b>9. Compensation and Benefits</b><br>Participants who complete the survey will receive $1.67 through CloudResearch Connect. Participants who do not vote in the poll during the live stream will receive a partial payment of $0.78 instead. Withdrawing the use of your data in the debriefing will not affect your compensation.</p>
         <p><b>10. Voluntary Participation and Freedom to Decline or Withdraw</b><br>Your participation in this study is entirely voluntary. If you do not wish to participate, you do not have to consent. Even after consenting, if you change your mind, you may stop participating at any time by closing your browser window, and you may request the deletion of your data through the CloudResearch Connect messaging feature or by emailing the researcher.</p>
         <p><b>11. Confidentiality</b><br>Your personal information will be kept confidential in any reports or publications resulting from this study and will be protected by law.</p>
         <p><b>12. Consent to Additional Use of Data</b><br>If this study goes well, your data may also be used in other future studies to achieve better results. Please indicate one of the following regarding the use of your data in other future studies.</p>` },
@@ -266,31 +276,28 @@ window.SURVEY_CONFIG = {
      showIf   : ctx => 조건. ctx.group('ai'|'human'|'mixed'), ctx.cong, ctx.answers 사용 가능
      저장되는 열 이름: single/number/textarea = id, likert = id_항목id (rawKeys: true면 항목id 그대로), multi = id_값(1/0) */
   PAGES: {
-    // 동의서보다 먼저 나오는 선별 문항 (팀 피드백 대안 2). 3번(실시간 라이브 시청)을 안 고르면 설문 끝(screened)
-    screen: [
-      {
-        id: 'screening',
-        title: 'Screening',
-        blocks: [
-          { type: 'multi', id: 'scr_online', required: true, min: 1,
-            text: 'In the past 3 months, which of the following have you done online? (Select all that apply)',
-            options: [
-              { value: '1', label: 'Posted a photo or video on social media' },
-              { value: '2', label: 'Watched a movie or TV series on a streaming service' },
-              { value: '3', label: 'Watched a live stream in real time (e.g., on Twitch, YouTube Live, TikTok LIVE, Instagram Live, Kick)' },
-              { value: '4', label: 'Listened to a podcast' },
-              { value: '5', label: 'Played an online multiplayer game' },
-              { value: '6', label: 'Shopped online' },
-              { value: '7', label: 'Joined a video call (e.g., Zoom, FaceTime)' },
-              { value: '8', label: 'Read news on a website or app' },
-              { value: '9', label: 'None of the above' }
-            ],
-            screen: { required: ['3'] } }
-        ]
-      }
-    ],
+    // 선별 문항 없앰 (본조사 결정: 라이브 방송 시청 경험이 있는 사람만 Connect 모집 단계에서 받음).
+    // 다시 쓰려면 git 기록에서 scr_online 블록을 가져오면 됨
+    screen: [],
 
     pre: [
+      /* ── 방송 전 안내 (본조사 결정: 방송 중 투표 필수, 안 하면 방송 직후 부분 보상으로 종료)
+            금액은 여기에 쓰지 않음 (동의서 9번과 종료 화면에만) ── */
+      {
+        id: 'before_stream',
+        title: 'Before the live stream',
+        blocks: [
+          { type: 'html', html: `<p>Please give this study your full attention. The live stream lasts about 4 minutes.</p>
+            <ul>
+              <li>During the live stream, the streamer will open a poll. <b>Please vote in the poll</b> and rate how confident you are in your choice.</li>
+              <li>If you do not take part properly (for example, if you do not vote in the poll), <b>the study may end early and you will receive a reduced payment</b> instead of the full payment.</li>
+              <li>The questionnaire after the stream includes an attention-check question. Responses that do not pass it may be excluded from the analysis.</li>
+            </ul>` },
+          { type: 'single', id: 'notice_ack', required: true,
+            text: 'Please confirm that you have read the instructions above.',
+            options: [ { value: '1', label: 'I understand. I will watch the stream and vote in the poll.' } ] }
+        ]
+      },
       /* ── 채팅 닉네임 (팀 피드백: 채팅에 참가자 ID 대신 이 이름이 보이도록)
             자극물 주소에 &nick=…으로 넘김. 자극물이 nick을 읽어야 화면에 반영됨 ── */
       {
@@ -720,6 +727,7 @@ window.SURVEY_CONFIG = {
     mobileBlocked: 'This study must be completed on a computer (desktop or laptop). Please return the study.',
     screenedMsg: 'Thank you. Unfortunately you are not eligible for this study. Redirecting you to CloudResearch…',
     attentionMsg: 'Thank you. Unfortunately, your responses did not meet the study\'s quality requirements.',
+    noVoteMsg: 'Thank you for watching. Because you did not vote in the poll during the live stream, the study ends here. You will receive a partial payment of {{novote_pay}} for your time. Redirecting you to CloudResearch…',
     fullMsg: 'This study is now full. Thank you for your interest.',
     returnStream: 'It looks like you have not finished the stream yet. Click below to go back to it.',
     returnStreamBtn: 'Return to the stream',
@@ -733,7 +741,7 @@ window.SURVEY_CONFIG = {
     doneSaved: 'Your responses have been saved. You may now close this window.',
     doneCodeLead: 'Your responses have been saved. Enter this completion code on CloudResearch.',
     copy: 'Copy', copied: 'Copied.', copyManual: 'Press Ctrl+C (Cmd+C on Mac) to copy the selected code.',
-    endTitles: { screened: 'Thank you', attention: 'Thank you', full: 'Study full', mobile: 'Computer required', declined: 'Thank you' },
+    endTitles: { screened: 'Thank you', attention: 'Thank you', novote: 'Thank you', full: 'Study full', mobile: 'Computer required', declined: 'Thank you' },
     declinedMsg: 'You have chosen not to participate in this study. Thank you for your time. You may now close this window.',   // 동의서에서 비동의 답을 고른 경우
     redirectLink: 'Click here if you are not redirected automatically.',
     errorSave: 'Connection problem while saving. Retrying…'

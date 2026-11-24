@@ -296,7 +296,7 @@ if (DEBUG) C.API_URL = '';
 if (PILOT){
   // Researcher storage checks use real APIs with reserved test IDs. Never
   // substitute unfinished recruitment information or send Connect completion.
-  C.REDIRECTS = {complete:'',screenedOut:'',attentionFail:'',full:''};
+  C.REDIRECTS = {complete:'',screenedOut:'',attentionFail:'',full:'',noVote:''};
   C.COMPLETION_CODE = '';
   C.CONSENT = {
     title:'Researcher storage test',
@@ -362,7 +362,7 @@ function ctx(){
   return {
     group: c ? c.group : null, cong: c ? c.cong : null, cell: c ? c.id : null,
     answers: S ? S.answers : {}, pid: S ? S.pid : null,
-    topic_q: C.TOPIC.q, topic_A: C.TOPIC.A, topic_B: C.TOPIC.B,
+    topic_q: C.TOPIC.q, topic_A: C.TOPIC.A, topic_B: C.TOPIC.B, novote_pay: C.NO_VOTE_PAY || '',
     viewers: c ? ((C.VIEWER_WORDS || {})[c.group] || '') : ''
   };
 }
@@ -457,6 +457,7 @@ function deploymentIssues(){
   if (!secure(RESEARCH_API_URL)) issues.push('Set the HTTPS survey API URL.');
   if (!PILOT && !secure(C.REDIRECTS.complete) && !String(C.COMPLETION_CODE || '').trim()) issues.push('Set a completion URL or code.');
   if (!PILOT && C.REDIRECTS.complete && !secure(C.REDIRECTS.complete)) issues.push('The completion URL must use HTTPS.');
+  if (!PILOT && C.NO_VOTE_EXIT && !secure(C.REDIRECTS.noVote)) issues.push('Set the partial-payment URL for participants who did not vote (REDIRECTS.noVote).');
   if (!PILOT && /\[(?:N|Amount|XXXX|Researcher name|email)\]/.test(JSON.stringify([C.CONSENT,C.DEBRIEF])))
     issues.push('Complete the consent and debriefing information.');
   try {
@@ -561,7 +562,9 @@ function applyTerminalStatus(status){
   if (!['screened','attention_fail','technical','mobile','declined'].includes(status)) return false;
   S.pending={}; delete S.draft;
   S.stage='end';
-  S.meta.end_reason=status === 'attention_fail' ? 'attention' : status;
+  // 투표 안 함으로 끝난 경우도 attention_fail로 저장되므로, 남아 있는 기록으로 구분
+  S.meta.end_reason=status === 'attention_fail'
+    ? ((S.meta.end_reason === 'novote' || S.meta.t1_submitted === 0) ? 'novote' : 'attention') : status;
   return true;
 }
 
@@ -1345,6 +1348,8 @@ function viewStimulus(){
     document.body.classList.remove('stim-on');
     window.__stimFinish = null;
     if (!DEBUG && via !== 'complete'){ save(m); return end('technical'); }
+    // 방송 중 투표를 끝내지 않음(T1 미제출) → 설문 없이 부분 보상으로 종료 (config NO_VOTE_EXIT)
+    if (C.NO_VOTE_EXIT && m.t1_read === 1 && m.t1_submitted === 0){ save(m); return end('novote'); }
     S.stage = 'post'; S.page = 0;
     save(Object.assign({status: 'returned'}, m));
     render();
@@ -1500,16 +1505,16 @@ async function viewDone(){
 
 function end(reason){
   S.stage = 'end'; S.meta.end_reason = reason;
-  const status = {screened: 'screened', attention: 'attention_fail', full: 'full', mobile: 'mobile'}[reason] || reason;
+  const status = {screened: 'screened', attention: 'attention_fail', novote: 'attention_fail', full: 'full', mobile: 'mobile'}[reason] || reason;
   save({status, end_reason: reason, end_at: iso()});
   render();
 }
 async function viewEnd(){
   const version = viewVersion;
   const r = S.meta.end_reason;
-  const msg = {screened: T.screenedMsg, attention: T.attentionMsg, full: T.fullMsg, mobile: T.mobileBlocked, declined: T.declinedMsg,
+  const msg = {screened: T.screenedMsg, attention: T.attentionMsg, novote: interp(T.noVoteMsg || ''), full: T.fullMsg, mobile: T.mobileBlocked, declined: T.declinedMsg,
     technical:'The stream could not be played. Please return to the recruitment platform and contact the researcher.'}[r] || '';
-  const url = {screened: C.REDIRECTS.screenedOut, attention: C.REDIRECTS.attentionFail, full: C.REDIRECTS.full}[r];
+  const url = {screened: C.REDIRECTS.screenedOut, attention: C.REDIRECTS.attentionFail, novote: C.REDIRECTS.noVote, full: C.REDIRECTS.full}[r];
   const title = T.endTitles[r] || '';
   paper('', spinner());
   const saved = await flushWithin(SAVE_WAIT_MS);
@@ -1564,7 +1569,7 @@ function admScreens(){
   L.push(['intro', 'Before the stream'], ['stimulus', 'Live stream'], ['stimreturn', 'Live stream · came back after refresh']);
   (C.PAGES.post || []).forEach((p, i) => L.push(['post:' + i, `After · ${p.id}${p.showIf ? ' (some conditions)' : ''}`]));
   L.push(['debrief', 'Debrief'], ['done', 'Complete'],
-    ['end:screened', 'Exit · not eligible'], ['end:attention', 'Exit · attention check'],
+    ['end:screened', 'Exit · not eligible'], ['end:attention', 'Exit · attention check'], ['end:novote', 'Exit · did not vote'],
     ['end:full', 'Exit · study full'], ['end:mobile', 'Exit · computer required'], ['lost', 'Session not found']);
   return L;
 }
